@@ -14,7 +14,7 @@ Before you begin, ensure you have met the following requirements:
 * get_tweets()
 * get_user_info()
 * get_trends() (can be used without username)
-* search() 
+* search() (can be used without username)
 
 
 ## Using tweety
@@ -79,7 +79,7 @@ Python 3.7.3 (default, Mar 26 2019, 21:43:19)
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import tweet
->>> trends = Twitter("Twitter").get_user_info
+>>> trends = Twitter("Twitter").get_user_info()
 ```
 
 
