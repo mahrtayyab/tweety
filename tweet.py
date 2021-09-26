@@ -1,94 +1,7 @@
-import pprint
-import random
 import re
-import string
+from utils import *
 import traceback
-
-from bs4 import BeautifulSoup as bs
 import requests as s
-
-
-def proxyFactory() -> list:
-    # https://proxylist.geonode.com/api/organdasn?limit=200&page=2
-    r2 = s.get("https://free-proxy-list.net/")
-    soup = bs(r2.content, "html.parser")
-    tds = soup.find("tbody").find_all("tr")
-    proxies = []
-    for io in tds:
-        proxies.append(f"{io.find_all('td')[0].text}:{io.find_all('td')[1].text}")
-    return proxies
-
-
-def get_graph_ql_query(typed, user, pages=None) -> str:
-    """
-
-    :param typed: internal script query type
-    :param user: username or user_id
-    :param pages: cursor of next page
-    :return: string on graphql query object
-    """
-    if typed == 1:
-        """
-        {
-            "userId":"",
-            "count":20,
-            "cursor":""
-            "withTweetQuoteCount":true,
-            "includePromotedContent":true,
-            "withSuperFollowsUserFields":false,
-            "withUserResults":true,
-            "withBirdwatchPivots":false,
-            "withReactionsMetadata":false,
-            "withReactionsPerspective":false,
-            "withSuperFollowsTweetFields":false,
-            "withVoice":true
-        }
-        """
-        if pages:
-            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A20%2C%22cursor%22%3A%22''' + pages + '''%22%2C%22withTweetQuoteCount%22%3Atrue%2C%22includePromotedContent%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D'''
-        else:
-            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A20%2C%22withTweetQuoteCount%22%3Atrue%2C%22includePromotedContent%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D'''
-    else:
-        """
-        {
-             "screen_name":f"{user}",
-             "withSafetyModeUserFields":True,
-             "withSuperFollowsUserFields":False
-         }
-        """
-        data = '''%7B%22screen_name%22%3A%22''' + user + '''%22%2C%22withSafetyModeUserFields%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%7D'''
-    return data
-
-
-def get_headers(typed=None) -> dict:
-    if not typed:
-        headers = {
-            "authority": "twitter.com",
-            "sec-ch-ua": '"Google Chrome";v="93", " Not;A Brand";v="99", "Chromium";v="93"',
-            "x-twitter-client-language": "en",
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "accept-encoding": "gzip, deflate, br",
-            "upgrade-insecure-requests": "1",
-            "sec-ch-ua-platform": 'Windows"',
-            "sec-ch-ua-mobile": "?0",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
-        }
-    else:
-        headers = {
-            'x-csrf-token': ''.join(random.choices(string.ascii_letters + string.digits, k=32)),
-            'authorization': "Bearer " + "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
-            'content-type': "application/json",
-            'referer': "https://twitter.com/AmitabhJha3",
-            "authority": "twitter.com",
-            "sec-ch-ua": '"Google Chrome";v="93", " Not;A Brand";v="99", "Chromium";v="93"',
-            "x-twitter-client-language": "en",
-            "upgrade-insecure-requests": "1",
-            "sec-ch-ua-platform": 'Windows"',
-            "sec-ch-ua-mobile": "?0",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
-            "x-guest-token": typed
-        }
-    return headers
 
 
 class Twitter:
@@ -103,6 +16,7 @@ class Twitter:
         self.user_by_screen_url = "https://twitter.com/i/api/graphql/B-dCk4ph5BZ0UReWK590tw/UserByScreenName?variables="
         self.tweets_url = "https://twitter.com/i/api/graphql/Lya9A5YxHQxhCQJ5IPtm7A/UserTweets?variables="
         self.trends_url = "https://api.twitter.com/2/guide.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=20&candidate_source=trends&include_page_configuration=false&entity_tokens=false&ext=mediaStats%2ChighlightedLabel"
+        self.search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&q={}&count=20&query_source=typeahead_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2CvoiceInfo"
         self.proxy = {"http": random.choice(proxyFactory())}
         self.guest_token = self.__get_guest_token()
         self.guest_headers = get_headers(self.guest_token)
@@ -124,19 +38,33 @@ class Twitter:
             traceback.print_exc()
             exit(1)
 
+    def __verify_user(self):
+        user = self.profile_url.split("/")[-1]
+        data = str(get_graph_ql_query(2, user))
+        response = s.get(f"{self.user_by_screen_url}{data}", headers=self.guest_headers,
+                         proxies=self.proxy)
+        try:
+            if response.json()['data']['user']['result']['legacy']['profile_banner_extensions']:
+                json_ = response.json()
+                return json_
+        except:
+            return {"error":"Either User not Found or is Restricted"}
+
     def get_user_info(self, banner_extensions=False, image_extensions=False):
         try:
             if self.profile_url:
-                user = self.profile_url.split("/")[-1]
-                data = str(get_graph_ql_query(2, user))
-                response = s.get(f"{self.user_by_screen_url}{data}", headers=self.guest_headers,
-                                 proxies=self.proxy)
-                json_ = response.json()
-                if not banner_extensions or banner_extensions is False:
-                    del json_['data']['user']['result']['legacy']['profile_banner_extensions']
-                if not image_extensions or image_extensions is False:
-                    del json_['data']['user']['result']['legacy']['profile_image_extensions']
-                return json_
+                json_ = self.__verify_user()
+                try:
+                    if "error" in json_:
+                        return json_
+                    else:
+                        if not banner_extensions or banner_extensions is False:
+                            del json_['data']['user']['result']['legacy']['profile_banner_extensions']
+                        if not image_extensions or image_extensions is False:
+                            del json_['data']['user']['result']['legacy']['profile_image_extensions']
+                        return json_
+                except:
+                    return json_
             else:
                 raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
         except:
@@ -147,7 +75,13 @@ class Twitter:
         try:
             if self.profile_url:
                 user = self.get_user_info()
-                return user['data']['user']['result']['rest_id']
+                try:
+                    if "error" in user:
+                        return 0
+                    else:
+                        return user['data']['user']['result']['rest_id']
+                except:
+                    return 0
             else:
                 raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
         except:
@@ -158,15 +92,18 @@ class Twitter:
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
-                tweet = {
-                    "result": []
-                }
-                data = str(get_graph_ql_query(1, user_id))
-                response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
-                                 proxies=self.proxy)
-                tweet['result'].append(
-                    response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries'])
-                return tweet
+                if user_id == 0:
+                    return {"error":"Either User not Found or is Restricted"}
+                else:
+                    tweet = {
+                        "result": []
+                    }
+                    data = str(get_graph_ql_query(1, user_id))
+                    response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
+                                     proxies=self.proxy)
+                    tweet['result'].append(
+                        response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries'])
+                    return tweet
             else:
                 raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
         except:
@@ -189,6 +126,14 @@ class Twitter:
                     data['tweet_count'] = i['item']['content']['trend']['trendMetadata']['metaDescription']
             except:
                 pass
-
             trends['trends'].append(data)
         return trends
+
+    def search(self, keyword,latest=False):
+        if latest is False:
+            r = s.get(self.search_url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
+        else:
+            url = f"{self.search_url}&tweet_search_mode=live"
+            r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
+
+        return r.json()['globalObjects']['tweets']
