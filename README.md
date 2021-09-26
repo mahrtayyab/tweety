@@ -29,6 +29,5 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 # Coming Soon
 * Getting Multiple Tweet Pages
-* Searching Tweets for specific Keyword
-* Getting All Trends 
-* 
+* Searching Tweets for specific Keyword and hashtags
+* Getting All Trends
