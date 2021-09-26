@@ -12,6 +12,7 @@ Before you begin, ensure you have met the following requirements:
 
 ## Using tweety
 
+### Getting Tweets:
 ```bash
 python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
@@ -23,11 +24,24 @@ Type "help", "copyright", "credits" or "license" for more information.
 ...   print(i)
 ```
 
+### Getting Trends:
+
+```bash
+python
+Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
+[GCC 8.2.1 20181127] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import tweet
+>>> trends = Twitter().get_trends()
+>>> for i in trends['trends']:
+...   print(i['name'])
+```
+
 ## All Functions
 * get_tweets()
 * get_user_info()
+* get_trends() (can be used without username)
 
 # Coming Soon
 * Getting Multiple Tweet Pages
 * Searching Tweets for specific Keyword and hashtags
-* Getting All Trends
