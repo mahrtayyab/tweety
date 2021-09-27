@@ -1,3 +1,4 @@
+
 import re
 from utils import *
 import traceback
@@ -88,22 +89,30 @@ class Twitter:
             traceback.print_exc()
             exit(1)
 
-    def get_tweets(self):
+    def get_tweets(self,pages=None) -> dict:
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
                 if user_id == 0:
                     return {"error":"Either User not Found or is Restricted"}
                 else:
-                    tweet = {
-                        "result": []
-                    }
+                    result = {}
                     data = str(get_graph_ql_query(1, user_id))
                     response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
                                      proxies=self.proxy)
-                    tweet['result'].append(
-                        response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries'])
-                    return tweet
+                    tweet,__nextCursor = format_tweet_json(response)
+                    result['p-1'] = tweet
+                    if not pages or pages == 1 or pages == "1":
+                        return result
+                    else:
+                        for io in range(2, pages + 1):
+                            nextCursor = __nextCursor[0]
+                            data = str(get_graph_ql_query(1, user_id, nextCursor))
+                            response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
+                                             proxies=self.proxy)
+                            tweet, __nextCursor = format_tweet_json(response)
+                            result[f'p-{io}'] = tweet
+                    return result
             else:
                 raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
         except:
@@ -135,5 +144,4 @@ class Twitter:
         else:
             url = f"{self.search_url}&tweet_search_mode=live"
             r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
-
         return r.json()['globalObjects']['tweets']

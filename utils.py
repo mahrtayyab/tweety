@@ -87,3 +87,24 @@ def get_headers(typed=None) -> dict:
         }
     return headers
 
+
+def format_tweet_json(response):
+    tweet = {
+        "result": {
+            "tweets": []
+        }
+    }
+    __cursor = []
+    for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']:
+        if str(i['entryId']).split("-")[0] == "tweet":
+            tweet['result']['tweets'].append(i)
+        elif str(i['entryId']).split("-")[0] == "cursor":
+            if i['content']['cursorType'] == "Bottom":
+                __cursor.append(i['content']['value'])
+        else:
+            if str(i['entryId']).split("-")[0] in tweet['result']:
+                pass
+            else:
+                tweet['result'][f"{str(i['entryId']).split('-')[0]}"] = []
+            tweet['result'][f"{str(i['entryId']).split('-')[0]}"].append(i)
+    return tweet, __cursor

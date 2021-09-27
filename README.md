@@ -21,22 +21,60 @@ Before you begin, ensure you have met the following requirements:
 
 ### Getting Tweets:
 #### Description:
-Get 20 Tweets of a Twitter User , More Coming Soon
+Get 20 Tweets of a Twitter User
 #### Required Parameter:
 * Username or User profile URL while initiating the Twitter Object
+#### Optional Parameter:
+* pages : int (starts from 2) -> Get the mentioned number of pages of tweets
+#### Output:
+* Type -> dictionary
+- Structure
+```bash
+    {
+      "p-1" : {
+        "result": {
+            "tweets": []
+        }
+      },
+      "p-2":{
+        "result": {
+            "tweets": []
+        }
+      }
+    }
+```
+#### Example:
 ```bash
 python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from tweet import Twitter
->>> all_tweet = Twitter("Username or URL").get_tweets()
->>> for i in all_tweet['result']:
-...   print(i)
+>>> all_tweet = Twitter("Username or URL").get_tweets(pages=2)
+>>> for i in all_tweet:
+...   print(all_tweet[i])
 ```
 ### Getting Trends:
 #### Description:
 Get 20 Locale Trends
+#### Output:
+* Type -> dictionary
+- Structure
+```bash
+  {
+    "trends":[
+      {
+        "name":"<Trend-name>",
+        "url":"<Trend-URL>"
+      },
+      {
+        "name":"<Trend-name>",
+        "url":"<Trend-URL>"
+      }
+    ]
+  } 
+```
+#### Example :
 ```bash
 python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
@@ -55,7 +93,10 @@ Get 20 Tweets for a specific Keyword or Hashtag
 * keyword : str -> Keyword begin search
 #### Optional Parameter:
 * latest : boolean -> Get the latest tweets
+#### Output:
+* Type -> list
 
+#### Example:
 ```bash
 python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
@@ -73,6 +114,10 @@ Get the information about the user
 #### Optional Parameter:
 * banner_extensions : boolean -> get more information about user banner image
 * image_extensions : boolean -> get more information about user profile image
+#### Output:
+* Type -> dict
+
+#### Example:
 ```bash
 python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
@@ -83,5 +128,6 @@ Type "help", "copyright", "credits" or "license" for more information.
 ```
 
 
-# Coming Soon
-* Getting Multiple Tweet Pages
+# Update 0.1:
+* Get Multiple Pages of tweets using pages parameter in get_tweets() function
+* output of get_tweets() has been reworked.
