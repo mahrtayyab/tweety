@@ -29,9 +29,9 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> import tweet
->>> tweet = Twitter("Twitter").get_tweets()
->>> for i in tweet['result']:
+>>> from tweet import Twitter
+>>> all_tweet = Twitter("Username or URL").get_tweets()
+>>> for i in all_tweet['result']:
 ...   print(i)
 ```
 ### Getting Trends:
@@ -42,7 +42,7 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> import tweet
+>>> from tweet import Twitter
 >>> trends = Twitter().get_trends()
 >>> for i in trends['trends']:
 ...   print(i['name'])
@@ -61,7 +61,7 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> import tweet
+>>> from tweet import Twitter
 >>> trends = Twitter().search("Pakistan")
 ```
 
@@ -78,8 +78,8 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> import tweet
->>> trends = Twitter("Twitter").get_user_info()
+>>> from tweet import Twitter
+>>> trends = Twitter("Username or URL").get_user_info()
 ```
 
 
