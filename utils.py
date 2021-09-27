@@ -88,7 +88,7 @@ def get_headers(typed=None) -> dict:
     return headers
 
 
-def format_tweet_json(response):
+def format_tweet_json(response,include_extras):
     tweet = {
         "result": {
             "tweets": []
@@ -97,14 +97,18 @@ def format_tweet_json(response):
     __cursor = []
     for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']:
         if str(i['entryId']).split("-")[0] == "tweet":
-            tweet['result']['tweets'].append(i)
+            tweet['result']['tweets'].append(i['content']['itemContent']['tweet_results']['result']['legacy'])
         elif str(i['entryId']).split("-")[0] == "cursor":
             if i['content']['cursorType'] == "Bottom":
                 __cursor.append(i['content']['value'])
+            # __cursor.append(i)
         else:
-            if str(i['entryId']).split("-")[0] in tweet['result']:
-                pass
+            if include_extras is True:
+                if str(i['entryId']).split("-")[0] in tweet['result']:
+                    pass
+                else:
+                    tweet['result'][f"{str(i['entryId']).split('-')[0]}"] = []
+                tweet['result'][f"{str(i['entryId']).split('-')[0]}"].append(i)
             else:
-                tweet['result'][f"{str(i['entryId']).split('-')[0]}"] = []
-            tweet['result'][f"{str(i['entryId']).split('-')[0]}"].append(i)
+                pass
     return tweet, __cursor

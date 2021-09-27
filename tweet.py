@@ -1,4 +1,3 @@
-
 import re
 from utils import *
 import traceback
@@ -18,6 +17,7 @@ class Twitter:
         self.tweets_url = "https://twitter.com/i/api/graphql/Lya9A5YxHQxhCQJ5IPtm7A/UserTweets?variables="
         self.trends_url = "https://api.twitter.com/2/guide.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=20&candidate_source=trends&include_page_configuration=false&entity_tokens=false&ext=mediaStats%2ChighlightedLabel"
         self.search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&q={}&count=20&query_source=typeahead_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2CvoiceInfo"
+        self.tweet_detail_url = "https://twitter.com/i/api/graphql/4tzuTRu5-fpJTS7bDF6Nlg/TweetDetail?variables=%7B%22focalTweetId%22%3A%22{}%22%2C%22with_rux_injections%22%3Afalse%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D"
         self.proxy = {"http": random.choice(proxyFactory())}
         self.guest_token = self.__get_guest_token()
         self.guest_headers = get_headers(self.guest_token)
@@ -89,7 +89,7 @@ class Twitter:
             traceback.print_exc()
             exit(1)
 
-    def get_tweets(self,pages=None) -> dict:
+    def get_tweets(self,pages=None,include_extras=False) -> dict:
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
@@ -100,7 +100,7 @@ class Twitter:
                     data = str(get_graph_ql_query(1, user_id))
                     response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
                                      proxies=self.proxy)
-                    tweet,__nextCursor = format_tweet_json(response)
+                    tweet,__nextCursor = format_tweet_json(response,include_extras=include_extras)
                     result['p-1'] = tweet
                     if not pages or pages == 1 or pages == "1":
                         return result
@@ -145,3 +145,24 @@ class Twitter:
             url = f"{self.search_url}&tweet_search_mode=live"
             r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
         return r.json()['globalObjects']['tweets']
+
+    def tweet_detail(self,identifier):
+        if str(identifier).startswith("https://"):
+            if str(identifier).endswith("/"):
+                tweetId = str(identifier)[:-1].split("/")[-1]
+            else:
+                tweetId = str(identifier).split("/")[-1]
+        else:
+            tweetId = identifier
+        result = {
+            "conversation_threads":[]
+        }
+        r = s.get(self.tweet_detail_url.format(tweetId), headers=self.guest_headers, proxies=self.proxy)
+        for entry in r.json()['data']['threaded_conversation_with_injections']['instructions'][0]['entries']:
+            if str(entry['entryId']).split("-")[0] == "tweet":
+                tweet = entry['content']['itemContent']['tweet_results']['result']['legacy']
+                result['tweet'] = tweet
+            else:
+                result['conversation_threads'].append(entry)
+        return result
+
