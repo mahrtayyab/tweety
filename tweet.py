@@ -139,6 +139,8 @@ class Twitter:
         return trends
 
     def search(self, keyword,latest=False):
+        if keyword.startswith("#"):
+            keyword = f"%23{keyword[1:]}"
         if latest is False:
             r = s.get(self.search_url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
         else:

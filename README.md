@@ -161,3 +161,5 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Update 0.2:
 * Again reworked and simplified tweets in [get_tweets](#getting-tweets) function :stuck_out_tongue_winking_eye:
 * Added [tweet_detail function](#getting-a-tweet-detail) for getting details about a tweet including replies to it
+## Update 0.2.1:
+* Fixed Hashtag Search
