@@ -88,7 +88,78 @@ def get_headers(typed=None) -> dict:
     return headers
 
 
-def format_tweet_json(response,include_extras):
+def simplify_tweet(tweet, rest_id):
+    try:
+        created_on = tweet['created_at'] if tweet['created_at'] else ""
+    except KeyError:
+        created_on = ""
+    rest_id = rest_id
+    try:
+        is_retweet = True if str(tweet['full_text']).startswith("RT") else False
+    except:
+        is_retweet = False
+    try:
+        if is_retweet:
+            text = tweet['retweeted_status_result']['result']['legacy']['full_text']
+        else:
+            text = tweet['full_text'] if tweet['full_text'] else ""
+    except KeyError:
+        text = ""
+    try:
+        language = tweet['lang'] if tweet['lang'] else ""
+    except KeyError:
+        language = ""
+    try:
+        likes = tweet['favorite_count'] if tweet['favorite_count'] else ""
+    except KeyError:
+        likes = ""
+    try:
+        retweet_count = tweet['retweet_count'] if tweet['retweet_count'] else ""
+    except KeyError:
+        retweet_count = ""
+    try:
+        source = str(tweet['source']).split(">")[1].split("<")[0] if tweet['source'] else ""
+    except KeyError:
+        source = ""
+    try:
+        media = tweet['entities']['media'] if tweet['entities']['media'] else ""
+    except KeyError:
+        media = ""
+    try:
+        mentions = tweet['entities']['user_mentions'] if tweet['entities']['user_mentions'] else ""
+    except KeyError:
+        mentions = ""
+    try:
+        urls = tweet['entities']['urls'] if tweet['entities']['urls'] else ""
+    except KeyError:
+        urls = ""
+    try:
+        hashtags = tweet['entities']['hashtags'] if tweet['entities']['hashtags'] else ""
+    except KeyError:
+        hashtags = ""
+    try:
+        symbols = tweet['entities']['symbols'] if tweet['entities']['symbols'] else ""
+    except KeyError:
+        symbols = ""
+    result = {
+        "created_on": created_on,
+        "is_retweet": is_retweet,
+        "tweet_id": rest_id,
+        "tweet_body": text,
+        "language": language,
+        "likes": likes,
+        "retweet_counts": retweet_count,
+        "source": source,
+        "media": media,
+        "user_mentions": mentions,
+        "urls": urls,
+        "hashtags": hashtags,
+        "symbols": symbols
+    }
+    return result
+
+
+def format_tweet_json(response, include_extras, simplify):
     tweet = {
         "result": {
             "tweets": []
@@ -97,7 +168,13 @@ def format_tweet_json(response,include_extras):
     __cursor = []
     for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']:
         if str(i['entryId']).split("-")[0] == "tweet":
-            tweet['result']['tweets'].append(i['content']['itemContent']['tweet_results']['result']['legacy'])
+            # print(i['content']['itemContent']['tweet_results']['result']['legacy']['retweeted'])
+            if simplify:
+                tweet['result']['tweets'].append(
+                    simplify_tweet(i['content']['itemContent']['tweet_results']['result']['legacy'],
+                                   i['content']['itemContent']['tweet_results']['result']['rest_id']))
+            else:
+                tweet['result']['tweets'].append(i['content']['itemContent']['tweet_results']['result']['legacy'])
         elif str(i['entryId']).split("-")[0] == "cursor":
             if i['content']['cursorType'] == "Bottom":
                 __cursor.append(i['content']['value'])

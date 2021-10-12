@@ -27,14 +27,48 @@ Get 20 Tweets of a Twitter User
 #### Optional Parameter:
 * pages : int (default is 1,starts from 2) -> Get the mentioned number of pages of tweets
 * include_extras : boolean (default is False) -> Get different extras on the page like Topics etc
+* simplify : boolean (default is False) -> get simplifies tweets instead of Twitter's cultured results  
 #### Output:
 * Type -> dictionary
-- Structure
+* Structure
+> Not Simplified
 ```json
     {
       "p-1" : {
         "result": {
             "tweets": []
+        }
+      },
+      "p-2":{
+        "result": {
+            "tweets": []
+        }
+      }
+    }
+```
+> Simplified
+```json
+    {
+      "p-1" : {
+        "result": {
+            "tweets": [
+              {
+                   "created_on":"Tue Oct 05 17:35:26 +0000 2021",
+                   "is_retweet":true,
+                   "tweet_id":"1445442518301163521",
+                   "tweet_body":"Hello, world. #Windows11 https://t.co/pg3d6EsreQ https://t.co/wh6InmfngF",
+                   "language":"en",
+                   "likes":"",
+                   "retweet_counts":442,
+                   "source":"Twitter Web App",
+                   "media":[],
+                   "user_mentions":[],
+                   "urls":[],
+                   "hashtags":[],
+                   "symbols":""
+              },
+              {}
+            ]
         }
       },
       "p-2":{
@@ -163,3 +197,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 * Added [tweet_detail function](#getting-a-tweet-detail) for getting details about a tweet including replies to it
 ## Update 0.2.1:
 * Fixed Hashtag Search
+
+## Update 0.2.2:
+* Fixed get_tweets() with multiple pages
+* Added Simplify Parameter in get_tweets() , to get simplified results instead of Twitter's cluttered results

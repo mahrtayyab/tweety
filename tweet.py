@@ -1,3 +1,4 @@
+import pprint
 import re
 from utils import *
 import traceback
@@ -89,7 +90,7 @@ class Twitter:
             traceback.print_exc()
             exit(1)
 
-    def get_tweets(self,pages=None,include_extras=False) -> dict:
+    def get_tweets(self,pages=None,include_extras=False,simplify=False) -> dict:
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
@@ -100,7 +101,7 @@ class Twitter:
                     data = str(get_graph_ql_query(1, user_id))
                     response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
                                      proxies=self.proxy)
-                    tweet,__nextCursor = format_tweet_json(response,include_extras=include_extras)
+                    tweet,__nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
                     result['p-1'] = tweet
                     if not pages or pages == 1 or pages == "1":
                         return result
@@ -110,7 +111,7 @@ class Twitter:
                             data = str(get_graph_ql_query(1, user_id, nextCursor))
                             response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
                                              proxies=self.proxy)
-                            tweet, __nextCursor = format_tweet_json(response)
+                            tweet, __nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
                             result[f'p-{io}'] = tweet
                     return result
             else:
@@ -167,4 +168,3 @@ class Twitter:
             else:
                 result['conversation_threads'].append(entry)
         return result
-
