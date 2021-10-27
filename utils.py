@@ -88,6 +88,30 @@ def get_headers(typed=None) -> dict:
     return headers
 
 
+def format_search(response,simplify):
+    tweet = {
+        "result": {
+            "tweets": []
+        }
+    }
+    __cursor = []
+    for i in response.json()['timeline']['instructions'][0]['addEntries']['entries']:
+        try:
+            if i['content']['operation']:
+                if i['content']['operation']['cursor']['cursorType'] == "Bottom":
+                    __cursor.append(i['content']['operation']['cursor']['value'])
+        except:
+            pass
+    for i in response.json()['globalObjects']['tweets']:
+        if simplify:
+            tweet_ = simplify_tweet(response.json()['globalObjects']['tweets'][i],
+                                    response.json()['globalObjects']['tweets'][i]['id'])
+            tweet['result']['tweets'].append(tweet_)
+        else:
+            tweet['result']['tweets'].append(response.json()['globalObjects']['tweets'][i])
+    return tweet, __cursor
+
+
 def simplify_tweet(tweet, rest_id):
     try:
         created_on = tweet['created_at'] if tweet['created_at'] else ""

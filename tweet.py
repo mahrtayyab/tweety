@@ -139,7 +139,7 @@ class Twitter:
             trends['trends'].append(data)
         return trends
 
-    def search(self, keyword,latest=False):
+    def search(self, keyword, pages=1, simplify=True, latest=False):
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
         if latest is False:
@@ -147,7 +147,25 @@ class Twitter:
         else:
             url = f"{self.search_url}&tweet_search_mode=live"
             r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
-        return r.json()['globalObjects']['tweets']
+        result = {}
+        tweets_, __cursor = format_search(r, simplify)
+        result['p-1'] = tweets_
+        if not pages or pages == 1 or pages == "1":
+            return result
+        else:
+            for io in range(2, pages + 1):
+                try:
+                    nextCursor = __cursor[0]
+                    if latest is False:
+                        url = f"{self.search_url}&cursor={nextCursor}"
+                    else:
+                        url = f"{self.search_url}&tweet_search_mode=live&cursor={nextCursor}"
+                    r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
+                    tweets_, __cursor = format_search(r, simplify)
+                    result[f'p-{io}'] = tweets_
+                except:
+                    pass
+        return result
 
     def tweet_detail(self,identifier):
         if str(identifier).startswith("https://"):

@@ -128,9 +128,11 @@ Get 20 Tweets for a specific Keyword or Hashtag
 * keyword : str -> Keyword begin search
 #### Optional Parameter:
 * latest : boolean (Default is False) -> Get the latest tweets
+* simplify : boolean (Default is True) -> Simplify the Results instead of Twitter's cultured results
+* pages : int (starts from 2 , default is 1) -> number of pages to get 
 #### Output:
 * Type -> list
-
+* Structure -> Please check the structure of [get_tweets](#getting-tweets) function
 #### Example:
 ```bash
 python
@@ -192,12 +194,18 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Update 0.1:
 * Get Multiple Pages of tweets using pages parameter in get_tweets() function
 * output of [get_tweets](#getting-tweets) has been reworked.
+
 ## Update 0.2:
 * Again reworked and simplified tweets in [get_tweets](#getting-tweets) function :stuck_out_tongue_winking_eye:
 * Added [tweet_detail function](#getting-a-tweet-detail) for getting details about a tweet including replies to it
+
 ## Update 0.2.1:
 * Fixed Hashtag Search
 
 ## Update 0.2.2:
 * Fixed get_tweets() with multiple pages
 * Added Simplify Parameter in get_tweets() , to get simplified results instead of Twitter's cluttered results
+
+## Update 0.3:
+* Added getting multiple pages while searching keyword
+* [searching a keyword](#searching-a-keyword) now supports simplify parameter
