@@ -209,3 +209,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Update 0.3:
 * Added getting multiple pages while searching keyword
 * [searching a keyword](#searching-a-keyword) now supports simplify parameter
+
+## Update 0.3.1:
+* Fixed the issue when searching more than 2 pages of keyword's tweet gives empty dict
+* Fixed the issue when using [get_tweet](#getting-tweets) with a username through an exception if the tweets of the user are less than the mentioned number of pages

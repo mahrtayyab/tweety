@@ -109,6 +109,16 @@ def format_search(response,simplify):
             tweet['result']['tweets'].append(tweet_)
         else:
             tweet['result']['tweets'].append(response.json()['globalObjects']['tweets'][i])
+    try:
+        if not __cursor:
+            for i in response.json()['timeline']['instructions']:
+                for key in i.keys():
+                    if key == "replaceEntry":
+                        if i['replaceEntry']['entry']['content']['operation']['cursor']['cursorType'] == "Bottom":
+                            __cursor.append(i['replaceEntry']['entry']['content']['operation']['cursor']['value'])
+                            break
+    except:
+        pass
     return tweet, __cursor
 
 
@@ -192,17 +202,18 @@ def format_tweet_json(response, include_extras, simplify):
     __cursor = []
     for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']:
         if str(i['entryId']).split("-")[0] == "tweet":
-            # print(i['content']['itemContent']['tweet_results']['result']['legacy']['retweeted'])
-            if simplify:
-                tweet['result']['tweets'].append(
-                    simplify_tweet(i['content']['itemContent']['tweet_results']['result']['legacy'],
-                                   i['content']['itemContent']['tweet_results']['result']['rest_id']))
-            else:
-                tweet['result']['tweets'].append(i['content']['itemContent']['tweet_results']['result']['legacy'])
+            try:
+                if simplify:
+                    tweet['result']['tweets'].append(
+                        simplify_tweet(i['content']['itemContent']['tweet_results']['result']['legacy'],
+                                       i['content']['itemContent']['tweet_results']['result']['rest_id']))
+                else:
+                    tweet['result']['tweets'].append(i['content']['itemContent']['tweet_results']['result']['legacy'])
+            except:
+                pass
         elif str(i['entryId']).split("-")[0] == "cursor":
             if i['content']['cursorType'] == "Bottom":
                 __cursor.append(i['content']['value'])
-            # __cursor.append(i)
         else:
             if include_extras is True:
                 if str(i['entryId']).split("-")[0] in tweet['result']:
