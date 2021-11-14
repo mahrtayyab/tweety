@@ -140,6 +140,11 @@ def simplify_tweet(tweet, rest_id):
     except KeyError:
         text = ""
     try:
+        is_reply = True if tweet['in_reply_to_status_id'] is not None or tweet[
+            'in_reply_to_user_id'] is not None else False
+    except:
+        is_reply = False
+    try:
         language = tweet['lang'] if tweet['lang'] else ""
     except KeyError:
         language = ""
@@ -178,6 +183,7 @@ def simplify_tweet(tweet, rest_id):
     result = {
         "created_on": created_on,
         "is_retweet": is_retweet,
+        "is_reply":is_reply,
         "tweet_id": rest_id,
         "tweet_body": text,
         "language": language,
@@ -224,3 +230,7 @@ def format_tweet_json(response, include_extras, simplify):
             else:
                 pass
     return tweet, __cursor
+
+
+WORKBOOK_HEADERS = ['Created on', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
+                    'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']

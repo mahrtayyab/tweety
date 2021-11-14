@@ -9,6 +9,7 @@ Before you begin, ensure you have met the following requirements:
 * Python 3.6+
 * BeautifulSoup (Python Module)
 * Requests (Python Module)
+* openpyxl (Python Module)
 
 ## All Functions
 * get_tweets()
@@ -29,55 +30,63 @@ Get 20 Tweets of a Twitter User
 * include_extras : boolean (default is False) -> Get different extras on the page like Topics etc
 * simplify : boolean (default is False) -> get simplifies tweets instead of Twitter's cultured results  
 #### Output:
-* Type -> dictionary
+* Type -> TweetDict
 * Structure
-> Not Simplified
-```json
-    {
-      "p-1" : {
-        "result": {
-            "tweets": []
-        }
-      },
-      "p-2":{
-        "result": {
-            "tweets": []
-        }
-      }
-    }
-```
-> Simplified
-```json
-    {
-      "p-1" : {
-        "result": {
+  * #### TweetDict
+      - TweetDict is custom Object returned by get_tweet or search method
+      - This object can be used to get dict or get an Excel Workbook containing the tweets
+      - This Object has two methods:
+        - to_xlsx -> this returns Nothing and create an Excel Sheet
+          - to use this method _simplify_ parameter must be set to True
+          - _filename_ parameter can be optionally pass to _to_xlsx_ method in order to set the filename of Excel file , if not passed the default name of Excel file will be _tweet.xlsx_
+        - to_dict -> this is return a tweet dict
+      > Not Simplified dict
+      ```json
+          {
             "tweets": [
               {
-                   "created_on":"Tue Oct 05 17:35:26 +0000 2021",
-                   "is_retweet":true,
-                   "tweet_id":"1445442518301163521",
-                   "tweet_body":"Hello, world. #Windows11 https://t.co/pg3d6EsreQ https://t.co/wh6InmfngF",
-                   "language":"en",
-                   "likes":"",
-                   "retweet_counts":442,
-                   "source":"Twitter Web App",
-                   "media":[],
-                   "user_mentions":[],
-                   "urls":[],
-                   "hashtags":[],
-                   "symbols":""
+                "results": {
+                  "tweets": []
+                }
               },
-              {}
+              {
+                "results": {
+                  "tweets": []
+                }
+              }
             ]
-        }
-      },
-      "p-2":{
-        "result": {
-            "tweets": []
-        }
-      }
-    }
-```
+          }
+      ```
+      > Simplified dict
+      ```json
+          {
+            "tweets": [
+              {
+                "results": {
+                  "tweets": [
+                    {
+                         "created_on":"Tue Oct 05 17:35:26 +0000 2021",
+                         "is_retweet":true,
+                         "is_reply": true,
+                         "tweet_id":"1445442518301163521",
+                         "tweet_body":"Hello, world. #Windows11 https://t.co/pg3d6EsreQ https://t.co/wh6InmfngF",
+                         "language":"en",
+                         "likes":"",
+                         "retweet_counts":442,
+                         "source":"Twitter Web App",
+                         "media":[],
+                         "user_mentions":[],
+                         "urls":[],
+                         "hashtags":[],
+                         "symbols":""
+                    }     
+                  ]
+                }
+              }
+            ]
+          }
+        
+      ```
 #### Example:
 ```bash
 python
@@ -85,10 +94,9 @@ Python 3.7.3 (default, Mar 26 2019, 21:43:19)
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from tweet import Twitter
->>> all_tweet = Twitter("Username or URL").get_tweets(pages=2)
->>> for i in all_tweet:
-...   print(all_tweet[i])
+>>> all_tweet = Twitter("Username or URL").get_tweets(pages=2).to_dict()
 ```
+
 ### Getting Trends:
 #### Description:
 Get 20 Locale Trends
@@ -140,7 +148,7 @@ Python 3.7.3 (default, Mar 26 2019, 21:43:19)
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from tweet import Twitter
->>> trends = Twitter().search("Pakistan")
+>>> trends = Twitter().search("Pakistan").to_xlsx(filename="searches.xlsx")
 ```
 
 ### Getting USER Info:
@@ -213,3 +221,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Update 0.3.1:
 * Fixed the issue when searching more than 2 pages of keyword's tweet gives empty dict
 * Fixed the issue when using [get_tweet](#getting-tweets) with a username through an exception if the tweets of the user are less than the mentioned number of pages
+
+## Update 0.3.5:
+* Again reworked and simplified tweets in [get_tweets](#getting-tweets)  and [search](#searching-a-keyword) function :stuck_out_tongue_winking_eye:
+* [get_tweets](#getting-tweets)  and [search](#searching-a-keyword) now returns TweetDict object , more about TweetDict [here](#TweetDict)
+* Tweets can now be imported as Excel Workbook

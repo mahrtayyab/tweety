@@ -1,5 +1,7 @@
 import pprint
 import re
+import openpyxl
+from _types import TweetDict
 from utils import *
 import traceback
 import requests as s
@@ -90,21 +92,21 @@ class Twitter:
             traceback.print_exc()
             exit(1)
 
-    def get_tweets(self,pages=None,include_extras=False,simplify=False) -> dict:
+    def get_tweets(self,pages=None,include_extras=False,simplify=True) -> TweetDict:
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
                 if user_id == 0:
-                    return {"error":"Either User not Found or is Restricted"}
+                    return TweetDict({"error":"Either User not Found or is Restricted"})
                 else:
-                    result = {}
+                    result = {"tweets":[]}
                     data = str(get_graph_ql_query(1, user_id))
                     response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
                                      proxies=self.proxy)
                     tweet,__nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
-                    result['p-1'] = tweet
+                    result['tweets'].append(tweet)
                     if not pages or pages == 1 or pages == "1":
-                        return result
+                        return TweetDict(result)
                     else:
                         for io in range(2, pages + 1):
                             nextCursor = __nextCursor[0]
@@ -112,8 +114,8 @@ class Twitter:
                             response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
                                              proxies=self.proxy)
                             tweet, __nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
-                            result[f'p-{io}'] = tweet
-                    return result
+                            result['tweets'].append(tweet)
+                    return TweetDict(result)
             else:
                 raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
         except:
@@ -139,7 +141,7 @@ class Twitter:
             trends['trends'].append(data)
         return trends
 
-    def search(self, keyword, pages=1, simplify=True, latest=False):
+    def search(self, keyword, pages=1, simplify=True, latest=False) ->TweetDict:
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
         if latest is False:
@@ -147,11 +149,11 @@ class Twitter:
         else:
             url = f"{self.search_url}&tweet_search_mode=live"
             r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
-        result = {}
+        result = {"tweets":[]}
         tweets_, __cursor = format_search(r, simplify)
-        result['p-1'] = tweets_
+        result['tweets'].append(tweets_)
         if not pages or pages == 1 or pages == "1":
-            return result
+            return TweetDict(result)
         else:
             for io in range(2, pages + 1):
                 try:
@@ -162,10 +164,10 @@ class Twitter:
                         url = f"{self.search_url}&tweet_search_mode=live&cursor={nextCursor}"
                     r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
                     tweets_, __cursor = format_search(r, simplify)
-                    result[f'p-{io}'] = tweets_
+                    result['tweets'].append(tweets_)
                 except:
                     pass
-        return result
+        return TweetDict(result)
 
     def tweet_detail(self,identifier):
         if str(identifier).startswith("https://"):
