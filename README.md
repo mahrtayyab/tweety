@@ -139,7 +139,7 @@ Get 20 Tweets for a specific Keyword or Hashtag
 * simplify : boolean (Default is True) -> Simplify the Results instead of Twitter's cultured results
 * pages : int (starts from 2 , default is 1) -> number of pages to get 
 #### Output:
-* Type -> list
+* Type -> TweetDict
 * Structure -> Please check the structure of [get_tweets](#getting-tweets) function
 #### Example:
 ```bash
