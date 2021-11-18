@@ -11,6 +11,10 @@ Before you begin, ensure you have met the following requirements:
 * Requests (Python Module)
 * openpyxl (Python Module)
 
+## Installation:
+```bash
+pip install tweety-ns
+```
 ## All Functions
 * get_tweets()
 * get_user_info()
@@ -28,7 +32,7 @@ Get 20 Tweets of a Twitter User
 #### Optional Parameter:
 * pages : int (default is 1,starts from 2) -> Get the mentioned number of pages of tweets
 * include_extras : boolean (default is False) -> Get different extras on the page like Topics etc
-* simplify : boolean (default is False) -> get simplifies tweets instead of Twitter's cultured results  
+* simplify : boolean (default is True) -> get simplifies tweets instead of Twitter's cultured results  
 #### Output:
 * Type -> TweetDict
 * Structure
@@ -93,7 +97,7 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> from tweet import Twitter
+>>> from tweety.bot import Twitter
 >>> all_tweet = Twitter("Username or URL").get_tweets(pages=2).to_dict()
 ```
 
@@ -123,7 +127,7 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> from tweet import Twitter
+>>> from tweety.bot import Twitter
 >>> trends = Twitter().get_trends()
 >>> for i in trends['trends']:
 ...   print(i['name'])
@@ -147,7 +151,7 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> from tweet import Twitter
+>>> from tweety.bot import Twitter
 >>> trends = Twitter().search("Pakistan").to_xlsx(filename="searches.xlsx")
 ```
 
@@ -168,7 +172,7 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> from tweet import Twitter
+>>> from tweety.bot import Twitter
 >>> trends = Twitter("Username or URL").get_user_info()
 ```
 
@@ -194,7 +198,7 @@ python
 Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> from tweet import Twitter
+>>> from tweety.bot import Twitter
 >>> trends = Twitter().tweet_detail("https://twitter.com/Microsoft/status/1442542812197801985")
 ```
 
@@ -226,3 +230,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 * Again reworked and simplified tweets in [get_tweets](#getting-tweets)  and [search](#searching-a-keyword) function :stuck_out_tongue_winking_eye:
 * [get_tweets](#getting-tweets)  and [search](#searching-a-keyword) now returns TweetDict object , more about TweetDict [here](#TweetDict)
 * Tweets can now be imported as Excel Workbook
+
+## Update 0.3.9:
+* Tweets can now be imported s CSV too
+* The Project is Live at [PYPI Repository](https://pypi.org/project/tweety-ns/)

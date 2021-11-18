@@ -1,6 +1,5 @@
 import random
 import string
-
 from bs4 import BeautifulSoup as bs
 import requests as s
 
@@ -232,5 +231,5 @@ def format_tweet_json(response, include_extras, simplify):
     return tweet, __cursor
 
 
-WORKBOOK_HEADERS = ['Created on', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
-                    'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
+WORKBOOK_HEADERS = ['Created on', 'IS Retweet', 'IS Reply', 'Tweet ID', 'Tweet Body', 'Language', 'Likes',
+                    'Retweet Count', 'Source', 'Medias', 'User Mentioned', 'URLS', 'Hashtags', 'Symbols']

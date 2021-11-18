@@ -1,8 +1,6 @@
-import pprint
 import re
-import openpyxl
-from _types import TweetDict
-from utils import *
+from ._types import TweetDict
+from .utils import *
 import traceback
 import requests as s
 
@@ -141,7 +139,7 @@ class Twitter:
             trends['trends'].append(data)
         return trends
 
-    def search(self, keyword, pages=1, simplify=True, latest=False) ->TweetDict:
+    def search(self, keyword, pages=1, simplify=True, latest=False) -> TweetDict:
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
         if latest is False:
