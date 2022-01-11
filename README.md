@@ -234,3 +234,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Update 0.3.9:
 * Tweets can now be imported s CSV too
 * The Project is Live at [PYPI Repository](https://pypi.org/project/tweety-ns/)
+
+# Update 0.4:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.1.2
+* Fixed the issue of 'No Guest Token Found'

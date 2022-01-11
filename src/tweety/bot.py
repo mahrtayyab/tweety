@@ -3,6 +3,7 @@ from ._types import TweetDict
 from .utils import *
 import traceback
 import requests as s
+import sys
 
 
 class Twitter:
@@ -19,26 +20,44 @@ class Twitter:
         self.trends_url = "https://api.twitter.com/2/guide.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=20&candidate_source=trends&include_page_configuration=false&entity_tokens=false&ext=mediaStats%2ChighlightedLabel"
         self.search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&q={}&count=20&query_source=typeahead_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2CvoiceInfo"
         self.tweet_detail_url = "https://twitter.com/i/api/graphql/4tzuTRu5-fpJTS7bDF6Nlg/TweetDetail?variables=%7B%22focalTweetId%22%3A%22{}%22%2C%22with_rux_injections%22%3Afalse%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D"
+        self.guest_token_url = "https://api.twitter.com/1.1/guest/activate.json"
         self.proxy = {"http": random.choice(proxyFactory())}
         self.guest_token = self.__get_guest_token()
         self.guest_headers = get_headers(self.guest_token)
 
-    def __get_guest_token(self):
+    def __get_guest_token(self, max_retries=10):
         try:
-            if self.profile_url:
-                response = s.get(self.profile_url, headers=get_headers(), proxies=self.proxy)
-            else:
-                response = s.get("https://twitter.com/i/trends", headers=get_headers(), proxies=self.proxy)
-            guest_token = re.findall(
-                'document\.cookie = decodeURIComponent\("gt=(.*?); Max-Age=10800; Domain=\.twitter\.com; Path=/; Secure"\);',
-                response.text)
-            try:
-                return guest_token[0]
-            except IndexError:
-                raise ValueError("Guest Token Couldn't be found, Aborting.")
-        except:
+            guest_token = ""
+            for i in range(0, int(max_retries)):
+                if self.profile_url:
+                    response = s.get(self.profile_url, headers=get_headers(), proxies=self.proxy)
+                else:
+                    response = s.get("https://twitter.com/i/trends", headers=get_headers(), proxies=self.proxy)
+                guest_token_ = re.findall(
+                    'document\.cookie = decodeURIComponent\("gt=(.*?); Max-Age=10800; Domain=\.twitter\.com; Path=/; Secure"\);',
+                    response.text)
+                try:
+                    if guest_token_[0]:
+                        guest_token = guest_token_[0]
+                        return guest_token
+                except IndexError:
+                    try:
+                        headers = get_headers()
+                        headers['x-csrf-token'] = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+                        headers[
+                            'authorization'] = "Bearer " + "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+                        headers['content-type'] = 'application/x-www-form-urlencoded'
+                        headers['accept'] = "*/*"
+                        response = s.post(self.guest_token_url, headers=headers, proxies=self.proxy)
+                        guest_token = response.json()['guest_token']
+                        return response.json()['guest_token']
+                    except:
+                        continue
+            if guest_token == "":
+                sys.exit(f"Script Aborting : Guest Token couldn't be found after {max_retries} retires.")
+        except Exception as e:
             traceback.print_exc()
-            exit(1)
+            sys.exit(f"Script Aborting : Guest Token couldn't be found after {max_retries} retires.\n{e}")
 
     def __verify_user(self):
         user = self.profile_url.split("/")[-1]
