@@ -1,5 +1,6 @@
 import random
 import string
+
 from bs4 import BeautifulSoup as bs
 import requests as s
 
@@ -44,6 +45,11 @@ def get_graph_ql_query(typed, user, pages=None) -> str:
             data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A20%2C%22cursor%22%3A%22''' + pages + '''%22%2C%22withTweetQuoteCount%22%3Atrue%2C%22includePromotedContent%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D'''
         else:
             data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A20%2C%22withTweetQuoteCount%22%3Atrue%2C%22includePromotedContent%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D'''
+    elif typed == 2:
+        if pages:
+            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A40%2C%22cursor%22%3A%22''' + pages + '''%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Afalse%2C%22__fs_interactive_text%22%3Afalse%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Afalse%7D'''
+        else:
+            data = '''%7B%22userId%22%3A%2244196397%22%2C%22count%22%3A40%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Afalse%2C%22__fs_interactive_text%22%3Afalse%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Afalse%7D'''
     else:
         """
         {
@@ -139,10 +145,11 @@ def simplify_tweet(tweet, rest_id):
     except KeyError:
         text = ""
     try:
-        is_reply = True if tweet['in_reply_to_status_id'] is not None or tweet[
-            'in_reply_to_user_id'] is not None else False
+        is_reply = True if tweet.get('in_reply_to_status_id') is not None or tweet.get('in_reply_to_user_id') is not None or tweet.get('in_reply_to_screen_name') is not None else False
     except:
         is_reply = False
+    if is_reply:
+        reply_to = tweet['in_reply_to_screen_name']
     try:
         language = tweet['lang'] if tweet['lang'] else ""
     except KeyError:
@@ -195,6 +202,8 @@ def simplify_tweet(tweet, rest_id):
         "hashtags": hashtags,
         "symbols": symbols
     }
+    if is_reply:
+        result['reply_to'] = reply_to
     return result
 
 
@@ -231,5 +240,5 @@ def format_tweet_json(response, include_extras, simplify):
     return tweet, __cursor
 
 
-WORKBOOK_HEADERS = ['Created on', 'IS Retweet', 'IS Reply', 'Tweet ID', 'Tweet Body', 'Language', 'Likes',
-                    'Retweet Count', 'Source', 'Medias', 'User Mentioned', 'URLS', 'Hashtags', 'Symbols']
+WORKBOOK_HEADERS = ['Created on', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
+                    'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']

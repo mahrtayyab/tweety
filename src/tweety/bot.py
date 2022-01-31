@@ -15,27 +15,26 @@ class Twitter:
                 self.profile_url = f"https://twitter.com/{profile_name}"
         else:
             self.profile_url = None
-        self.user_by_screen_url = "https://twitter.com/i/api/graphql/B-dCk4ph5BZ0UReWK590tw/UserByScreenName?variables="
-        self.tweets_url = "https://twitter.com/i/api/graphql/Lya9A5YxHQxhCQJ5IPtm7A/UserTweets?variables="
-        self.trends_url = "https://api.twitter.com/2/guide.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=20&candidate_source=trends&include_page_configuration=false&entity_tokens=false&ext=mediaStats%2ChighlightedLabel"
-        self.search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&q={}&count=20&query_source=typeahead_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2CvoiceInfo"
-        self.tweet_detail_url = "https://twitter.com/i/api/graphql/4tzuTRu5-fpJTS7bDF6Nlg/TweetDetail?variables=%7B%22focalTweetId%22%3A%22{}%22%2C%22with_rux_injections%22%3Afalse%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D"
-        self.guest_token_url = "https://api.twitter.com/1.1/guest/activate.json"
-        self.proxy = {"http": random.choice(proxyFactory())}
-        self.guest_token = self.__get_guest_token()
-        self.guest_headers = get_headers(self.guest_token)
+        self.__user_by_screen_url = "https://twitter.com/i/api/graphql/B-dCk4ph5BZ0UReWK590tw/UserByScreenName?variables="
+        self.__tweets_url = "https://twitter.com/i/api/graphql/Lya9A5YxHQxhCQJ5IPtm7A/UserTweets?variables="
+        self.__tweets_with_replies = "https://twitter.com/i/api/graphql/B9izm_qt4l5qWUWrympCVw/UserTweetsAndReplies?variables="
+        self.__trends_url = "https://api.twitter.com/2/guide.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=20&candidate_source=trends&include_page_configuration=false&entity_tokens=false&ext=mediaStats%2ChighlightedLabel"
+        self.__search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&q={}&count=20&query_source=typeahead_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2CvoiceInfo"
+        self.__tweet_detail_url = "https://twitter.com/i/api/graphql/4tzuTRu5-fpJTS7bDF6Nlg/TweetDetail?variables=%7B%22focalTweetId%22%3A%22{}%22%2C%22with_rux_injections%22%3Afalse%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D"
+        self.__guest_token_url = "https://api.twitter.com/1.1/guest/activate.json"
+        self.__proxy = {"http": random.choice(proxyFactory())}
+        self.__guest_token = self.__get_guest_token()
+        self.__guest_headers = get_headers(self.__guest_token)
 
     def __get_guest_token(self, max_retries=10):
         try:
             guest_token = ""
             for i in range(0, int(max_retries)):
                 if self.profile_url:
-                    response = s.get(self.profile_url, headers=get_headers(), proxies=self.proxy)
+                    response = s.get(self.profile_url, headers=get_headers(), proxies=self.__proxy)
                 else:
-                    response = s.get("https://twitter.com/i/trends", headers=get_headers(), proxies=self.proxy)
-                guest_token_ = re.findall(
-                    'document\.cookie = decodeURIComponent\("gt=(.*?); Max-Age=10800; Domain=\.twitter\.com; Path=/; Secure"\);',
-                    response.text)
+                    response = s.get("https://twitter.com/i/trends", headers=get_headers(), proxies=self.__proxy)
+                guest_token_ = re.findall('document\.cookie = decodeURIComponent\("gt=(.*?); Max-Age=10800; Domain=\.twitter\.com; Path=/; Secure"\);',response.text)
                 try:
                     if guest_token_[0]:
                         guest_token = guest_token_[0]
@@ -44,11 +43,10 @@ class Twitter:
                     try:
                         headers = get_headers()
                         headers['x-csrf-token'] = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
-                        headers[
-                            'authorization'] = "Bearer " + "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+                        headers['authorization'] = "Bearer " + "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
                         headers['content-type'] = 'application/x-www-form-urlencoded'
                         headers['accept'] = "*/*"
-                        response = s.post(self.guest_token_url, headers=headers, proxies=self.proxy)
+                        response = s.post(self.__guest_token_url,headers=headers,proxies=self.__proxy)
                         guest_token = response.json()['guest_token']
                         return response.json()['guest_token']
                     except:
@@ -61,9 +59,9 @@ class Twitter:
 
     def __verify_user(self):
         user = self.profile_url.split("/")[-1]
-        data = str(get_graph_ql_query(2, user))
-        response = s.get(f"{self.user_by_screen_url}{data}", headers=self.guest_headers,
-                         proxies=self.proxy)
+        data = str(get_graph_ql_query(3, user))
+        response = s.get(f"{self.__user_by_screen_url}{data}", headers=self.__guest_headers,
+                         proxies=self.__proxy)
         try:
             if response.json()['data']['user']['result']['legacy']['profile_banner_extensions']:
                 json_ = response.json()
@@ -109,7 +107,7 @@ class Twitter:
             traceback.print_exc()
             exit(1)
 
-    def get_tweets(self,pages=None,include_extras=False,simplify=True) -> TweetDict:
+    def get_tweets(self,pages=None,include_extras=False,simplify=False,replies=False) -> TweetDict:
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
@@ -117,9 +115,14 @@ class Twitter:
                     return TweetDict({"error":"Either User not Found or is Restricted"})
                 else:
                     result = {"tweets":[]}
-                    data = str(get_graph_ql_query(1, user_id))
-                    response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
-                                     proxies=self.proxy)
+                    if replies:
+                        data = str(get_graph_ql_query(2, user_id))
+                        response = s.get(f"{self.__tweets_with_replies}{data}", headers=self.__guest_headers,
+                                         proxies=self.__proxy)
+                    else:
+                        data = str(get_graph_ql_query(1, user_id))
+                        response = s.get(f"{self.__tweets_url}{data}", headers=self.__guest_headers,
+                                         proxies=self.__proxy)
                     tweet,__nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
                     result['tweets'].append(tweet)
                     if not pages or pages == 1 or pages == "1":
@@ -127,9 +130,14 @@ class Twitter:
                     else:
                         for io in range(2, pages + 1):
                             nextCursor = __nextCursor[0]
-                            data = str(get_graph_ql_query(1, user_id, nextCursor))
-                            response = s.get(f"{self.tweets_url}{data}", headers=self.guest_headers,
-                                             proxies=self.proxy)
+                            if replies:
+                                data = str(get_graph_ql_query(2, user_id,nextCursor))
+                                response = s.get(f"{self.__tweets_with_replies}{data}", headers=self.__guest_headers,
+                                                 proxies=self.__proxy)
+                            else:
+                                data = str(get_graph_ql_query(1, user_id,nextCursor))
+                                response = s.get(f"{self.__tweets_url}{data}", headers=self.__guest_headers,
+                                                 proxies=self.__proxy)
                             tweet, __nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
                             result['tweets'].append(tweet)
                     return TweetDict(result)
@@ -143,8 +151,8 @@ class Twitter:
         trends = {
             "trends":[]
         }
-        response = s.get(f"{self.trends_url}", headers=self.guest_headers,
-                         proxies=self.proxy)
+        response = s.get(f"{self.__trends_url}", headers=self.__guest_headers,
+                         proxies=self.__proxy)
         for i in response.json()['timeline']['instructions'][1]['addEntries']['entries'][1]['content']['timelineModule']['items']:
             data = {
                 "name":i['item']['content']['trend']['name'],
@@ -158,14 +166,14 @@ class Twitter:
             trends['trends'].append(data)
         return trends
 
-    def search(self, keyword, pages=1, simplify=True, latest=False) -> TweetDict:
+    def search(self, keyword, pages=1, simplify=True, latest=False):
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
         if latest is False:
-            r = s.get(self.search_url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
+            r = s.get(self.__search_url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
         else:
-            url = f"{self.search_url}&tweet_search_mode=live"
-            r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
+            url = f"{self.__search_url}&tweet_search_mode=live"
+            r = s.get(url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
         result = {"tweets":[]}
         tweets_, __cursor = format_search(r, simplify)
         result['tweets'].append(tweets_)
@@ -176,10 +184,10 @@ class Twitter:
                 try:
                     nextCursor = __cursor[0]
                     if latest is False:
-                        url = f"{self.search_url}&cursor={nextCursor}"
+                        url = f"{self.__search_url}&cursor={nextCursor}"
                     else:
-                        url = f"{self.search_url}&tweet_search_mode=live&cursor={nextCursor}"
-                    r = s.get(url.format(keyword), headers=self.guest_headers, proxies=self.proxy)
+                        url = f"{self.__search_url}&tweet_search_mode=live&cursor={nextCursor}"
+                    r = s.get(url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
                     tweets_, __cursor = format_search(r, simplify)
                     result['tweets'].append(tweets_)
                 except:
@@ -197,7 +205,7 @@ class Twitter:
         result = {
             "conversation_threads":[]
         }
-        r = s.get(self.tweet_detail_url.format(tweetId), headers=self.guest_headers, proxies=self.proxy)
+        r = s.get(self.__tweet_detail_url.format(tweetId), headers=self.__guest_headers, proxies=self.__proxy)
         for entry in r.json()['data']['threaded_conversation_with_injections']['instructions'][0]['entries']:
             if str(entry['entryId']).split("-")[0] == "tweet":
                 tweet = entry['content']['itemContent']['tweet_results']['result']['legacy']

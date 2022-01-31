@@ -33,6 +33,7 @@ Get 20 Tweets of a Twitter User
 * pages : int (default is 1,starts from 2) -> Get the mentioned number of pages of tweets
 * include_extras : boolean (default is False) -> Get different extras on the page like Topics etc
 * simplify : boolean (default is True) -> get simplifies tweets instead of Twitter's cultured results  
+* replies : boolean (default is False) - > should get replies from tweets too
 #### Output:
 * Type -> TweetDict
 * Structure
@@ -44,6 +45,7 @@ Get 20 Tweets of a Twitter User
           - to use this method _simplify_ parameter must be set to True
           - _filename_ parameter can be optionally pass to _to_xlsx_ method in order to set the filename of Excel file , if not passed the default name of Excel file will be _tweet.xlsx_
         - to_dict -> this is return a tweet dict
+        - to_csv -> this returns Nothing and create an CSV Sheet
       > Not Simplified dict
       ```json
           {
@@ -238,3 +240,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 # Update 0.4:
 * Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.1.2
 * Fixed the issue of 'No Guest Token Found'
+
+# Update 0.4.1:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.1.3
+* Fixed Tweet Formatting Issues
