@@ -1,6 +1,6 @@
 import re
-from ._types import TweetDict
 from .utils import *
+from .exceptions_ import *
 import traceback
 import requests as s
 import sys
@@ -60,87 +60,63 @@ class Twitter:
     def __verify_user(self):
         user = self.profile_url.split("/")[-1]
         data = str(get_graph_ql_query(3, user))
-        response = s.get(f"{self.__user_by_screen_url}{data}", headers=self.__guest_headers,
-                         proxies=self.__proxy)
-        try:
-            if response.json()['data']['user']['result']['legacy']['profile_banner_extensions']:
-                json_ = response.json()
-                return json_
-        except:
-            return {"error":"Either User not Found or is Restricted"}
+        response = s.get(
+            f"{self.__user_by_screen_url}{data}",
+            headers=self.__guest_headers,
+            proxies=self.__proxy
+        )
+        if response.json().get('data'):
+            return response.json()
+        else:
+            return 0
 
     def get_user_info(self, banner_extensions=False, image_extensions=False):
-        try:
-            if self.profile_url:
-                json_ = self.__verify_user()
-                try:
-                    if "error" in json_:
-                        return json_
-                    else:
-                        if not banner_extensions or banner_extensions is False:
-                            del json_['data']['user']['result']['legacy']['profile_banner_extensions']
-                        if not image_extensions or image_extensions is False:
-                            del json_['data']['user']['result']['legacy']['profile_image_extensions']
-                        return json_
-                except:
-                    return json_
+        if self.profile_url:
+            json_ = self.__verify_user()
+            if json_ == 0:
+                raise UserNotFound()
             else:
-                raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
-        except:
-            traceback.print_exc()
-            exit(1)
+                if not banner_extensions or banner_extensions is False:
+                    del json_['data']['user']['result']['legacy']['profile_banner_extensions']
+                if not image_extensions or image_extensions is False:
+                    del json_['data']['user']['result']['legacy']['profile_image_extensions']
+                return User(json_)
+        else:
+            raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
 
     def get_user_id(self):
-        try:
-            if self.profile_url:
-                user = self.get_user_info()
-                try:
-                    if "error" in user:
-                        return 0
-                    else:
-                        return user['data']['user']['result']['rest_id']
-                except:
-                    return 0
+        if self.profile_url:
+            user = self.__verify_user()
+            if user == 0:
+                raise UserNotFound()
             else:
-                raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
-        except:
-            traceback.print_exc()
-            exit(1)
+                return User(user).rest_id
+        else:
+            raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
 
-    def get_tweets(self,pages=None,include_extras=False,simplify=False,replies=False) -> TweetDict:
+    def get_tweets(self,pages=1,include_extras=False,replies=False):
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
-                if user_id == 0:
-                    return TweetDict({"error":"Either User not Found or is Restricted"})
-                else:
-                    result = {"tweets":[]}
+                result = {"tweets":[]}
+                __nextCursor = None
+                for page in range(0,int(pages)):
                     if replies:
-                        data = str(get_graph_ql_query(2, user_id))
+                        data = str(get_graph_ql_query(2, user_id,__nextCursor))
                         response = s.get(f"{self.__tweets_with_replies}{data}", headers=self.__guest_headers,
                                          proxies=self.__proxy)
                     else:
-                        data = str(get_graph_ql_query(1, user_id))
+                        data = str(get_graph_ql_query(1, user_id,__nextCursor))
                         response = s.get(f"{self.__tweets_url}{data}", headers=self.__guest_headers,
                                          proxies=self.__proxy)
-                    tweet,__nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
-                    result['tweets'].append(tweet)
-                    if not pages or pages == 1 or pages == "1":
-                        return TweetDict(result)
+                    tweet,__Cursor = format_tweet_json(response,include_extras=include_extras,simplify=True)
+                    for i in tweet['result']['tweets']:
+                        result['tweets'].append(i)
+                    if __nextCursor != __Cursor:
+                        __nextCursor = __Cursor[0]
                     else:
-                        for io in range(2, pages + 1):
-                            nextCursor = __nextCursor[0]
-                            if replies:
-                                data = str(get_graph_ql_query(2, user_id,nextCursor))
-                                response = s.get(f"{self.__tweets_with_replies}{data}", headers=self.__guest_headers,
-                                                 proxies=self.__proxy)
-                            else:
-                                data = str(get_graph_ql_query(1, user_id,nextCursor))
-                                response = s.get(f"{self.__tweets_url}{data}", headers=self.__guest_headers,
-                                                 proxies=self.__proxy)
-                            tweet, __nextCursor = format_tweet_json(response,include_extras=include_extras,simplify=simplify)
-                            result['tweets'].append(tweet)
-                    return TweetDict(result)
+                        break
+                return UserTweets(result,user_id)
             else:
                 raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
         except:
@@ -148,9 +124,7 @@ class Twitter:
             exit(1)
 
     def get_trends(self) -> dict:
-        trends = {
-            "trends":[]
-        }
+        trends = {"trends":[]}
         response = s.get(f"{self.__trends_url}", headers=self.__guest_headers,
                          proxies=self.__proxy)
         for i in response.json()['timeline']['instructions'][1]['addEntries']['entries'][1]['content']['timelineModule']['items']:
@@ -163,36 +137,32 @@ class Twitter:
                     data['tweet_count'] = i['item']['content']['trend']['trendMetadata']['metaDescription']
             except:
                 pass
-            trends['trends'].append(data)
+            trends['trends'].append(Trends(data))
         return trends
 
-    def search(self, keyword, pages=1, simplify=True, latest=False):
+    def search(self, keyword, pages=1, latest=False):
+        result = {"tweets":[]}
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
-        if latest is False:
-            r = s.get(self.__search_url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
-        else:
-            url = f"{self.__search_url}&tweet_search_mode=live"
-            r = s.get(url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
-        result = {"tweets":[]}
-        tweets_, __cursor = format_search(r, simplify)
-        result['tweets'].append(tweets_)
-        if not pages or pages == 1 or pages == "1":
-            return TweetDict(result)
-        else:
-            for io in range(2, pages + 1):
-                try:
-                    nextCursor = __cursor[0]
-                    if latest is False:
-                        url = f"{self.__search_url}&cursor={nextCursor}"
-                    else:
-                        url = f"{self.__search_url}&tweet_search_mode=live&cursor={nextCursor}"
-                    r = s.get(url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
-                    tweets_, __cursor = format_search(r, simplify)
-                    result['tweets'].append(tweets_)
-                except:
-                    pass
-        return TweetDict(result)
+        nextCursor = None
+        for page in range(0,int(pages)):
+            if nextCursor:
+                search_url = f"{self.__search_url}&cursor={nextCursor}"
+            else:
+                search_url = self.__search_url
+            if latest is False:
+                r = s.get(search_url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
+            else:
+                url = f"{search_url}&tweet_search_mode=live"
+                r = s.get(url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
+            tweets_, __cursor = format_search(r, True)
+            for i in tweets_['result']['tweets']:
+                result['tweets'].append(i)
+            if __cursor != nextCursor:
+                nextCursor = __cursor[0]
+            else:
+                break
+        return Search(result,keyword)
 
     def tweet_detail(self,identifier):
         if str(identifier).startswith("https://"):

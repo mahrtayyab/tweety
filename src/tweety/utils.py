@@ -1,8 +1,14 @@
 import random
 import string
-
+import traceback
+from ._types import Tweet, UserTweets, Media,ShortUser,User,Search,Trends,UserLegacy
 from bs4 import BeautifulSoup as bs
 import requests as s
+UserTweets = UserTweets
+User = User
+Search = Search
+Trends = Trends
+UserLegacy = UserLegacy
 
 
 def proxyFactory() -> list:
@@ -107,10 +113,17 @@ def format_search(response,simplify):
                     __cursor.append(i['content']['operation']['cursor']['value'])
         except:
             pass
+    users = response.json()['globalObjects']['users']
     for i in response.json()['globalObjects']['tweets']:
         if simplify:
-            tweet_ = simplify_tweet(response.json()['globalObjects']['tweets'][i],
-                                    response.json()['globalObjects']['tweets'][i]['id'])
+            tweet_ = Tweet(
+                simplify_tweet(
+                    response.json()['globalObjects']['tweets'][i],
+                    response.json()['globalObjects']['tweets'][i]['id'],
+                    users.get(str(response.json()['globalObjects']['tweets'][i]['user_id'])),
+                    True
+                )
+            )
             tweet['result']['tweets'].append(tweet_)
         else:
             tweet['result']['tweets'].append(response.json()['globalObjects']['tweets'][i])
@@ -127,7 +140,7 @@ def format_search(response,simplify):
     return tweet, __cursor
 
 
-def simplify_tweet(tweet, rest_id):
+def simplify_tweet(tweet, rest_id,author,author_legacy=False):
     try:
         created_on = tweet['created_at'] if tweet['created_at'] else ""
     except KeyError:
@@ -167,11 +180,11 @@ def simplify_tweet(tweet, rest_id):
     except KeyError:
         source = ""
     try:
-        media = tweet['entities']['media'] if tweet['entities']['media'] else ""
+        media = [Media(i) for i in tweet['entities']['media']] if tweet.get('entities').get('media') else None
     except KeyError:
         media = ""
     try:
-        mentions = tweet['entities']['user_mentions'] if tweet['entities']['user_mentions'] else ""
+        mentions = [ShortUser(l) for l in tweet['entities']['user_mentions']] if tweet.get('entities').get('user_mentions') else None
     except KeyError:
         mentions = ""
     try:
@@ -186,8 +199,13 @@ def simplify_tweet(tweet, rest_id):
         symbols = tweet['entities']['symbols'] if tweet['entities']['symbols'] else ""
     except KeyError:
         symbols = ""
+    if not author_legacy:
+        author_ = User(author,2)
+    else:
+        author_ = UserLegacy(author)
     result = {
         "created_on": created_on,
+        "author":author_,
         "is_retweet": is_retweet,
         "is_reply":is_reply,
         "tweet_id": rest_id,
@@ -217,12 +235,15 @@ def format_tweet_json(response, include_extras, simplify):
     for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']:
         if str(i['entryId']).split("-")[0] == "tweet":
             try:
-                if simplify:
-                    tweet['result']['tweets'].append(
-                        simplify_tweet(i['content']['itemContent']['tweet_results']['result']['legacy'],
-                                       i['content']['itemContent']['tweet_results']['result']['rest_id']))
-                else:
-                    tweet['result']['tweets'].append(i['content']['itemContent']['tweet_results']['result']['legacy'])
+                tweet['result']['tweets'].append(
+                    Tweet(
+                        simplify_tweet(
+                            i['content']['itemContent']['tweet_results']['result']['legacy'],
+                            i['content']['itemContent']['tweet_results']['result']['rest_id'],
+                            i['content']['itemContent']['tweet_results']['result']['core']
+                        )
+                    )
+                )
             except:
                 pass
         elif str(i['entryId']).split("-")[0] == "cursor":
@@ -240,5 +261,4 @@ def format_tweet_json(response, include_extras, simplify):
     return tweet, __cursor
 
 
-WORKBOOK_HEADERS = ['Created on', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
-                    'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
+
