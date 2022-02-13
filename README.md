@@ -336,3 +336,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 * Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.2
 * Now every function by default returns its own type of object class , check here [classes](#objects-type-classes)
 * Reworked and more simplified results of [get_tweet](#getting-tweets) and [searches](#search)
+
+## Update 0.5.1:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.2.1
+* A simple but important update , fixed the issue of KeyError while looking for tweets

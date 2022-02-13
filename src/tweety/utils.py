@@ -232,7 +232,7 @@ def format_tweet_json(response, include_extras, simplify):
         }
     }
     __cursor = []
-    for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['entries']:
+    for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][1]['entries']:
         if str(i['entryId']).split("-")[0] == "tweet":
             try:
                 tweet['result']['tweets'].append(
