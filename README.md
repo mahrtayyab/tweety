@@ -340,3 +340,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Update 0.5.1:
 * Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.2.1
 * A simple but important update , fixed the issue of KeyError while looking for tweets
+
+## Update 0.5.2:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.2.11
+* Fixed the issue of multiple pages not being scraped for user tweets
