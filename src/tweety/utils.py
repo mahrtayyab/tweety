@@ -232,8 +232,7 @@ def format_tweet_json(response, include_extras, simplify):
         }
     }
     __cursor = []
-    if response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0][
-        'type'] == "TimelineAddEntries":
+    if response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['type'] == "TimelineAddEntries":
         h = 0
     else:
         h = 1
@@ -266,4 +265,31 @@ def format_tweet_json(response, include_extras, simplify):
     return tweet, __cursor
 
 
+def formatThreadedTweet(r):
+    result = {
+        "tweet":{},
+        "threads":[]
+    }
+    for entry in r.json()['data']['threaded_conversation_with_injections']['instructions'][0]['entries']:
+        if str(entry['entryId']).split("-")[0] == "tweet":
+            result['tweet'] = simplify_tweet(
+                    entry['content']['itemContent']['tweet_results']['result']['legacy'],
+                    entry['content']['itemContent']['tweet_results']['result']['rest_id'],
+                    entry['content']['itemContent']['tweet_results']['result']['core']
+                )
+        else:
+            if str(entry['entryId']).split("-")[0] == "conversationthread":
+                for item in entry['content']['items']:
+                    try:
+                        tweet = item['item']['itemContent']['tweet_results']['result']
+                        result['threads'].append(
+                            simplify_tweet(
+                                tweet['legacy'],
+                                tweet['rest_id'],
+                                tweet['core']
+                            )
+                        )
+                    except KeyError as e:
+                        pass
+    return result
 

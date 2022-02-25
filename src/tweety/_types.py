@@ -116,12 +116,16 @@ class UserTweets:
     def to_dict(self):
         return self.dict_
 
+    def __iter__(self):
+        for __tweet in self.dict_['tweets']:
+            yield __tweet
+
     def __repr__(self):
-        return f"<UserTweets (user={self.user}) (count={len(self.dict_['tweets'])})>"
+        return f"UserTweets(user={self.user}, count={len(self.dict_['tweets'])})"
 
 
 class Tweet:
-    def __init__(self,tweet_dict):
+    def __init__(self,tweet_dict,threads=None):
         self.__dictionary = tweet_dict
         self.id = self.__dictionary.get("tweet_id")
         self.author = self.__dictionary.get("author")
@@ -138,12 +142,20 @@ class Tweet:
         self.hashtags = self.__dictionary.get("hashtags")
         self.symbols = self.__dictionary.get("symbols")
         self.reply_to = self.__dictionary.get("reply_to")
+        self.threads = threads
 
     def __repr__(self):
-        return f"<Tweet (id={self.id}) (author={self.author}) (created_on={self.created_on})>"
+        return f"Tweet(id={self.id}, author={self.author}, created_on={self.created_on}, threads={len(self.threads) if self.threads else None})"
+
+    def __iter__(self):
+        if self.threads:
+            for thread__ in self.threads:
+                yield thread__
 
     def to_dict(self):
-        return self.__dictionary
+        result = self.__dictionary
+        result['threads'] = self.threads
+        return result
 
 
 class Media:
@@ -161,7 +173,7 @@ class Media:
         self.original_info = self.__dictionary.get("original_info")
 
     def __repr__(self):
-        return f"<Media (id={self.id}) (type={self.type})>"
+        return f"Media(id={self.id}, type={self.type})"
 
     def to_dict(self):
         return self.__dictionary
@@ -175,7 +187,7 @@ class ShortUser:
         self.screen_name = self.__dictionary.get("screen_name")
 
     def __repr__(self):
-        return f"<ShortUser (id={self.id}) (name={self.name})>"
+        return f"ShortUser(id={self.id}, name={self.name})>"
 
     def to_dict(self):
         return self.__dictionary
@@ -212,7 +224,7 @@ class User:
         self.verified = self.__dictionary.get("legacy").get("verified")
 
     def __repr__(self):
-        return f"<User (id={self.rest_id}) (name={self.name}) (followers={self.followers_count}) (verified={self.verified})>"
+        return f"User(id={self.rest_id}, name={self.name}, followers={self.followers_count}, verified={self.verified})"
 
     def to_dict(self):
         return self.__dictionary
@@ -330,8 +342,12 @@ class Search:
     def to_dict(self):
         return self.dict_
 
+    def __iter__(self):
+        for __tweet in self.dict_['tweets']:
+            yield __tweet
+
     def __repr__(self):
-        return f"<Search (keyword={self.keyword}) (count={len(self.dict_['tweets'])})>"
+        return f"Search(keyword={self.keyword} , count={len(self.dict_['tweets'])})"
 
 
 class Trends:
@@ -342,7 +358,7 @@ class Trends:
         self.tweet_count = self.__dictionary.get("tweet_count")
 
     def __repr__(self):
-        return f"<Trends (name={self.name})>"
+        return f"Trends(name={self.name})"
 
     def to_dict(self):
         return self.__dictionary
@@ -379,7 +395,7 @@ class UserLegacy:
         self.verified = self.__dictionary.get("verified")
 
     def __repr__(self):
-        return f"<User (id={self.rest_id}) (name={self.name}) (followers={self.followers_count}) (verified={self.verified})>"
+        return f"User(id={self.rest_id}, name={self.name}, followers={self.followers_count} , verified={self.verified})"
 
     def to_dict(self):
         return self.__dictionary

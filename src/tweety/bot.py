@@ -7,7 +7,7 @@ import sys
 
 
 class Twitter:
-    def __init__(self, profile_name=None):
+    def __init__(self, profile_name=None,max_retires=10):
         if profile_name:
             if profile_name.startswith("https://"):
                 self.profile_url = profile_name
@@ -23,7 +23,7 @@ class Twitter:
         self.__tweet_detail_url = "https://twitter.com/i/api/graphql/4tzuTRu5-fpJTS7bDF6Nlg/TweetDetail?variables=%7B%22focalTweetId%22%3A%22{}%22%2C%22with_rux_injections%22%3Afalse%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D"
         self.__guest_token_url = "https://api.twitter.com/1.1/guest/activate.json"
         self.__proxy = {"http": random.choice(proxyFactory())}
-        self.__guest_token = self.__get_guest_token()
+        self.__guest_token = self.__get_guest_token(max_retries=max_retires)
         self.__guest_headers = get_headers(self.__guest_token)
 
     def __get_guest_token(self, max_retries=10):
@@ -52,10 +52,9 @@ class Twitter:
                     except:
                         continue
             if guest_token == "":
-                sys.exit(f"Script Aborting : Guest Token couldn't be found after {max_retries} retires.")
+                raise GuestTokenNotFound(f"Guest Token couldn't be found after {max_retries} retires.")
         except Exception as e:
-            traceback.print_exc()
-            sys.exit(f"Script Aborting : Guest Token couldn't be found after {max_retries} retires.\n{e}")
+            sys.exit(f"Exception Occurred : \n {str(e)}")
 
     def __verify_user(self):
         user = self.profile_url.split("/")[-1]
@@ -172,14 +171,13 @@ class Twitter:
                 tweetId = str(identifier).split("/")[-1]
         else:
             tweetId = identifier
-        result = {
-            "conversation_threads":[]
-        }
-        r = s.get(self.__tweet_detail_url.format(tweetId), headers=self.__guest_headers, proxies=self.__proxy)
-        for entry in r.json()['data']['threaded_conversation_with_injections']['instructions'][0]['entries']:
-            if str(entry['entryId']).split("-")[0] == "tweet":
-                tweet = entry['content']['itemContent']['tweet_results']['result']['legacy']
-                result['tweet'] = tweet
-            else:
-                result['conversation_threads'].append(entry)
+        r = s.get(
+            self.__tweet_detail_url.format(tweetId),
+            headers=self.__guest_headers,
+            proxies=self.__proxy
+        )
+        result_ = formatThreadedTweet(r)
+        result = Tweet(result_.get("tweet"))
+        result.threads = [Tweet(i) for i in result_.get("threads")]
+
         return result

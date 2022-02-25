@@ -22,6 +22,9 @@ pip install tweety-ns
 * search() (can be used without username)
 * tweet_detail() (can be used without username)
 
+## Exceptions
+* UserNotFound       -> Raised when the queried user not Found
+* GuestTokenNotFound -> Raised when the script is unable to get the guest token from Twitter
 
 ## Using tweety
 
@@ -35,37 +38,30 @@ Get 20 Tweets of a Twitter User
 * include_extras : boolean (default is False) -> Get different extras on the page like Topics etc 
 * replies : boolean (default is False) - > should get replies from tweets too
 #### Output:
-* Type -> [class UserTweets](#usertweets)
+* Type -> [class UserTweets](#usertweets) (iterable)
     > Simplified dict
     ```json
-        {
-          "tweets": [
-            {
-              "results": {
-                "tweets": [
-                  {
-                       "created_on":"Tue Oct 05 17:35:26 +0000 2021",
-                       "author": "<class User>",
-                       "is_retweet":true,
-                       "is_reply": true,
-                       "tweet_id":"1445442518301163521",
-                       "tweet_body":"Hello, world. #Windows11 https://t.co/pg3d6EsreQ https://t.co/wh6InmfngF",
-                       "language":"en",
-                       "likes":"",
-                       "retweet_counts":442,
-                       "source":"Twitter Web App",
-                       "media":[],
-                       "user_mentions":[],
-                       "urls":[],
-                       "hashtags":[],
-                       "symbols":""
-                  }     
-                ]
-              }
-            }
-          ]
-        }
         
+           {
+               "created_on":"Tue Oct 05 17:35:26 +0000 2021",
+               "author": "<class User>",
+               "is_retweet":true,
+               "is_reply": true,
+               "tweet_id":"1445442518301163521",
+               "tweet_body":"Hello, world. #Windows11 https://t.co/pg3d6EsreQ https://t.co/wh6InmfngF",
+               "language":"en",
+               "likes":"",
+               "retweet_counts":442,
+               "source":"Twitter Web App",
+               "media":[],
+               "user_mentions":[],
+               "urls":[],
+               "hashtags":[],
+               "symbols":"",
+               "threads": "None"
+           }     
+                
+  
     ```
 #### Example:
 ```bash
@@ -74,7 +70,7 @@ Python 3.7.3 (default, Mar 26 2019, 21:43:19)
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from tweety.bot import Twitter
->>> all_tweet = Twitter("Username or URL").get_tweets(pages=2).to_dict()
+>>> all_tweet = Twitter("Username or URL").get_tweets(pages=2)
 ```
 
 ### Getting Trends:
@@ -104,7 +100,7 @@ Python 3.7.3 (default, Mar 26 2019, 21:43:19)
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from tweety.bot import Twitter
->>> trends = Twitter().get_trends()
+>>> trends = Twitter().get_trends().to_dict()
 >>> for i in trends['trends']:
 ...   print(i['name'])
 ```
@@ -118,7 +114,7 @@ Get 20 Tweets for a specific Keyword or Hashtag
 * latest : boolean (Default is False) -> Get the latest tweets
 * pages : int (starts from 2 , default is 1) -> number of pages to get 
 #### Output:
-* Type -> [class Search](#search)
+* Type -> [class Search](#search) (iterable)
 #### Example:
 ```bash
 python
@@ -158,11 +154,11 @@ Get the detail of a tweet including its reply
 * Identifier of the Tweet -> Either Tweet URL  OR Tweet ID
 
 #### Output:
-* Type -> dict
+* Type -> class [Tweet](#tweet)
 * Structure
 ```json
   {
-    "conversation_threads":[],
+    "threads":[],
     "tweet": {}
   }
 ```
@@ -178,8 +174,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ## Objects Type Classes
 * ### UserTweets
+  ```This Object is Iterable```
     #### Representation:
-        <UserTweets (user=username) (count=number_of_results)>
+        UserTweets(user=username, count=number_of_results)
     #### Methods:
     * to_xlsx -> this returns Nothing and create an Excel Sheet
         - '_filename_' parameter can be optionally pass to _to_xlsx_ method in order to set the filename of Excel file , if not passed the default name of Excel file will be _tweet-{username}.xlsx_
@@ -189,11 +186,13 @@ Type "help", "copyright", "credits" or "license" for more information.
     #### Attributes:
     * user -> User ID of the queried user
     * dict -> Dictionary of Tweet Results
-    * NOTE: All the Tweets included in the result are of class [Tweet](#tweet)
-    
+  
+  All the Tweets included in the result are of class [Tweet](#tweet)
+
+
 * ### Tweet
     #### Representation
-      <Tweet (id=id_of_tweet) (author=author_of_tweet) (created_on=tweet_creation_time)>
+      Tweet(id=id_of_tweet , author=author_of_tweet, created_on=tweet_creation_time)
     #### Methods:
     * to_dict -> this is return a tweet dict
     #### Attributes:
@@ -211,10 +210,14 @@ Type "help", "copyright", "credits" or "license" for more information.
     * hashtags -> list of hashtags in the tweet
     * symbols -> list of symbols in the tweet
     * reply_to -> username of the user to which this tweet was reply to (if is_reply is true)
+    * threads -> list of class [Tweet](#tweet) associated with the tweet or None
+
+    This Object is Iterable if the ```threads``` attribute is not None
+    
 
 * ### Media
     #### Representation
-      <Media (id=id_of_media) (type=type_of_media)>
+      Media(id=id_of_media , type=type_of_media)
     #### Methods:
     * to_dict -> this is return a list of dict
     #### Attributes:
@@ -231,7 +234,7 @@ Type "help", "copyright", "credits" or "license" for more information.
     
 * ### ShortUser
     #### Representation
-      <ShortUser (id=id_of_user) (name=name_of_user)>
+      ShortUser(id=id_of_user , name=name_of_user)
     #### Methods:
     * to_dict -> this is return a list of dict
     #### Attributes:
@@ -239,9 +242,9 @@ Type "help", "copyright", "credits" or "license" for more information.
     * name -> name of the user
     * screen_name -> screen name of the user
 
-* ### User & UserLegacy
+* ### User & UserLegacy 
    #### Representation
-      <User (id=id_of_user) (name=name_of_user) (followers=follower_count_of_user) (verified=is_user_verified)>
+      User(id=id_of_user , name=name_of_user , followers=follower_count_of_user , verified=is_user_verified)
    #### Methods:
     * to_dict -> this is return a list of dict
    #### Attributes:
@@ -267,9 +270,10 @@ Type "help", "copyright", "credits" or "license" for more information.
    * statuses_count -> number of statuses posted by the user
    * verified -> is user verified
       
-* ### Search
+* ### Search 
+  ```This Object is Iterable```
     #### Representation:
-        <Search (keyword=keyword_begin_searched) (count=number_of_tweets_in_result)>
+        Search(keyword=keyword_begin_searched , count=number_of_tweets_in_result)>
     #### Methods:
     * to_xlsx -> this returns Nothing and create an Excel Sheet
         - '_filename_' parameter can be optionally pass to _to_xlsx_ method in order to set the filename of Excel file , if not passed the default name of Excel file will be _search-{keyword}.xlsx_
@@ -279,11 +283,14 @@ Type "help", "copyright", "credits" or "license" for more information.
     #### Attributes:
     * keyword -> Keyword which is being queried
     * dict -> Dictionary of Tweet Results
+  
     All the Tweets included in the result are of class [Tweet](#tweet)
+
+  
 
 * ### Trends
     #### Representation:
-        <Trends (name=name_of_trend)>
+        Trends(name=name_of_trend)
     #### Methods:
     * to_dict -> this is return a tweet dict
     #### Attributes:
@@ -344,3 +351,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Update 0.5.2:
 * Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.2.11
 * Fixed the issue of multiple pages not being scraped for user tweets
+
+## Update 0.5.3:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.2.21
+* Results of [get_tweet](#getting-tweets) and [searches](#search) are now iterable even without calling to_dict() method
+* tweet_details method returns [Tweet](#tweet) object
+
