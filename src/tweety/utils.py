@@ -100,12 +100,9 @@ def get_headers(typed=None) -> dict:
 
 
 def format_search(response,simplify):
-    tweet = {
-        "result": {
-            "tweets": []
-        }
-    }
+    tweet = []
     __cursor = []
+    users = response.json()['globalObjects']['users']
     for i in response.json()['timeline']['instructions'][0]['addEntries']['entries']:
         try:
             if i['content']['operation']:
@@ -113,7 +110,6 @@ def format_search(response,simplify):
                     __cursor.append(i['content']['operation']['cursor']['value'])
         except:
             pass
-    users = response.json()['globalObjects']['users']
     for i in response.json()['globalObjects']['tweets']:
         if simplify:
             tweet_ = Tweet(
@@ -124,9 +120,9 @@ def format_search(response,simplify):
                     True
                 )
             )
-            tweet['result']['tweets'].append(tweet_)
+            tweet.append(tweet_)
         else:
-            tweet['result']['tweets'].append(response.json()['globalObjects']['tweets'][i])
+            tweet.append(response.json()['globalObjects']['tweets'][i])
     try:
         if not __cursor:
             for i in response.json()['timeline']['instructions']:
@@ -180,8 +176,8 @@ def simplify_tweet(tweet, rest_id,author,author_legacy=False):
     except KeyError:
         source = ""
     try:
-        media = [Media(i) for i in tweet['entities']['media']] if tweet.get('entities').get('media') else None
-    except KeyError:
+        media = [Media(i) for i in tweet['extended_entities']['media']] if tweet.get('extended_entities').get('media') else None
+    except (KeyError,AttributeError):
         media = ""
     try:
         mentions = [ShortUser(l) for l in tweet['entities']['user_mentions']] if tweet.get('entities').get('user_mentions') else None
@@ -200,7 +196,7 @@ def simplify_tweet(tweet, rest_id,author,author_legacy=False):
     except KeyError:
         symbols = ""
     if not author_legacy:
-        author_ = User(author,2)
+        author_ = User(author,3)
     else:
         author_ = UserLegacy(author)
     result = {
@@ -225,12 +221,8 @@ def simplify_tweet(tweet, rest_id,author,author_legacy=False):
     return result
 
 
-def format_tweet_json(response, include_extras, simplify):
-    tweet = {
-        "result": {
-            "tweets": []
-        }
-    }
+def format_tweet_json(response):
+    tweet = []
     __cursor = []
     if response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['type'] == "TimelineAddEntries":
         h = 0
@@ -239,7 +231,7 @@ def format_tweet_json(response, include_extras, simplify):
     for i in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][h]['entries']:
         if str(i['entryId']).split("-")[0] == "tweet":
             try:
-                tweet['result']['tweets'].append(
+                tweet.append(
                     Tweet(
                         simplify_tweet(
                             i['content']['itemContent']['tweet_results']['result']['legacy'],
@@ -253,15 +245,6 @@ def format_tweet_json(response, include_extras, simplify):
         elif str(i['entryId']).split("-")[0] == "cursor":
             if i['content']['cursorType'] == "Bottom":
                 __cursor.append(i['content']['value'])
-        else:
-            if include_extras is True:
-                if str(i['entryId']).split("-")[0] in tweet['result']:
-                    pass
-                else:
-                    tweet['result'][f"{str(i['entryId']).split('-')[0]}"] = []
-                tweet['result'][f"{str(i['entryId']).split('-')[0]}"].append(i)
-            else:
-                pass
     return tweet, __cursor
 
 
@@ -293,3 +276,33 @@ def formatThreadedTweet(r):
                         pass
     return result
 
+
+def searchFilters(filter_):
+    __search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&q={}&count=20&query_source=typeahead_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2CvoiceInfo"
+    __user_search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_has_nft_avatar=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&include_ext_sensitive_media_warning=true&include_ext_trusted_friends_metadata=true&send_error_codes=true&simple_quoted_tweet=true&q={}&result_filter=user&count=20&query_source=recent_search_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2ChasNftAvatar%2CvoiceInfo%2CsuperFollowMetadata"
+    __photo_search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_has_nft_avatar=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&include_ext_sensitive_media_warning=true&include_ext_trusted_friends_metadata=true&send_error_codes=true&simple_quoted_tweet=true&q={}&result_filter=image&count=20&query_source=recent_search_click&pc=0&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2ChasNftAvatar%2CvoiceInfo%2CsuperFollowMetadata"
+    __video_search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_has_nft_avatar=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&include_ext_sensitive_media_warning=true&include_ext_trusted_friends_metadata=true&send_error_codes=true&simple_quoted_tweet=true&q={}&result_filter=video&count=20&query_source=recent_search_click&pc=0&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2ChasNftAvatar%2CvoiceInfo%2CsuperFollowMetadata"
+    if not filter_:
+        return __search_url
+    elif filter_ and filter_.lower() == "latest":
+        return f"{__search_url}&tweet_search_mode=live"
+    elif filter_ and filter_.lower() == "users":
+        return __user_search_url
+    elif filter_ and filter_.lower() == "photos":
+        return __photo_search_url
+    elif filter_ and filter_.lower() == "videos":
+        return __video_search_url
+    else:
+        return __search_url
+
+
+def formatUserSearch(response):
+    results = []
+    __cursor = []
+    for i in response.json()['timeline']['instructions'][-1]['addEntries']['entries']:
+        if str(i['entryId']).split("-")[0] == "cursor":
+            if i['content']['operation']['cursor']['cursorType'] == "Bottom":
+                __cursor.append(i['content']['operation']['cursor']['value'])
+    for i in response.json()['globalObjects']['users'].values():
+        results.append(User(i,2))
+    return results,__cursor

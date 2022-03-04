@@ -1,6 +1,7 @@
 # tweety
 Twitter's API is annoying to work with, and has lots of limitations — luckily their frontend (JavaScript) has it's own API, which I reverse–engineered. No API rate limits. No restrictions. Extremely fast.
 
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
@@ -10,59 +11,51 @@ Before you begin, ensure you have met the following requirements:
 * BeautifulSoup (Python Module)
 * Requests (Python Module)
 * openpyxl (Python Module)
+* wget (Python Module)
 
+## Table of Contents
+- [Installation](#installation)
+- All Functions
+  * [Get Tweets](#getting-tweets)
+  * [Get User Info](#getting-user-info)
+  * [Get Trends](#getting-trends)
+  * [Search Keywords](#searching-a-keyword)
+    * [Search Filters](#search-filters)
+  * [Get Tweet Detail](#getting-a-tweet-detail)
+- [Exceptions](#exceptions)
+- [Result Class Objects](#objects-type-classes)
+  * [UserTweets](#usertweets)
+  * [Tweet](#tweet)
+  * [User](#user--userlegacy)
+  * [ShortUser](#shortuser)
+  * [Trend](#trends)
+  * [Search](#search)
+  * [Media](#media)
+  * [Stream](#stream)
+  
 ## Installation:
 ```bash
 pip install tweety-ns
 ```
-## All Functions
-* get_tweets()
-* get_user_info()
-* get_trends() (can be used without username)
-* search() (can be used without username)
-* tweet_detail() (can be used without username)
 
 ## Exceptions
-* UserNotFound       -> Raised when the queried user not Found
-* GuestTokenNotFound -> Raised when the script is unable to get the guest token from Twitter
+* ```UserNotFound```       : Raised when the queried user not Found
+* ```GuestTokenNotFound``` : Raised when the script is unable to get the guest token from Twitter
 
 ## Using tweety
 
 ### Getting Tweets:
+
 #### Description:
-Get 20 Tweets of a Twitter User
+_Get 20 Tweets of a Twitter User_
 #### Required Parameter:
-* Username or User profile URL while initiating the Twitter Object
+* ```Username``` or ```User profile URL``` while initiating the Twitter Object
 #### Optional Parameter:
-* pages : int (default is 1,starts from 2) -> Get the mentioned number of pages of tweets
-* include_extras : boolean (default is False) -> Get different extras on the page like Topics etc 
-* replies : boolean (default is False) - > should get replies from tweets too
+* ```pages``` : int (default is 1,starts from 2) -> Get the mentioned number of pages of tweets
+* ```replies``` : boolean (default is False) - > should get replies from tweets too
 #### Output:
-* Type -> [class UserTweets](#usertweets) (iterable)
-    > Simplified dict
-    ```json
-        
-           {
-               "created_on":"Tue Oct 05 17:35:26 +0000 2021",
-               "author": "<class User>",
-               "is_retweet":true,
-               "is_reply": true,
-               "tweet_id":"1445442518301163521",
-               "tweet_body":"Hello, world. #Windows11 https://t.co/pg3d6EsreQ https://t.co/wh6InmfngF",
-               "language":"en",
-               "likes":"",
-               "retweet_counts":442,
-               "source":"Twitter Web App",
-               "media":[],
-               "user_mentions":[],
-               "urls":[],
-               "hashtags":[],
-               "symbols":"",
-               "threads": "None"
-           }     
-                
-  
-    ```
+[class UserTweets](#usertweets) (iterable)
+
 #### Example:
 ```bash
 python
@@ -75,24 +68,10 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ### Getting Trends:
 #### Description:
-Get 20 Locale Trends
+_Get 20 Locale Trends_
 #### Output:
-* Type -> [class Trends](#trends)
-- Structure
-```json
-  {
-    "trends":[
-      {
-        "name":"<Trend-name>",
-        "url":"<Trend-URL>"
-      },
-      {
-        "name":"<Trend-name>",
-        "url":"<Trend-URL>"
-      }
-    ]
-  } 
-```
+List of [class Trends Object](#trends)
+
 #### Example :
 ```bash
 python
@@ -100,21 +79,21 @@ Python 3.7.3 (default, Mar 26 2019, 21:43:19)
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from tweety.bot import Twitter
->>> trends = Twitter().get_trends().to_dict()
->>> for i in trends['trends']:
-...   print(i['name'])
+>>> trends = Twitter().get_trends()
+>>> for i in trends:
+...   print(i.name)
 ```
 
 ### Searching a keyword:
 #### Description:
-Get 20 Tweets for a specific Keyword or Hashtag
+_Get 20 Tweets for a specific Keyword or Hashtag_
 #### Required Parameter:
-* keyword : str -> Keyword begin search
+* ```keyword``` : str -> Keyword begin search
 #### Optional Parameter:
-* latest : boolean (Default is False) -> Get the latest tweets
-* pages : int (starts from 2 , default is 1) -> number of pages to get 
+* ```pages``` : int (starts from 2 , default is 1) -> number of pages to get
+* ```filter_``` : str -> filter your search results for different types , check [Search Filters](#search-filters)
 #### Output:
-* Type -> [class Search](#search) (iterable)
+[class Search](#search) (iterable)
 #### Example:
 ```bash
 python
@@ -122,19 +101,29 @@ Python 3.7.3 (default, Mar 26 2019, 21:43:19)
 [GCC 8.2.1 20181127] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from tweety.bot import Twitter
->>> trends = Twitter().search("Pakistan").to_xlsx(filename="searches.xlsx")
+>>> trends = Twitter().search("Pakistan")
+```
+#### Example with filter:
+```bash
+python
+Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
+[GCC 8.2.1 20181127] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from tweety.bot import Twitter
+>>> from tweety.filters import SearchFilters
+>>> trends = Twitter().search("Pakistan",filter_=SearchFilters.Videos())
 ```
 
 ### Getting USER Info:
 #### Description:
-Get the information about the user
+_Get the information about the user_
 #### Required Parameter:
-* Username or User profile URL while initiating the Twitter Object
+* ```Username``` or ```User profile URL``` while initiating the Twitter Object
 #### Optional Parameter:
-* banner_extensions : boolean (Default is False) -> get more information about user banner image
-* image_extensions : boolean (Default is False) -> get more information about user profile image
+* ```banner_extensions``` : boolean (Default is False) -> get more information about user banner image
+* ```image_extensions``` : boolean (Default is False) -> get more information about user profile image
 #### Output:
-* Type -> [class User](#user--userlegacy)
+[class User](#user--userlegacy)
 
 #### Example:
 ```bash
@@ -149,19 +138,13 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ### Getting a Tweet Detail:
 #### Description:
-Get the detail of a tweet including its reply
+_Get the detail of a tweet including its replies_
 #### Required Parameter:
-* Identifier of the Tweet -> Either Tweet URL  OR Tweet ID
+* ```Identifier of the Tweet```: Either Tweet URL OR Tweet ID
 
 #### Output:
-* Type -> class [Tweet](#tweet)
-* Structure
-```json
-  {
-    "threads":[],
-    "tweet": {}
-  }
-```
+class [Tweet](#tweet)
+
 #### Example:
 ```bash
 python
@@ -176,7 +159,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 * ### UserTweets
   ```This Object is Iterable```
     #### Representation:
-        UserTweets(user=username, count=number_of_results)
+      UserTweets(user=username, count=number_of_results)
     #### Methods:
     * to_xlsx -> this returns Nothing and create an Excel Sheet
         - '_filename_' parameter can be optionally pass to _to_xlsx_ method in order to set the filename of Excel file , if not passed the default name of Excel file will be _tweet-{username}.xlsx_
@@ -185,7 +168,7 @@ Type "help", "copyright", "credits" or "license" for more information.
     * to_dict -> this is return a tweet dict
     #### Attributes:
     * user -> User ID of the queried user
-    * dict -> Dictionary of Tweet Results
+    * dict -> List of Tweet Results
   
   All the Tweets included in the result are of class [Tweet](#tweet)
 
@@ -220,6 +203,8 @@ Type "help", "copyright", "credits" or "license" for more information.
       Media(id=id_of_media , type=type_of_media)
     #### Methods:
     * to_dict -> this is return a list of dict
+    * download -> download the given media in the disk
+      > download method requires parameter _filename_
     #### Attributes:
     * id -> id of the media
     * display_url -> url of the media which is used for preview
@@ -231,7 +216,12 @@ Type "help", "copyright", "credits" or "license" for more information.
     * features -> features of the media
     * sizes -> size of the media
     * original_info -> original dimensions of the media preview 
-    
+    * media_key -> internal key of the following media
+    * mediaStats -> stats of the media (usually available only when the type of media is video)
+    * file_format -> file format of the media if the type of media is photo else None
+    * streams -> list of all the video types available [class Stream](#stream) (if the type of media is video)
+        
+
 * ### ShortUser
     #### Representation
       ShortUser(id=id_of_user , name=name_of_user)
@@ -279,12 +269,16 @@ Type "help", "copyright", "credits" or "license" for more information.
         - '_filename_' parameter can be optionally pass to _to_xlsx_ method in order to set the filename of Excel file , if not passed the default name of Excel file will be _search-{keyword}.xlsx_
     * to_csv -> this returns Nothing and create an CSV Sheet
         - '_filename_' parameter can be optionally pass to _to_csv_ method in order to set the filename of CSV file , if not passed the default name of Excel file will be _search-{keyword}.csv_
+      > to_csv and to_xlsx is not available when using filter
+    >You can check filters here [Filters](#search-filters)
     * to_dict -> this is return a tweet dict
     #### Attributes:
     * keyword -> Keyword which is being queried
     * dict -> Dictionary of Tweet Results
   
     All the Tweets included in the result are of class [Tweet](#tweet)
+    
+    If used User Filter , All the Users included in the result are of class [User](#user--userlegacy)
 
   
 
@@ -298,6 +292,42 @@ Type "help", "copyright", "credits" or "license" for more information.
     * url -> URL of the trend
     * tweet_count -> Number of tweets of the trend
 
+* ### Stream
+    #### Representation:
+        Stream(content_type=content_type_of_media, length=length_of_media, bitrate=bitrate_of_media, res=resolution_of_media)
+    #### Methods:
+    * download -> Download the stream in the disk
+      > download method requires parameter _filename_
+    #### Attributes:
+    * bitrate -> Audio bitrate of stream
+    * content_type -> Content Type of stream
+    * url -> URL of stream
+    * length -> Length of the stream in milliseconds
+    * aspect_ratio -> Aspect Ratio of the stream
+    * res -> Resolution of the stream
+
+
+### Search Filters
+#### Description 
+_You can filter your search results using these filters_
+#### Filter Types
+* Filter Latest Tweet
+  > Get the latest tweets for the keyword instead of Twitter Default Popular Tweets
+  
+  > To use this filter you can pass ```latest``` directly to ```filter_``` parameter of search OR pass ```SearchFilters.Latest()``` method from filters module
+* Filter Users
+  > Search only Users with corresponding keyword
+  
+  > To use this filter you can pass ```users``` directly to ```filter_``` parameter of search OR pass ```SearchFilters.Users()``` method from filters module
+* Filter Only Photos
+  > Search only Tweets has photo in it with corresponding keyword
+  
+  > To use this filter you can pass ```photos``` directly to ```filter_``` parameter of search OR pass ```SearchFilters.Photos()``` method from filters module
+* Filter Only Videos
+  > Search only Tweets has video in it with corresponding keyword
+  
+  > To use this filter you can pass ```videos``` directly to ```filter_``` parameter of search OR pass ```SearchFilters.Videos()``` method from filters module
+  
 # Updates:
 ## Update 0.1:
 * Get Multiple Pages of tweets using pages parameter in get_tweets() function
@@ -357,3 +387,10 @@ Type "help", "copyright", "credits" or "license" for more information.
 * Results of [get_tweet](#getting-tweets) and [searches](#search) are now iterable even without calling to_dict() method
 * tweet_details method returns [Tweet](#tweet) object
 
+## Update 0.6:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.3
+* Fixed some minor Bugs
+* _to_dict()_ method of resultSet classes ([Search](#searching-a-keyword), [UserTweet](#usertweets)) now return list
+* [get_trends](#getting-trends) now return list of [Trend Class](#trends)
+* [search](#searching-a-keyword) now supports [filters](#search-filters)
+* [Media Class](#media) now supports _download()_ method
