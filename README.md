@@ -11,7 +11,7 @@ Before you begin, ensure you have met the following requirements:
 * BeautifulSoup (Python Module)
 * Requests (Python Module)
 * openpyxl (Python Module)
-* wget (Python Module)
+* wget (Python Module) [Optional , you need to install it manually]
 
 ## Table of Contents
 - [Installation](#installation)
@@ -41,6 +41,8 @@ pip install tweety-ns
 ## Exceptions
 * ```UserNotFound```       : Raised when the queried user not Found
 * ```GuestTokenNotFound``` : Raised when the script is unable to get the guest token from Twitter
+* ```InvalidTweetIdentifier``` : Raised when the getting the standalone tweet detail and the tweet identifier is invalid
+* ```UnknownError``` : Raised when the error occurs which is unknown to the module
 
 ## Using tweety
 
@@ -53,6 +55,8 @@ _Get 20 Tweets of a Twitter User_
 #### Optional Parameter:
 * ```pages``` : int (default is 1,starts from 2) -> Get the mentioned number of pages of tweets
 * ```replies``` : boolean (default is False) - > should get replies from tweets too
+* ```wait_time``` : int (default is 2) - > seconds to wait between multiple requests
+
 #### Output:
 [class UserTweets](#usertweets) (iterable)
 
@@ -92,6 +96,8 @@ _Get 20 Tweets for a specific Keyword or Hashtag_
 #### Optional Parameter:
 * ```pages``` : int (starts from 2 , default is 1) -> number of pages to get
 * ```filter_``` : str -> filter your search results for different types , check [Search Filters](#search-filters)
+* ```wait_time``` : int (default is 2) - > seconds to wait between multiple requests
+
 #### Output:
 [class Search](#search) (iterable)
 #### Example:
@@ -157,7 +163,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ## Objects Type Classes
 * ### UserTweets
-  ```This Object is Iterable```
+  ```This Object is Iterable and Subscriptable```
     #### Representation:
       UserTweets(user=username, count=number_of_results)
     #### Methods:
@@ -261,7 +267,7 @@ Type "help", "copyright", "credits" or "license" for more information.
    * verified -> is user verified
       
 * ### Search 
-  ```This Object is Iterable```
+  ```This Object is Iterable and Subscriptable```
     #### Representation:
         Search(keyword=keyword_begin_searched , count=number_of_tweets_in_result)>
     #### Methods:
@@ -394,3 +400,10 @@ _You can filter your search results using these filters_
 * [get_trends](#getting-trends) now return list of [Trend Class](#trends)
 * [search](#searching-a-keyword) now supports [filters](#search-filters)
 * [Media Class](#media) now supports _download()_ method
+
+## Update 0.7:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.3.5
+* ```wait_time``` parameter added to wait between multiple requests on resultSet classes ([Search](#searching-a-keyword), [UserTweet](#usertweets)) 
+* Fixed a bug of getting replies where the module was getting the first page replies of Elon Musk only
+* Structural Improvements
+* ResultSet classes ([Search](#searching-a-keyword), [UserTweet](#usertweets)) are now subscriptable

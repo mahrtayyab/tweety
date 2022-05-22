@@ -1,14 +1,17 @@
 import random
 import string
 import traceback
-from ._types import Tweet, UserTweets, Media,ShortUser,User,Search,Trends,UserLegacy
+from ._types import Tweet, UserTweets, Media,ShortUser,User,Search,Trends,UserLegacy,Card
 from bs4 import BeautifulSoup as bs
 import requests as s
+
+
 UserTweets = UserTweets
 User = User
 Search = Search
 Trends = Trends
 UserLegacy = UserLegacy
+Card = Card
 
 
 def proxyFactory() -> list:
@@ -55,7 +58,7 @@ def get_graph_ql_query(typed, user, pages=None) -> str:
         if pages:
             data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A40%2C%22cursor%22%3A%22''' + pages + '''%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Afalse%2C%22__fs_interactive_text%22%3Afalse%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Afalse%7D'''
         else:
-            data = '''%7B%22userId%22%3A%2244196397%22%2C%22count%22%3A40%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Afalse%2C%22__fs_interactive_text%22%3Afalse%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Afalse%7D'''
+            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A40%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Afalse%2C%22__fs_interactive_text%22%3Afalse%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Afalse%7D'''
     else:
         """
         {
@@ -136,7 +139,7 @@ def format_search(response,simplify):
     return tweet, __cursor
 
 
-def simplify_tweet(tweet, rest_id,author,author_legacy=False):
+def simplify_tweet(tweet, rest_id,author,author_legacy=False,card=None):
     try:
         created_on = tweet['created_at'] if tweet['created_at'] else ""
     except KeyError:
@@ -195,6 +198,10 @@ def simplify_tweet(tweet, rest_id,author,author_legacy=False):
         symbols = tweet['entities']['symbols'] if tweet['entities']['symbols'] else ""
     except KeyError:
         symbols = ""
+    if card:
+        card_ = Card(card)
+    else:
+        card_ = None
     if not author_legacy:
         author_ = User(author,3)
     else:
@@ -208,6 +215,7 @@ def simplify_tweet(tweet, rest_id,author,author_legacy=False):
         "tweet_body": text,
         "language": language,
         "likes": likes,
+        "card":card_,
         "retweet_counts": retweet_count,
         "source": source,
         "media": media,
@@ -236,7 +244,9 @@ def format_tweet_json(response):
                         simplify_tweet(
                             i['content']['itemContent']['tweet_results']['result']['legacy'],
                             i['content']['itemContent']['tweet_results']['result']['rest_id'],
-                            i['content']['itemContent']['tweet_results']['result']['core']
+                            i['content']['itemContent']['tweet_results']['result']['core'],
+                            False,
+                            i['content']['itemContent']['tweet_results']['result'].get("card")
                         )
                     )
                 )

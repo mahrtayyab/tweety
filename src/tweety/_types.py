@@ -1,7 +1,7 @@
 import csv
 import sys
 import traceback
-
+from dateutil import parser
 import openpyxl
 try:
     import wget
@@ -125,6 +125,9 @@ class UserTweets:
     def to_dict(self):
         return self.dict_
 
+    def __getitem__(self,index):
+        return self.dict_[index]
+
     def __iter__(self):
         for __tweet in self.dict_:
             yield __tweet
@@ -145,6 +148,7 @@ class Tweet:
         self.language = self.__dictionary.get("language")
         self.likes = self.__dictionary.get("likes")
         self.retweet_counts = self.__dictionary.get("retweet_counts")
+        self.card = self.__dictionary.get("card")
         self.media = self.__dictionary.get("media")
         self.user_mentions = self.__dictionary.get("user_mentions")
         self.urls = self.__dictionary.get("urls")
@@ -291,7 +295,7 @@ class User:
             self.__dictionary = user_dict['user_results']['result']
         self.id = self.__dictionary.get("id")
         self.rest_id = self.__dictionary.get("rest_id") if self.__dictionary.get("rest_id") else self.__dictionary.get("id_str")
-        self.created_at = self.__dictionary.get("created_at") if type_ == 2 else self.__dictionary.get("legacy").get("created_at")
+        self.created_at = parser.parse(self.__dictionary.get("created_at")) if type_ == 2 else parser.parse(self.__dictionary.get("legacy").get("created_at"))
         self.default_profile = self.__dictionary.get("default_profile") if type_ == 2 else self.__dictionary.get("legacy").get("default_profile")
         self.default_profile_image = self.__dictionary.get("default_profile_image") if type_ == 2 else self.__dictionary.get("legacy").get("default_profile_image")
         self.description = self.__dictionary.get("description") if type_ == 2 else self.__dictionary.get("legacy").get("description")
@@ -315,9 +319,10 @@ class User:
         self.statuses_count = self.__dictionary.get("statuses_count") if type_ == 2 else self.__dictionary.get("legacy").get("statuses_count")
         self.translator_type = self.__dictionary.get("translator_type") if type_ == 2 else self.__dictionary.get("legacy").get("translator_type")
         self.verified = self.__dictionary.get("verified") if type_ == 2 else self.__dictionary.get("legacy").get("verified")
+        self.profile_url = "https://twitter.com/{}".format(self.screen_name)
 
     def __repr__(self):
-        return f"User(id={self.rest_id}, name={self.name}, followers={self.followers_count}, verified={self.verified})"
+        return f"User(id={self.rest_id}, name={self.name}, screen_name={self.screen_name}, followers={self.followers_count}, verified={self.verified})"
 
     def to_dict(self):
         return self.__dictionary
@@ -437,6 +442,9 @@ class Search:
     def to_dict(self):
         return self.dict_
 
+    def __getitem__(self,index):
+        return self.dict_[index]
+
     def __iter__(self):
         for __tweet in self.dict_:
             yield __tweet
@@ -464,7 +472,7 @@ class UserLegacy:
         self.__dictionary = user_dict
         self.id = self.__dictionary.get("id")
         self.rest_id = self.__dictionary.get("id")
-        self.created_at = self.__dictionary.get("created_at")
+        self.created_at = parser.parse(self.__dictionary.get("created_at")) if self.__dictionary.get("created_at") else None
         self.default_profile = self.__dictionary.get("default_profile")
         self.default_profile_image = self.__dictionary.get("default_profile_image")
         self.description = self.__dictionary.get("description")
@@ -494,3 +502,64 @@ class UserLegacy:
 
     def to_dict(self):
         return self.__dictionary
+
+
+class Card:
+    def __init__(self,card_dict):
+        self._dict = card_dict
+        self.__bindings = self._dict['legacy'].get("binding_values")
+        self.rest_id = self._dict.get("rest_id")
+        self.name = self._dict['legacy'].get("name")
+        self.choices = []
+        self.end_time = None
+        self.last_updated_time = None
+        self.duration = None
+        self.user_ref = self._dict['legacy'].get("user_refs")
+        self.__parse_choices()
+
+    def __parse_choices(self):
+        for _ in self.__bindings:
+            _key = _.get("key").split("_")
+            if "choice" in _key[0] and "label" in _key[1]:
+                _cardName = _key[0]
+                _cardValue = _['value']['string_value']
+                _cardValueType = _['value']['type']
+                _cardCounts = 0
+                _cardCountsType = None
+                for __ in self.__bindings:
+                    __key = __.get("key")
+                    if __key[0] == _key[0] and "count" in __key[1]:
+                        _cardCounts = __['value']['string_value']
+                        _cardCountsType = __['value']['type']
+                _r = {
+                    "card_name":_cardName,
+                    "card_value":_cardValue,
+                    "card_value_type":_cardValueType,
+                    "card_counts":_cardCounts,
+                    "card_counts_type":_cardCountsType,
+                }
+                self.choices.append(Choice(_r))
+            elif _key[0] == "end" and _key[1] == "datetime":
+                self.end_time = parser.parse(_['value']['string_value'])
+                # last_updated_datetime_utc
+            elif _key[0] == "last" and _key[1] == "updated":
+                self.last_updated_time = parser.parse(_['value']['string_value'])
+                # duration_minutes
+            elif _key[0] == "duration" and _key[1] == "minutes":
+                self.duration = _['value']['string_value']
+
+    def __repr__(self):
+        return f"Card(id={self.rest_id}, choices={len(self.choices) if self.choices else []}, duration={len(self.duration)})"
+
+
+class Choice:
+    def __init__(self,_dict):
+        self._dict = _dict
+        self.name = self._dict.get("card_name")
+        self.value = self._dict.get("card_value")
+        self.type = self._dict.get("card_value_type")
+        self.counts = self._dict.get("card_counts")
+        self.counts_type = self._dict.get("card_counts_type")
+
+    def __repr__(self):
+        return f"Choice(name={self.name}, value={self.value}, counts={self.counts})"

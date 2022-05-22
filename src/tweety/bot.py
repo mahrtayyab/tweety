@@ -1,13 +1,12 @@
-import re
+import time
+import traceback
 from .utils import *
 from .exceptions_ import *
-import traceback
-import requests as s
-import sys
+from .http import Request
 
 
 class Twitter:
-    def __init__(self, profile_name=None,max_retires=10):
+    def __init__(self, profile_name: str = None, max_retires: int = 10):
         if profile_name:
             if profile_name.startswith("https://"):
                 self.profile_url = profile_name
@@ -15,62 +14,27 @@ class Twitter:
                 self.profile_url = f"https://twitter.com/{profile_name}"
         else:
             self.profile_url = None
-        self.__user_by_screen_url = "https://twitter.com/i/api/graphql/B-dCk4ph5BZ0UReWK590tw/UserByScreenName?variables="
-        self.__tweets_url = "https://twitter.com/i/api/graphql/Lya9A5YxHQxhCQJ5IPtm7A/UserTweets?variables="
-        self.__tweets_with_replies = "https://twitter.com/i/api/graphql/B9izm_qt4l5qWUWrympCVw/UserTweetsAndReplies?variables="
-        self.__trends_url = "https://api.twitter.com/2/guide.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&count=20&candidate_source=trends&include_page_configuration=false&entity_tokens=false&ext=mediaStats%2ChighlightedLabel"
-        self.__search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweet=true&q={}&count=20&query_source=typeahead_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2CvoiceInfo"
-        self.__user_search_url = "https://twitter.com/i/api/2/search/adaptive.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_has_nft_avatar=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&include_ext_sensitive_media_warning=true&include_ext_trusted_friends_metadata=true&send_error_codes=true&simple_quoted_tweet=true&q={}&result_filter=user&count=20&query_source=recent_search_click&pc=1&spelling_corrections=1&ext=mediaStats%2ChighlightedLabel%2ChasNftAvatar%2CvoiceInfo%2CsuperFollowMetadata"
-        self.__tweet_detail_url = "https://twitter.com/i/api/graphql/4tzuTRu5-fpJTS7bDF6Nlg/TweetDetail?variables=%7B%22focalTweetId%22%3A%22{}%22%2C%22with_rux_injections%22%3Afalse%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D"
-        self.__guest_token_url = "https://api.twitter.com/1.1/guest/activate.json"
-        self.__proxy = {"http": random.choice(proxyFactory())}
-        self.__guest_token = self.__get_guest_token(max_retries=max_retires)
-        self.__guest_headers = get_headers(self.__guest_token)
-
-    def __get_guest_token(self, max_retries=10):
-        try:
-            guest_token = ""
-            for i in range(0, int(max_retries)):
-                if self.profile_url:
-                    response = s.get(self.profile_url, headers=get_headers(), proxies=self.__proxy)
-                else:
-                    response = s.get("https://twitter.com/i/trends", headers=get_headers(), proxies=self.__proxy)
-                guest_token_ = re.findall('document\.cookie = decodeURIComponent\("gt=(.*?); Max-Age=10800; Domain=\.twitter\.com; Path=/; Secure"\);',response.text)
-                try:
-                    if guest_token_[0]:
-                        guest_token = guest_token_[0]
-                        return guest_token
-                except IndexError:
-                    try:
-                        headers = get_headers()
-                        headers['x-csrf-token'] = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
-                        headers['authorization'] = "Bearer " + "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
-                        headers['content-type'] = 'application/x-www-form-urlencoded'
-                        headers['accept'] = "*/*"
-                        response = s.post(self.__guest_token_url,headers=headers,proxies=self.__proxy)
-                        guest_token = response.json()['guest_token']
-                        return response.json()['guest_token']
-                    except:
-                        continue
-            if guest_token == "":
-                raise GuestTokenNotFound(f"Guest Token couldn't be found after {max_retries} retires.")
-        except Exception as e:
-            sys.exit(f"Exception Occurred : \n {str(e)}")
+        self.request = Request(self.profile_url,max_retries=max_retires)
 
     def __verify_user(self):
+        """
+        Private method to Verify the User
+
+        :return: User Json
+        """
         user = self.profile_url.split("/")[-1]
         data = str(get_graph_ql_query(3, user))
-        response = s.get(
-            f"{self.__user_by_screen_url}{data}",
-            headers=self.__guest_headers,
-            proxies=self.__proxy
-        )
-        if response.json().get('data'):
-            return response.json()
-        else:
-            return 0
+        return self.request.verify_user(data)
 
-    def get_user_info(self, banner_extensions=False, image_extensions=False):
+    def get_user_info(self, banner_extensions: bool = False, image_extensions:bool = False):
+        """
+        Get the user available info
+
+        :param banner_extensions: (`boolean`) Get the Banner extension on the user page
+        :param image_extensions: (`boolean`) Get the Image extension on the user page
+
+        :return: _types.User
+        """
         if self.profile_url:
             json_ = self.__verify_user()
             if json_ == 0:
@@ -85,6 +49,11 @@ class Twitter:
             raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
 
     def get_user_id(self):
+        """
+        Get the user unique twitter id
+
+        :return: int
+        """
         if self.profile_url:
             user = self.__verify_user()
             if user == 0:
@@ -94,7 +63,16 @@ class Twitter:
         else:
             raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
 
-    def get_tweets(self,pages=1,replies=False):
+    def get_tweets(self,pages: int = 1, replies:bool = False, wait_time:int = 2):
+        """
+        Get the tweets from a user
+
+        :param pages: (`int`) number of pages to be scraped
+        :param replies: (`boolean`) get the replied tweets of the user too
+        :param wait_time: (`int`) seconds to wait between multiple requests
+
+        :return:_type.UserTweets
+        """
         try:
             if self.profile_url:
                 user_id = self.get_user_id()
@@ -103,30 +81,33 @@ class Twitter:
                 for page in range(0,int(pages)):
                     if replies:
                         data = str(get_graph_ql_query(2, user_id,__nextCursor))
-                        response = s.get(f"{self.__tweets_with_replies}{data}", headers=self.__guest_headers,
-                                         proxies=self.__proxy)
+                        response = self.request.get_tweets(data,replies=True)
                     else:
                         data = str(get_graph_ql_query(1, user_id,__nextCursor))
-                        response = s.get(f"{self.__tweets_url}{data}", headers=self.__guest_headers,
-                                         proxies=self.__proxy)
+                        response = self.request.get_tweets(data,replies=False)
                     tweet,__Cursor = format_tweet_json(response)
                     for i in tweet:
                         result.append(i)
                     if __nextCursor != __Cursor:
                         __nextCursor = __Cursor[0]
+                        time.sleep(wait_time)
                     else:
                         break
                 return UserTweets(result,user_id)
             else:
                 raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
         except:
-            traceback.print_exc()
-            exit(1)
+            error = traceback.format_exc().splitlines()[-1]
+            raise UnknownError(str(error))
 
-    def get_trends(self) -> list:
+    def get_trends(self):
+        """
+        Get the Trends from you locale
+
+        :return:list of _types.Trends
+        """
         trends = []
-        response = s.get(f"{self.__trends_url}", headers=self.__guest_headers,
-                         proxies=self.__proxy)
+        response = self.request.get_trends()
         for i in response.json()['timeline']['instructions'][1]['addEntries']['entries'][1]['content']['timelineModule']['items']:
             data = {
                 "name":i['item']['content']['trend']['name'],
@@ -140,18 +121,23 @@ class Twitter:
             trends.append(Trends(data))
         return trends
 
-    def search(self, keyword, pages=1,filter_=None):
+    def search(self, keyword:str, pages:int = 1, filter_:str = None, wait_time:int = 2):
+        """
+        Search for a keyword or hashtag on Twitter
+
+        :param keyword: (`str`) The keyword which is supposed to be searched
+        :param pages: (`int`) The number of pages to get
+        :param filter_: (
+        `str`| `filters.SearchFilters.Users()`| `filters.SearchFilters.Latest()` | `filters.SearchFilters.Photos()` | `filters.SearchFilters.Videos()`
+        )
+        :param wait_time : (`int`) seconds to wait between multiple requests
+
+        :return: _types.Search
+        """
         result = []
-        if keyword.startswith("#"):
-            keyword = f"%23{keyword[1:]}"
-        url = searchFilters(filter_=filter_)
         nextCursor = None
         for page in range(0,int(pages)):
-            if nextCursor:
-                search_url = f"{url}&cursor={nextCursor}"
-            else:
-                search_url = url
-            r = s.get(search_url.format(keyword), headers=self.__guest_headers, proxies=self.__proxy)
+            r = self.request.perform_search(keyword,nextCursor,filter_)
             if filter_ and filter_.lower() == "users":
                 results_,__cursor = formatUserSearch(r)
             elif filter_ and filter_.lower() == "photos":
@@ -164,11 +150,19 @@ class Twitter:
                 result.append(i)
             if __cursor != nextCursor:
                 nextCursor = __cursor[0]
+                time.sleep(wait_time)
             else:
                 break
         return Search(result,keyword,filter_)
 
-    def tweet_detail(self,identifier):
+    def tweet_detail(self,identifier:str):
+        """
+        Get Detail of a single tweet
+
+        :param identifier: (`str`) The unique identifier of the tweet , either the `Tweet id` or `Tweet Link`
+
+        :return: _types.Tweet
+        """
         if str(identifier).startswith("https://"):
             if str(identifier).endswith("/"):
                 tweetId = str(identifier)[:-1].split("/")[-1]
@@ -176,13 +170,13 @@ class Twitter:
                 tweetId = str(identifier).split("/")[-1]
         else:
             tweetId = identifier
-        r = s.get(
-            self.__tweet_detail_url.format(tweetId),
-            headers=self.__guest_headers,
-            proxies=self.__proxy
-        )
-        result_ = formatThreadedTweet(r)
-        result = Tweet(result_.get("tweet"))
-        result.threads = [Tweet(i) for i in result_.get("threads")]
+        r = self.request.get_tweet_detail(tweetId)
+        try:
+            result_ = formatThreadedTweet(r)
+            result = Tweet(result_.get("tweet"))
+            result.threads = [Tweet(i) for i in result_.get("threads")]
 
-        return result
+            return result
+        except KeyError:
+            raise InvalidTweetIdentifier("The Identifier provided of the tweet is either invalid or the tweet is "
+                                         "private")
