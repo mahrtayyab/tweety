@@ -32,6 +32,7 @@ Before you begin, ensure you have met the following requirements:
   * [Search](#search)
   * [Media](#media)
   * [Stream](#stream)
+- [Proxy Support](#adding-proxy)
   
 ## Installation:
 ```bash
@@ -265,6 +266,7 @@ Type "help", "copyright", "credits" or "license" for more information.
    * protected -> is profile protected
    * statuses_count -> number of statuses posted by the user
    * verified -> is user verified
+   * profile_url -> The profile link of the user
       
 * ### Search 
   ```This Object is Iterable and Subscriptable```
@@ -333,7 +335,42 @@ _You can filter your search results using these filters_
   > Search only Tweets has video in it with corresponding keyword
   
   > To use this filter you can pass ```videos``` directly to ```filter_``` parameter of search OR pass ```SearchFilters.Videos()``` method from filters module
-  
+
+
+### Adding Proxy
+ > Proxy Support is still experimental and isn't recommended
+
+ > Why not recommended : Twitter often blocks the access to known proxies
+
+  > Only http/https proxy is supported
+
+  In order to add the proxy , pass the proxy dict to the Twitter class 
+  Valid proxy dict format :
+  ```json
+    {
+      "http": "username:password@host:ip",
+      "https": "username:password@host:ip"
+    }
+  ```
+
+  ```json
+    {
+      "http": "host:ip",
+      "https": "host:ip"
+    }
+  ```
+
+  #### Example:
+  ```bash
+  python
+  Python 3.7.3 (default, Mar 26 2019, 21:43:19) 
+  [GCC 8.2.1 20181127] on linux
+  Type "help", "copyright", "credits" or "license" for more information.
+  >>> from tweety.bot import Twitter
+  >>> proxy = {"http":"127.0.0.1:8080","https":"127.0.0.1:8080"}:
+  >>> user = Twitter("elonmusk",proxy=proxy).get_user_info()
+  ```
+
 # Updates:
 ## Update 0.1:
 * Get Multiple Pages of tweets using pages parameter in get_tweets() function
@@ -407,3 +444,9 @@ _You can filter your search results using these filters_
 * Fixed a bug of getting replies where the module was getting the first page replies of Elon Musk only
 * Structural Improvements
 * ResultSet classes ([Search](#searching-a-keyword), [UserTweet](#usertweets)) are now subscriptable
+
+## Update 0.7.1:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.3.6
+* Partial Support for proxies
+* Fixed the delay while getting tweets or searching keyword even if the `pages` is set to 1
+* Fixed `KeyError` when getting the user info

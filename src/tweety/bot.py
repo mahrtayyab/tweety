@@ -6,7 +6,14 @@ from .http import Request
 
 
 class Twitter:
-    def __init__(self, profile_name: str = None, max_retires: int = 10):
+    def __init__(self, profile_name: str = None, max_retires: int = 10, proxy: dict = None):
+        """
+        Initialize the Twitter Class
+
+        :param profile_name: (`str`) Profile URL or The Username of the user you are dealing with
+        :param max_retires: (`int`) Number of retries the script would make , if the guest token wasn't found
+        :param proxy: (`dict`) Provide the proxy you want to use while making a request
+        """
         if profile_name:
             if profile_name.startswith("https://"):
                 self.profile_url = profile_name
@@ -14,7 +21,14 @@ class Twitter:
                 self.profile_url = f"https://twitter.com/{profile_name}"
         else:
             self.profile_url = None
-        self.request = Request(self.profile_url,max_retries=max_retires)
+        if proxy and proxy is not None:
+            if proxy.get("http") and proxy.get("https"):
+                self.proxy = dict(http=proxy['http'], https=proxy['https'])
+            else:
+                raise ProxyParseError()
+        else:
+            self.proxy = None
+        self.request = Request(self.profile_url,max_retries=max_retires,proxy=self.proxy)
 
     def __verify_user(self):
         """
@@ -41,9 +55,15 @@ class Twitter:
                 raise UserNotFound()
             else:
                 if not banner_extensions or banner_extensions is False:
-                    del json_['data']['user']['result']['legacy']['profile_banner_extensions']
+                    try:
+                        del json_['data']['user']['result']['legacy']['profile_banner_extensions']
+                    except KeyError:
+                        pass
                 if not image_extensions or image_extensions is False:
-                    del json_['data']['user']['result']['legacy']['profile_image_extensions']
+                    try:
+                        del json_['data']['user']['result']['legacy']['profile_image_extensions']
+                    except KeyError:
+                        pass
                 return User(json_)
         else:
             raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
@@ -78,7 +98,7 @@ class Twitter:
                 user_id = self.get_user_id()
                 result = []
                 __nextCursor = None
-                for page in range(0,int(pages)):
+                for page in range(1,int(pages)+1):
                     if replies:
                         data = str(get_graph_ql_query(2, user_id,__nextCursor))
                         response = self.request.get_tweets(data,replies=True)
@@ -90,7 +110,8 @@ class Twitter:
                         result.append(i)
                     if __nextCursor != __Cursor:
                         __nextCursor = __Cursor[0]
-                        time.sleep(wait_time)
+                        if page != pages:
+                            time.sleep(wait_time)
                     else:
                         break
                 return UserTweets(result,user_id)
@@ -150,7 +171,8 @@ class Twitter:
                 result.append(i)
             if __cursor != nextCursor:
                 nextCursor = __cursor[0]
-                time.sleep(wait_time)
+                if page != pages:
+                    time.sleep(wait_time)
             else:
                 break
         return Search(result,keyword,filter_)

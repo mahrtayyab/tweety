@@ -36,6 +36,19 @@ class InvalidTweetIdentifier(Exception):
         super().__init__(self.message)
 
 
+class ProxyParseError(Exception):
+    """
+    Exception Raised when an error occurs while parsing the provided proxy
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message="Error while parsing the Proxy, please make sure you are passing the right formatted proxy"):
+        self.message = message
+        super().__init__(self.message)
+
+
 class UnknownError(Exception):
     """
         Exception Raised when an unknown error occurs
