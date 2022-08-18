@@ -1,3 +1,6 @@
+import traceback
+
+
 class UserNotFound(Exception):
     """Exception raised when user isn't found.
 
@@ -5,7 +8,7 @@ class UserNotFound(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, message="Either User not Found or is Restricted"):
+    def __init__(self, message):
         self.message = message
         super().__init__(self.message)
 
@@ -49,6 +52,19 @@ class ProxyParseError(Exception):
         super().__init__(self.message)
 
 
+class UserProtected(Exception):
+    """
+    Exception Raised when an error occurs when the queried User isn't available / Protected
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 class UnknownError(Exception):
     """
         Exception Raised when an unknown error occurs
@@ -58,6 +74,8 @@ class UnknownError(Exception):
         """
 
     def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+        if not isinstance(message,UserProtected) or not isinstance(message,UserNotFound):
+            error = traceback.format_exc().splitlines()[-1]
+            self.message = error
+            super().__init__(self.message)
 

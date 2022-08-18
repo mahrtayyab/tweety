@@ -1,8 +1,25 @@
+import functools
 import time
-import traceback
 from .utils import *
 from .exceptions_ import *
 from .http import Request
+
+
+def valid_profile(f):
+    @functools.wraps(f)
+    def wrapper(self,*args, **kwargs):
+        if self.profile_url is None:
+            raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
+        if self.user.protected:
+            username = self.profile_url.split("/")[-1]
+            raise UserProtected(f"User {username} is Protected")
+        try:
+            return f(self,*args, **kwargs)
+        except (UserProtected,UserNotFound) as e:
+            raise e
+        except Exception as e:
+            raise UnknownError(e)
+    return wrapper
 
 
 class Twitter:
@@ -29,6 +46,7 @@ class Twitter:
         else:
             self.proxy = None
         self.request = Request(self.profile_url,max_retries=max_retires,proxy=self.proxy)
+        self.user = self.get_user_info() if self.profile_url is not None else None
 
     def __verify_user(self):
         """
@@ -52,7 +70,7 @@ class Twitter:
         if self.profile_url:
             json_ = self.__verify_user()
             if json_ == 0:
-                raise UserNotFound()
+                raise UserNotFound("User {} not Found".format(self.profile_url.split("/")[-1]))
             else:
                 if not banner_extensions or banner_extensions is False:
                     try:
@@ -68,22 +86,18 @@ class Twitter:
         else:
             raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
 
-    def get_user_id(self):
+    @property
+    def user_id(self):
         """
         Get the user unique twitter id
 
         :return: int
         """
-        if self.profile_url:
-            user = self.__verify_user()
-            if user == 0:
-                raise UserNotFound()
-            else:
-                return User(user).rest_id
-        else:
-            raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
 
-    def get_tweets(self,pages: int = 1, replies:bool = False, wait_time:int = 2):
+        return self.user.rest_id
+
+    @valid_profile
+    def get_tweets(self,pages: int = 1, replies: bool = False, wait_time: int = 2):
         """
         Get the tweets from a user
 
@@ -93,33 +107,26 @@ class Twitter:
 
         :return:_type.UserTweets
         """
-        try:
-            if self.profile_url:
-                user_id = self.get_user_id()
-                result = []
-                __nextCursor = None
-                for page in range(1,int(pages)+1):
-                    if replies:
-                        data = str(get_graph_ql_query(2, user_id,__nextCursor))
-                        response = self.request.get_tweets(data,replies=True)
-                    else:
-                        data = str(get_graph_ql_query(1, user_id,__nextCursor))
-                        response = self.request.get_tweets(data,replies=False)
-                    tweet,__Cursor = format_tweet_json(response)
-                    for i in tweet:
-                        result.append(i)
-                    if __nextCursor != __Cursor:
-                        __nextCursor = __Cursor[0]
-                        if page != pages:
-                            time.sleep(wait_time)
-                    else:
-                        break
-                return UserTweets(result,user_id)
+        # try:
+        result = []
+        __nextCursor = None
+        for page in range(1,int(pages)+1):
+            if replies:
+                data = str(get_graph_ql_query(2, self.user_id,__nextCursor))
+                response = self.request.get_tweets(data,replies=True)
             else:
-                raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
-        except:
-            error = traceback.format_exc().splitlines()[-1]
-            raise UnknownError(str(error))
+                data = str(get_graph_ql_query(1, self.user_id,__nextCursor))
+                response = self.request.get_tweets(data,replies=False)
+            tweet,__Cursor = format_tweet_json(response)
+            for i in tweet:
+                result.append(i)
+            if __nextCursor != __Cursor:
+                __nextCursor = __Cursor[0]
+                if page != pages:
+                    time.sleep(wait_time)
+            else:
+                break
+        return UserTweets(result,self.user_id)
 
     def get_trends(self):
         """
@@ -149,7 +156,7 @@ class Twitter:
         :param keyword: (`str`) The keyword which is supposed to be searched
         :param pages: (`int`) The number of pages to get
         :param filter_: (
-        `str`| `filters.SearchFilters.Users()`| `filters.SearchFilters.Latest()` | `filters.SearchFilters.Photos()` | `filters.SearchFilters.Videos()`
+            `str`| `filters.SearchFilters.Users()`| `filters.SearchFilters.Latest()` | `filters.SearchFilters.Photos()` | `filters.SearchFilters.Videos()`
         )
         :param wait_time : (`int`) seconds to wait between multiple requests
 

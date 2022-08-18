@@ -23,7 +23,7 @@ Before you begin, ensure you have met the following requirements:
     * [Search Filters](#search-filters)
   * [Get Tweet Detail](#getting-a-tweet-detail)
 - [Exceptions](#exceptions)
-- [Result Class Objects](#objects-type-classes)
+- [Data Objects](#data-objects)
   * [UserTweets](#usertweets)
   * [Tweet](#tweet)
   * [User](#user--userlegacy)
@@ -44,6 +44,8 @@ pip install tweety-ns
 * ```GuestTokenNotFound``` : Raised when the script is unable to get the guest token from Twitter
 * ```InvalidTweetIdentifier``` : Raised when the getting the standalone tweet detail and the tweet identifier is invalid
 * ```UnknownError``` : Raised when the error occurs which is unknown to the module
+* ```ProxyParseError``` : Raised when there is an error in proxy format
+* ```UserProtected``` : Raised when the queried user has private profile
 
 ## Using tweety
 
@@ -59,7 +61,7 @@ _Get 20 Tweets of a Twitter User_
 * ```wait_time``` : int (default is 2) - > seconds to wait between multiple requests
 
 #### Output:
-[class UserTweets](#usertweets) (iterable)
+[UserTweets Object](#usertweets) (iterable)
 
 #### Example:
 ```bash
@@ -75,7 +77,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 #### Description:
 _Get 20 Locale Trends_
 #### Output:
-List of [class Trends Object](#trends)
+List of [Trends Object](#trends)
 
 #### Example :
 ```bash
@@ -100,7 +102,7 @@ _Get 20 Tweets for a specific Keyword or Hashtag_
 * ```wait_time``` : int (default is 2) - > seconds to wait between multiple requests
 
 #### Output:
-[class Search](#search) (iterable)
+[Search Object](#search) (iterable)
 #### Example:
 ```bash
 python
@@ -130,7 +132,7 @@ _Get the information about the user_
 * ```banner_extensions``` : boolean (Default is False) -> get more information about user banner image
 * ```image_extensions``` : boolean (Default is False) -> get more information about user profile image
 #### Output:
-[class User](#user--userlegacy)
+[User Object](#user--userlegacy)
 
 #### Example:
 ```bash
@@ -150,7 +152,7 @@ _Get the detail of a tweet including its replies_
 * ```Identifier of the Tweet```: Either Tweet URL OR Tweet ID
 
 #### Output:
-class [Tweet](#tweet)
+[Tweet Object](#tweet)
 
 #### Example:
 ```bash
@@ -162,7 +164,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> trends = Twitter().tweet_detail("https://twitter.com/Microsoft/status/1442542812197801985")
 ```
 
-## Objects Type Classes
+## Data Objects
 * ### UserTweets
   ```This Object is Iterable and Subscriptable```
     #### Representation:
@@ -177,7 +179,7 @@ Type "help", "copyright", "credits" or "license" for more information.
     * user -> User ID of the queried user
     * dict -> List of Tweet Results
   
-  All the Tweets included in the result are of class [Tweet](#tweet)
+  All the Tweets included in the result are of object type [Tweet](#tweet)
 
 
 * ### Tweet
@@ -187,20 +189,23 @@ Type "help", "copyright", "credits" or "license" for more information.
     * to_dict -> this is return a tweet dict
     #### Attributes:
     * id -> id of the tweet
-    * author -> author of the tweet (class [User](#user--userlegacy))
+    * author -> author of the tweet ([Object User](#user--userlegacy))
     * created_on -> creation time of tweet
+    * card -> any pool in the tweet ([Object Card](#card))
     * is_retweet -> is the tweet is retweet
     * is_reply -> is the tweet is reply
     * tweet_body -> content of tweet
+    * text -> content of tweet
     * language -> language of the tweet
     * retweet_counts -> number of retweets on the tweet
-    * media -> list of media (class [Media](#media)) add to the tweet
-    * user_mentions -> list of users (class [ShortUser](#shortuser)) mentioned in the tweet 
+    * place -> any place tagged in with the tweet ([Object Place](#place))
+    * media -> list of media ([Object Media](#media)) add to the tweet
+    * user_mentions -> list of users ([Object ShortUser](#shortuser)) mentioned in the tweet 
     * urls -> list of urls in the tweet
     * hashtags -> list of hashtags in the tweet
     * symbols -> list of symbols in the tweet
     * reply_to -> username of the user to which this tweet was reply to (if is_reply is true)
-    * threads -> list of class [Tweet](#tweet) associated with the tweet or None
+    * threads -> list of [Object Tweet](#tweet) associated with the tweet or None
 
     This Object is Iterable if the ```threads``` attribute is not None
     
@@ -226,7 +231,7 @@ Type "help", "copyright", "credits" or "license" for more information.
     * media_key -> internal key of the following media
     * mediaStats -> stats of the media (usually available only when the type of media is video)
     * file_format -> file format of the media if the type of media is photo else None
-    * streams -> list of all the video types available [class Stream](#stream) (if the type of media is video)
+    * streams -> list of all the video types available [Object Stream](#stream) (if the type of media is video)
         
 
 * ### ShortUser
@@ -313,6 +318,45 @@ Type "help", "copyright", "credits" or "license" for more information.
     * length -> Length of the stream in milliseconds
     * aspect_ratio -> Aspect Ratio of the stream
     * res -> Resolution of the stream
+
+* ### Card
+    #### Representation:
+        Card(id=id_of_card, choices=number_of_choices, end_time=end_time_of_pool, duration=duration_in_minutes)
+    #### Attributes:
+    * rest_id -> id of the card
+    * name -> name of the card
+    * choices -> List of all [Choices](#choice)
+    * end_time -> End time of the Pool
+    * last_updated_time -> Last Update time of the pool
+    * duration -> Total duration of the pool in minutes
+
+* ### Choice
+    #### Representation:
+        Choice(name=string_name_of_choice, value=acutal_string_value_of_choice, counts=number_of_votes_on_this_choice)
+    #### Attributes:
+    * name -> name of the choice
+    * value -> value of the choice
+    * type -> type of the choice
+    * counts -> number of votes on the choice
+
+* ### Place
+    #### Representation:
+        Place(id=id_of_the_place, name=name_of_the_place, country=(country_name_of_the_place ,country_code_of_the_place), coordinates=list_of_all_coordinates)
+    #### Attributes:
+    * id -> id of the place
+    * country -> country of the place
+    * country_code -> country code of the place
+    * full_name -> full name of the place
+    * name -> name of the place
+    * url -> twitter url of the place
+    * coordinates -> list of the [coordinates](#coordinates) of the place
+
+* ### Coordinates
+    #### Representation:
+        Coordinates(latitude=latitude_of_the_place, longitude=longitude_of_the_place)
+    #### Attributes:
+    * latitude -> latitude of the place
+    * longitude -> longitude of the place
 
 
 ### Search Filters
@@ -450,3 +494,10 @@ _You can filter your search results using these filters_
 * Partial Support for proxies
 * Fixed the delay while getting tweets or searching keyword even if the `pages` is set to 1
 * Fixed `KeyError` when getting the user info
+
+## Update 0.8:
+* Module version on [PYPI Repository](https://pypi.org/project/tweety-ns/) is bumped to 0.4
+* More clean Code
+* Added ```UserProtected``` exception to identify if the user is private
+* Added ```place``` attribute to the [Tweet object](#tweet)
+* Added ```card``` attribute to the [Tweet object](#tweet)

@@ -144,7 +144,7 @@ class Tweet:
         self.created_on = self.__dictionary.get("created_on")
         self.is_retweet = self.__dictionary.get("is_retweet")
         self.is_reply = self.__dictionary.get("is_reply")
-        self.tweet_body = self.__dictionary.get("tweet_body")
+        self.tweet_body = self.text = self.__dictionary.get("tweet_body")
         self.language = self.__dictionary.get("language")
         self.likes = self.__dictionary.get("likes")
         self.retweet_counts = self.__dictionary.get("retweet_counts")
@@ -155,6 +155,7 @@ class Tweet:
         self.hashtags = self.__dictionary.get("hashtags")
         self.symbols = self.__dictionary.get("symbols")
         self.reply_to = self.__dictionary.get("reply_to")
+        self.place = self.__dictionary.get("place")
         self.threads = threads
 
     def __repr__(self):
@@ -188,7 +189,7 @@ class Media:
         self.original_info = self.__dictionary.get("original_info")
         self.file_format = self.media_url_https.split(".")[-1] if self.type == "photo" else None
         self.streams = []
-        if self.type == "video":
+        if self.type == "video" or self.type == "animated_gif":
             self.__parse_video_streams()
 
     def __parse_video_streams(self):
@@ -197,11 +198,7 @@ class Media:
             for i in videoDict.get("variants"):
                 if not i.get("content_type").split("/")[-1] == "x-mpegURL":
                     self.streams.append(
-                        Stream(
-                            i,
-                            videoDict.get("duration_millis"),
-                            videoDict.get("aspect_ratio"),
-                        )
+                        Stream(i,videoDict.get("duration_millis",0),videoDict.get("aspect_ratio"))
                     )
 
     def __repr__(self):
@@ -230,6 +227,14 @@ class Media:
                         if show_progress:
                             sys.stdout.write("\n")
                         return filename
+        elif self.type == "animated_gif":
+            file_format = self.streams[0].content_type.split("/")[-1]
+            if not file_format == "x-mpegURL":
+                filename = f"{filename_}.{file_format}"
+                wget.download(url=self.streams[0].url, out=filename, bar=show_progress)
+                if show_progress:
+                    sys.stdout.write("\n")
+                return filename
         return None
 
     def to_dict(self):
@@ -246,10 +251,10 @@ class Stream:
         self.aspect_ratio = ratio
         try:
             self.res = int(self.url.split("/")[7].split("x")[0]) * int(self.url.split("/")[7].split("x")[1])
-        except ValueError:
+        except (ValueError,IndexError):
             try:
                 self.res = int(self.url.split("/")[6].split("x")[0]) * int(self.url.split("/")[6].split("x")[1])
-            except ValueError:
+            except (ValueError,IndexError):
                 self.res = None
 
     def __repr__(self):
@@ -279,7 +284,7 @@ class ShortUser:
         self.screen_name = self.__dictionary.get("screen_name")
 
     def __repr__(self):
-        return f"ShortUser(id={self.id}, name={self.name})>"
+        return f"ShortUser(id={self.id}, name={self.name})"
 
     def to_dict(self):
         return self.__dictionary
@@ -496,6 +501,7 @@ class UserLegacy:
         self.statuses_count = self.__dictionary.get("statuses_count")
         self.translator_type = self.__dictionary.get("translator_type")
         self.verified = self.__dictionary.get("verified")
+        self.profile_url = "https://twitter.com/{}".format(self.screen_name)
 
     def __repr__(self):
         return f"User(id={self.rest_id}, name={self.name}, followers={self.followers_count} , verified={self.verified})"
@@ -549,7 +555,7 @@ class Card:
                 self.duration = _['value']['string_value']
 
     def __repr__(self):
-        return f"Card(id={self.rest_id}, choices={len(self.choices) if self.choices else []}, duration={len(self.duration)})"
+        return f"Card(id={self.rest_id}, choices={len(self.choices) if self.choices else []}, end_time={self.end_time}, duration={len(self.duration)} minutes)"
 
 
 class Choice:
@@ -563,3 +569,37 @@ class Choice:
 
     def __repr__(self):
         return f"Choice(name={self.name}, value={self.value}, counts={self.counts})"
+
+
+class Place:
+    def __init__(self,place_dict):
+        self.__dict = place_dict
+        self.id = self.__dict.get("id")
+        self.country = self.__dict.get("country")
+        self.country_code = self.__dict.get("country_code")
+        self.full_name = self.__dict.get("full_name")
+        self.name = self.__dict.get("name")
+        self.url = self.__dict.get("url")
+        self.coordinates = self.parse_coordinates()
+
+    def parse_coordinates(self):
+        results = []
+        for i in self.__dict['bounding_box'].get("coordinates"):
+            for p in i:
+                coordinates = [p[1],p[0]]
+                if coordinates not in results:
+                    results.append([coordinates[0],coordinates[1]])
+
+        return [Coordinates(i[0],i[1]) for i in results]
+
+    def __repr__(self):
+        return f"Place(id={self.id}, name={self.name}, country={self.country ,self.country_code}, coordinates={self.coordinates})"
+
+
+class Coordinates:
+    def __init__(self,latitude,longitude):
+        self.latitude = latitude
+        self.longitude = longitude
+
+    def __repr__(self):
+        return f"Coordinates(latitude={self.latitude}, longitude={self.longitude})"

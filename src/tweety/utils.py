@@ -1,7 +1,7 @@
 import random
 import string
 import traceback
-from ._types import Tweet, UserTweets, Media,ShortUser,User,Search,Trends,UserLegacy,Card
+from ._types import Tweet, UserTweets, Media, ShortUser, User, Search, Trends, UserLegacy, Card, Place
 from bs4 import BeautifulSoup as bs
 import requests as s
 
@@ -198,6 +198,7 @@ def simplify_tweet(tweet, rest_id,author,author_legacy=False,card=None):
         symbols = tweet['entities']['symbols'] if tweet['entities']['symbols'] else ""
     except KeyError:
         symbols = ""
+    place = Place(tweet['place']) if tweet.get('place') else None
     if card:
         card_ = Card(card)
     else:
@@ -216,6 +217,7 @@ def simplify_tweet(tweet, rest_id,author,author_legacy=False,card=None):
         "language": language,
         "likes": likes,
         "card":card_,
+        "place":place,
         "retweet_counts": retweet_count,
         "source": source,
         "media": media,
@@ -268,7 +270,9 @@ def formatThreadedTweet(r):
             result['tweet'] = simplify_tweet(
                     entry['content']['itemContent']['tweet_results']['result']['legacy'],
                     entry['content']['itemContent']['tweet_results']['result']['rest_id'],
-                    entry['content']['itemContent']['tweet_results']['result']['core']
+                    entry['content']['itemContent']['tweet_results']['result']['core'],
+                    False,
+                    entry['content']['itemContent']['tweet_results']['result'].get("card")
                 )
         else:
             if str(entry['entryId']).split("-")[0] == "conversationthread":
