@@ -8,7 +8,7 @@ from .utils import get_headers, searchFilters
 
 
 class Request:
-    def __init__(self, profile_url, max_retries=10,proxy=None):
+    def __init__(self, profile_url, max_retries=10, proxy=None):
         self.__user_by_screen_url = "https://twitter.com/i/api/graphql/B-dCk4ph5BZ0UReWK590tw/UserByScreenName?variables="
         self.__tweets_url = "https://twitter.com/i/api/graphql/Lya9A5YxHQxhCQJ5IPtm7A/UserTweets?variables="
         self.__tweets_with_replies = "https://twitter.com/i/api/graphql/B9izm_qt4l5qWUWrympCVw/UserTweetsAndReplies?variables="
@@ -74,17 +74,20 @@ class Request:
         response = self.__session.get(f"{self.__trends_url}", headers=self.__guest_headers)
         return response
 
-    def perform_search(self,keyword,cursor,filter_):
+    def perform_search(self, keyword, cursor, filter_):
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
+
         url = searchFilters(filter_=filter_)
+
         if cursor:
             search_url = f"{url}&cursor={cursor}"
         else:
             search_url = url
+
         response = self.__session.get(search_url.format(keyword), headers=self.__guest_headers)
         return response
 
-    def get_tweet_detail(self,tweetId):
+    def get_tweet_detail(self, tweetId):
         response = self.__session.get(self.__tweet_detail_url.format(tweetId),headers=self.__guest_headers)
         return response
