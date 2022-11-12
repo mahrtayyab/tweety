@@ -25,7 +25,7 @@ pip install tweety-ns
   app = Twitter("elonmusk")
   
   all_tweets = app.get_tweets()
-  for tweet in tweets:
+  for tweet in all_tweets:
       print(tweet)
 ```
 
