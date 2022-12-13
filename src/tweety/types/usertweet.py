@@ -35,7 +35,7 @@ class UserTweets(dict):
             return [tweet['content']['itemContent']['tweet_results']['result']]
 
         if str(tweet['entryId']).split("-")[0] == "homeConversation":
-            return [item['item']['itemContent']['tweet_results']['result'] for item in tweet["content"]["items"]]
+            return [item['item']['itemContent']['tweet_results']['result']['tweet'] for item in tweet["content"]["items"]]
 
         return []
 
@@ -92,8 +92,11 @@ class UserTweets(dict):
         for __tweet in self.tweets:
             yield __tweet
 
+    def __len__(self):
+        return len(self.tweets)
+
     def __repr__(self):
-        return f"UserTweets(user_id={self.user_id}, count={len(self.tweets)})"
+        return f"UserTweets(user_id={self.user_id}, count={self.__len__()})"
 
     @deprecated
     def to_dict(self):

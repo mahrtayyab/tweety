@@ -184,14 +184,6 @@ Tweet
      - `User <#user-userlegacy-section>`_
      - Author of the Tweet
 
-   * - is_retweet
-     - boolean
-     - Is it a retweeted tweet
-
-   * - is_reply
-     - boolean
-     - Is this tweet was sent in reply to any other tweet
-
    * - id
      - str
      - Rest ID of the Tweet
@@ -207,6 +199,38 @@ Tweet
    * - likes
      - int
      - Number of the Likes on Tweet
+
+   * - is_retweet
+     - boolean
+     - Is it a retweeted tweet
+
+   * - is_quoted
+     - boolean
+     - Is it a Quoted tweet
+
+   * - quoted_tweet
+     - `Tweet <#tweet-section>`_ | None
+     - Quoted Tweet (if ``is_quoted`` is ``True``)
+
+   * - quote_counts
+     - int
+     - Number of Quotes
+
+   * - vibe
+     - str | None
+     - Vibe of the Tweet
+
+   * - is_reply
+     - boolean
+     - Is this tweet was sent in reply to any other tweet
+
+   * - reply_counts
+     - int
+     - Number of Replies
+
+   * - is_possibly_sensitive
+     - boolean
+     - Is the content of Tweet could be sensitive
 
    * - card
      - `Card <#card-section>`_
@@ -230,7 +254,7 @@ Tweet
 
    * - user_mentions
      - list [`ShortUser <#short-user-section>`_]
-     - Medias in the Tweet
+     - Users mentioned in the Tweet
 
    * - urls
      - list
@@ -464,7 +488,7 @@ ShortUser
      - str
      - Name of the User
 
-   * - screen_name
+   * - screen_name | username
      - str
      - Username of the user
 
@@ -480,7 +504,7 @@ User / UserLegacy
 
     .. code-block::
 
-       User(id=rest_id_of_user, name=name_of_the_user, screen_name=username_of_the_user, followers=number_of_followers_of_user, verified=is_user_verified)
+       User(id=rest_id_of_user, name=name_of_the_user, username=username_of_the_user, followers=number_of_followers_of_user, verified=is_user_verified)
 
 * Methods:
 ^^^^^^^^^^
@@ -520,7 +544,7 @@ User / UserLegacy
      - str
      - Name of the User
 
-   * - screen_name
+   * - screen_name | username
      - str
      - Username of the user
 
@@ -563,6 +587,14 @@ User / UserLegacy
    * - verified
      - boolean
      - Is the user verified or Not
+
+   * - possibly_sensitive
+     - boolean
+     - is the content shared by this user sensitive
+
+   * - pinned_tweets
+     - list[int]
+     - list of tweet ids pinned by this User
 
    * - profile_url
      - str

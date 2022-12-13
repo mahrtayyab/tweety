@@ -16,7 +16,7 @@ A minimal Tweety script to get Tweets from `elonmusk` looks something like this:
     app = Twitter("elonmusk")
 
     all_tweets = app.get_tweets()
-    for tweet in tweets:
+    for tweet in all_tweets:
         print(tweet)
 
 So what did that code do?

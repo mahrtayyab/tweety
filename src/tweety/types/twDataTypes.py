@@ -1,4 +1,6 @@
 import sys
+from typing import Type
+
 from dateutil import parser
 import openpyxl
 import dateutil
@@ -118,7 +120,12 @@ class Excel:
 
         if not self.filename:
             self.filename = f"tweets-{self.user.screen_name}.xlsx"
-        self.workbook.remove("sheet")
+
+        try:
+            self.workbook.remove("sheet")
+        except ValueError:
+            pass
+
         self.workbook.save(self.filename)
 
 
@@ -137,6 +144,7 @@ class Tweet(dict):
 
         for key, value in self.__formatted_tweet.items():
             setattr(self, key, value)
+
             self[key] = value
 
     def __repr__(self):
@@ -152,29 +160,42 @@ class Tweet(dict):
         return self.__formatted_tweet
 
     def _format_tweet(self):
-        original_tweet = self.__raw_tweet['legacy'] if self.__raw_tweet.get("legacy") else self.__raw_tweet
-        self.id = tweet_rest_id = self.__raw_tweet['rest_id']
+        original_tweet = self._get_original_tweet()
+        self.id = tweet_rest_id = self._get_id()
         tweet_author = self.__raw_tweet['core']
-        tweet_card = self.__raw_tweet.get("card")
 
-        is_retweet = True if str(original_tweet.get('full_text', "")).startswith("RT") else False
-        is_reply = True if original_tweet.get('in_reply_to_status_id') is not None or original_tweet.get(
-            'in_reply_to_user_id') is not None or original_tweet.get('in_reply_to_screen_name') is not None else False
+        created_on = dateutil.parser.parse(original_tweet.get("created_at"))
+        author = UserLegacy(tweet_author) if self.__is_legacy_user else User(tweet_author, 3)
+        is_retweet = self._is_retweet(original_tweet)
+        text = self._get_tweet_text(original_tweet, is_retweet)
+        is_quoted = self._is_quoted(original_tweet)
+        quoted_tweet = self._get_quoted_tweet(is_quoted)
+        is_reply = self._is_reply(original_tweet)
+        is_sensitive = self._is_sensitive(original_tweet)
+        reply_counts = self._get_reply_counts(original_tweet)
+        quote_counts = self._get_quote_counts(original_tweet)
+        vibe = self._get_vibe()
 
         return {
-            "created_on": dateutil.parser.parse(original_tweet.get("created_at")),
-            "author": UserLegacy(tweet_author) if self.__is_legacy_user else User(tweet_author, 3),
+            "created_on": created_on,
+            "author": author,
+            "is_quoted": is_quoted,
+            "quoted_tweet": quoted_tweet,
+            "quote_counts": quote_counts,
             "is_retweet": is_retweet,
             "is_reply": is_reply,
+            "vibe": vibe,
+            "reply_counts": reply_counts,
+            "is_possibly_sensitive": is_sensitive,
             "id": tweet_rest_id,
-            "tweet_body": self._get_tweet_text(original_tweet, is_retweet),
-            "text": self._get_tweet_text(original_tweet, is_retweet),
-            "language": original_tweet['lang'] if original_tweet.get('lang') else "",
-            "likes": original_tweet['favorite_count'] if original_tweet.get("favorite_count") else 0,
-            "card": Card(tweet_card) if tweet_card else None,
-            "place": Place(original_tweet['place']) if original_tweet.get('place') else None,
-            "retweet_counts": original_tweet['retweet_count'] if original_tweet.get('retweet_count') else 0,
-            "source": str(original_tweet['source']).split(">")[1].split("<")[0] if original_tweet.get('source') else "",
+            "tweet_body": text,
+            "text": text,
+            "language": self._get_language(original_tweet),
+            "likes": self._get_likes(original_tweet),
+            "card": self._get_card(),
+            "place": self._get_place(original_tweet),
+            "retweet_counts": self._get_retweet_counts(original_tweet),
+            "source": self._get_source(original_tweet),
             "media": self._get_tweet_media(original_tweet),
             "user_mentions": self._get_tweet_mentions(original_tweet),
             "urls": self._get_tweet_urls(original_tweet),
@@ -185,11 +206,27 @@ class Tweet(dict):
             "comments": []
         }
 
+    def _get_id(self):
+        if self.__raw_tweet.get("rest_id"):
+            return self.__raw_tweet['rest_id']
+
+        if self.__raw_tweet.get("tweet"):
+            return self.__raw_tweet['tweet']['rest_id']
+
+    def _get_original_tweet(self):
+        if self.__raw_tweet.get("tweet"):
+            self.__raw_tweet = self.__raw_tweet['tweet']
+
+        if self.__raw_tweet.get("legacy"):
+            return self.__raw_tweet['legacy']
+
+        return self.__raw_tweet
+
     def _get_threads(self):
         if not self.__raw_response:
             self.__raw_response = self.http.get_tweet_detail(self.id)  # noqa
 
-        for entry in self.__raw_response.json()['data']['threaded_conversation_with_injections']['instructions'][0]['entries']:
+        for entry in self.__raw_response.json()['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
             if str(entry['entryId']).split("-")[0] == "conversationthread":
                 for item in entry['content']['items']:
                     try:
@@ -199,6 +236,95 @@ class Tweet(dict):
                             Tweet(None, tweet, self.http))
                     except KeyError as e:
                         pass
+
+    def _get_quoted_tweet(self, is_quoted):
+        if is_quoted:
+            raw_response = self.__raw_response
+            raw_tweet = None
+            if self.__raw_tweet.get("quoted_status_result"):
+                raw_tweet = self.__raw_tweet['quoted_status_result']['result']
+
+            if not raw_tweet and self.__raw_tweet.get("legacy"):
+                raw_tweet = self.__raw_tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
+
+            return Tweet(raw_response, raw_tweet, self.http)
+
+        return None
+
+    def _get_card(self):
+        if self.__raw_tweet.get("card"):
+            return Card(self.__raw_tweet['card'])
+
+        return None
+
+    def _get_vibe(self):
+        if self.__raw_tweet.get("vibe"):
+            vibeImage = self.__raw_tweet['vibe']['imgDescription']
+            vibeText = self.__raw_tweet['vibe']['text']
+            return f"{vibeImage} {vibeText}"
+
+        return ""
+
+    @staticmethod
+    def _is_sensitive(original_tweet):
+        return original_tweet.get("possibly_sensitive", False)
+
+    @staticmethod
+    def _get_reply_counts(original_tweet):
+        return original_tweet.get("reply_count", 0)
+
+    @staticmethod
+    def _get_quote_counts(original_tweet):
+        return original_tweet.get("quote_count", 0)
+
+    @staticmethod
+    def _is_retweet(original_tweet):
+        if original_tweet.get("retweeted"):
+            return True
+
+        if str(original_tweet.get('full_text', "")).startswith("RT"):
+            return True
+
+        return False
+
+    @staticmethod
+    def _is_reply(original_tweet):
+        tweet_keys = list(original_tweet.keys())
+        required_keys = ["in_reply_to_status_id", "in_reply_to_user_id", "in_reply_to_screen_name"]
+        return any(x in tweet_keys for x in required_keys)
+
+    @staticmethod
+    def _is_quoted(original_tweet):
+        if original_tweet.get("is_quote_status"):
+            return True
+
+        return False
+
+    @staticmethod
+    def _get_language(original_tweet):
+        return original_tweet.get('lang', "")
+
+    @staticmethod
+    def _get_likes(original_tweet):
+        return original_tweet.get("favorite_count", 0)
+
+    @staticmethod
+    def _get_place(original_tweet):
+        if original_tweet.get('place'):
+            return Place(original_tweet['place'])
+
+        return None
+
+    @staticmethod
+    def _get_retweet_counts(original_tweet):
+        return original_tweet.get('retweet_count', 0)
+
+    @staticmethod
+    def _get_source(original_tweet):
+        if original_tweet.get('source'):
+            return str(original_tweet['source']).split(">")[1].split("<")[0]
+
+        return ""
 
     @staticmethod
     def _get_tweet_text(original_tweet, is_retweet):
@@ -385,7 +511,7 @@ class ShortUser(dict):
         self.__dictionary = user_dict
         self.id = self.__dictionary.get("id_str")
         self.name = self.__dictionary.get("name")
-        self.screen_name = self.__dictionary.get("screen_name")
+        self.screen_name = self.username = self.__dictionary.get("screen_name")
 
         for k, v in vars(self).items():
             if not k.startswith("_"):
@@ -409,81 +535,34 @@ class User(dict):
             self.__dictionary = user_dict['user_results']['result']
 
         self.id = self.__dictionary.get("id")
-
-        self.rest_id = self.__dictionary.get("rest_id") if self.__dictionary.get("rest_id") else self.__dictionary.get(
-            "id_str")
-
-        self.created_at = parser.parse(self.__dictionary.get("created_at")) if type_ == 2 else parser.parse(
-            self.__dictionary.get("legacy").get("created_at"))
-
-        self.default_profile = self.__dictionary.get("default_profile") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("default_profile")
-
-        self.default_profile_image = self.__dictionary.get(
-            "default_profile_image") if type_ == 2 else self.__dictionary.get("legacy").get("default_profile_image")
-
-        self.description = self.__dictionary.get("description") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "description")
-
-        self.entities = self.__dictionary.get("description") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "entities")
-
-        self.fast_followers_count = self.__dictionary.get(
-            "fast_followers_count") if type_ == 2 else self.__dictionary.get("legacy").get("fast_followers_count")
-
-        self.favourites_count = self.__dictionary.get("favourites_count") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("favourites_count")
-
-        self.followers_count = self.__dictionary.get("followers_count") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("followers_count")
-
-        self.friends_count = self.__dictionary.get("friends_count") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("friends_count")
-
-        self.has_custom_timelines = self.__dictionary.get(
-            "has_custom_timelines") if type_ == 2 else self.__dictionary.get("legacy").get("has_custom_timelines")
-
-        self.is_translator = self.__dictionary.get("is_translator") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("is_translator")
-
-        self.listed_count = self.__dictionary.get("listed_count") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("listed_count")
-
-        self.location = self.__dictionary.get("location") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "location")
-
-        self.media_count = self.__dictionary.get("media_count") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "media_count")
-
-        self.name = self.__dictionary.get("name") if type_ == 2 else self.__dictionary.get("legacy").get("name")
-
-        self.normal_followers_count = self.__dictionary.get(
-            "normal_followers_count") if type_ == 2 else self.__dictionary.get("legacy").get("normal_followers_count")
-
-        self.profile_banner_url = self.__dictionary.get("profile_banner_url") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("profile_banner_url")
-
-        self.profile_image_url_https = self.__dictionary.get(
-            "profile_image_url_https") if type_ == 2 else self.__dictionary.get("legacy").get("profile_image_url_https")
-
-        self.profile_interstitial_type = self.__dictionary.get(
-            "profile_interstitial_type") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "profile_interstitial_type")
-
-        self.protected = self.__dictionary.get("protected") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "protected")
-
-        self.screen_name = self.__dictionary.get("screen_name") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "screen_name")
-
-        self.statuses_count = self.__dictionary.get("statuses_count") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("statuses_count")
-
-        self.translator_type = self.__dictionary.get("translator_type") if type_ == 2 else self.__dictionary.get(
-            "legacy").get("translator_type")
-
-        self.verified = self.__dictionary.get("verified") if type_ == 2 else self.__dictionary.get("legacy").get(
-            "verified")
+        self.rest_id = self._get_rest_id(self.__dictionary)
+        self.created_at = self._get_created_at(self.__dictionary)
+        self.default_profile = self._get_key(self.__dictionary, "default_profile")
+        self.default_profile_image = self._get_key(self.__dictionary, "default_profile_image")
+        self.description = self._get_key(self.__dictionary, "description")
+        self.entities = self._get_key(self.__dictionary, "entities")
+        self.fast_followers_count = self._get_key(self.__dictionary, "fast_followers_count")
+        self.favourites_count = self._get_key(self.__dictionary, "favourites_count")
+        self.followers_count = self._get_key(self.__dictionary, "followers_count")
+        self.friends_count = self._get_key(self.__dictionary, "friends_count")
+        self.has_custom_timelines = self._get_key(self.__dictionary, "has_custom_timelines")
+        self.is_translator = self._get_key(self.__dictionary, "is_translator")
+        self.listed_count = self._get_key(self.__dictionary, "listed_count")
+        self.location = self._get_key(self.__dictionary, "location")
+        self.media_count = self._get_key(self.__dictionary, "media_count")
+        self.name = self._get_key(self.__dictionary, "name")
+        self.normal_followers_count = self._get_key(self.__dictionary, "normal_followers_count")
+        self.profile_banner_url = self._get_key(self.__dictionary, "profile_banner_url")
+        self.profile_image_url_https = self._get_key(self.__dictionary, "profile_image_url_https")
+        self.profile_interstitial_type = self._get_key(self.__dictionary, "profile_interstitial_type")
+        self.protected = self._get_key(self.__dictionary, "protected")
+        self.screen_name = self.username = self._get_key(self.__dictionary, "screen_name")
+        self.statuses_count = self._get_key(self.__dictionary, "statuses_count")
+        self.translator_type = self._get_key(self.__dictionary, "translator_type")
+        self.verified = self._get_key(self.__dictionary, "verified")
+        self.verified_type = self._get_key(self.__dictionary, "verified_type")
+        self.possibly_sensitive = self._get_key(self.__dictionary, "possibly_sensitive")
+        self.pinned_tweets = self._get_key(self.__dictionary, "pinned_tweet_ids_str")
 
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
 
@@ -492,11 +571,43 @@ class User(dict):
                 self[k] = v
 
     def __repr__(self):
-        return f"User(id={self.rest_id}, name={self.name}, screen_name={self.screen_name}, followers={self.followers_count}, verified={self.verified})"
+        return f"User(id={self.rest_id}, name={self.name}, username={self.screen_name}, followers={self.followers_count}, verified={self.verified})"
 
     @deprecated
     def to_dict(self):
         return self.__dictionary
+
+    @staticmethod
+    def _get_rest_id(user):
+        if user.get("rest_id"):
+            return user['rest_id']
+
+        if user.get("id_str"):
+            return user['id_str']
+
+        return None
+
+    @staticmethod
+    def _get_created_at(user):
+        date = None
+        if user.get("legacy"):
+            date = user['legacy']['created_at']
+
+        if not date and user.get("created_at"):
+            date = user["created_at"]
+
+        return parser.parse(date) if date else None
+
+    @staticmethod
+    def _get_key(user, key):
+        keyValue = None
+        if user.get("legacy"):
+            keyValue = user['legacy'].get(key)
+
+        if not keyValue and user.get(key):
+            keyValue = user[key]
+
+        return keyValue
 
 
 class Trends:
@@ -544,6 +655,9 @@ class UserLegacy(dict):
         self.statuses_count = self.__dictionary.get("statuses_count")
         self.translator_type = self.__dictionary.get("translator_type")
         self.verified = self.__dictionary.get("verified")
+        self.verified_type = self.__dictionary.get("verified_type")
+        self.possibly_sensitive = self.__dictionary.get("possibly_sensitive")
+        self.pinned_tweets = self.__dictionary.get("pinned_tweet_ids_str")
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
 
         for k, v in vars(self).items():
@@ -607,7 +721,7 @@ class Card(dict):
                 self.duration = _['value']['string_value']
 
     def __repr__(self):
-        return f"Card(id={self.rest_id}, choices={len(self.choices) if self.choices else []}, end_time={self.end_time}, duration={len(self.duration)} minutes)"
+        return f"Card(id={self.rest_id}, choices={len(self.choices) if self.choices else []}, end_time={self.end_time}, duration={len(self.duration) if self.duration else 0} minutes)"
 
 
 class Choice(dict):
@@ -670,3 +784,5 @@ class Coordinates(dict):
 
     def __repr__(self):
         return f"Coordinates(latitude={self.latitude}, longitude={self.longitude})"
+
+

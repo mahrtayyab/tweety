@@ -41,8 +41,6 @@ class Search(dict):
             users = response.json()['globalObjects']['users']
             for tweet_id, raw_tweet in response.json()['globalObjects']['tweets'].items():
                 try:
-                    # print(users.get(raw_tweet['user_id']))
-
                     raw_tweet['rest_id'], raw_tweet['core'] = tweet_id, users.get(str(raw_tweet['user_id']))
                     self.tweets.append(Tweet(response, raw_tweet, self.http, False, True))
                 except:

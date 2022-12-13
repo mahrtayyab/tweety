@@ -188,10 +188,9 @@ class Twitter:
         r = self.request.get_tweet_detail(tweetId)
 
         try:
-            for entry in r.json()['data']['threaded_conversation_with_injections']['instructions'][0]['entries']:
+            for entry in r.json()['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
                 if str(entry['entryId']).split("-")[0] == "tweet":
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
                     return Tweet(r, raw_tweet, self.request, True)
         except KeyError:
-            raise InvalidTweetIdentifier("The Identifier provided of the tweet is either invalid or the tweet is "
-                                         "private")
+            raise InvalidTweetIdentifier("The Identifier provided of the tweet is either invalid or the tweet is private")
