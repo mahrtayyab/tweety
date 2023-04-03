@@ -1,14 +1,12 @@
 import sys
-from typing import Type
-
 from dateutil import parser
 import openpyxl
 import dateutil
 
 try:
     import wget
-except ModuleNotFoundError:
     import warnings
+except ModuleNotFoundError:
     warnings.warn(' "wget" not found in system ,you will not be able to download the medias')
 WORKBOOK_HEADERS = ['Created on', 'author', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
                     'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
@@ -30,52 +28,6 @@ def deprecated(func):
     new_func.__doc__ = func.__doc__
     new_func.__dict__.update(func.__dict__)
     return new_func
-
-
-def get_graph_ql_query(typed, user, pages=None) -> str:
-    """
-
-    :param typed: internal script query type
-    :param user: username or user_id
-    :param pages: cursor of next page
-    :return: string on graphql query object
-    """
-    if typed == 1:
-        """
-        {
-            "userId":"",
-            "count":20,
-            "cursor":""
-            "withTweetQuoteCount":true,
-            "includePromotedContent":true,
-            "withSuperFollowsUserFields":false,
-            "withUserResults":true,
-            "withBirdwatchPivots":false,
-            "withReactionsMetadata":false,
-            "withReactionsPerspective":false,
-            "withSuperFollowsTweetFields":false,
-            "withVoice":true
-        }
-        """
-        if pages:
-            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A20%2C%22cursor%22%3A%22''' + pages + '''%22%2C%22withTweetQuoteCount%22%3Atrue%2C%22includePromotedContent%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D'''
-        else:
-            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A20%2C%22withTweetQuoteCount%22%3Atrue%2C%22includePromotedContent%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Atrue%2C%22withBirdwatchPivots%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withVoice%22%3Atrue%7D'''
-    elif typed == 2:
-        if pages:
-            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A40%2C%22cursor%22%3A%22''' + pages + '''%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Afalse%2C%22__fs_interactive_text%22%3Afalse%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Afalse%7D'''
-        else:
-            data = '''%7B%22userId%22%3A%22''' + user + '''%22%2C%22count%22%3A40%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Afalse%2C%22__fs_interactive_text%22%3Afalse%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Afalse%7D'''
-    else:
-        """
-        {
-             "screen_name":f"{user}",
-             "withSafetyModeUserFields":True,
-             "withSuperFollowsUserFields":False
-         }
-        """
-        data = '''%7B%22screen_name%22%3A%22''' + user + '''%22%2C%22withSafetyModeUserFields%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Afalse%7D'''
-    return data
 
 
 def bar_progress(current, total, width=80):
@@ -130,12 +82,14 @@ class Excel:
 
 
 class Tweet(dict):
-    def __init__(self, raw_response, raw_tweet, http, get_threads=False, is_legacy_user=False):  # noqa
+    def __init__(self, raw_response, raw_tweet, http, get_threads=False, is_legacy_user=False, get_reply=False):  # noqa
         super().__init__()
         self.http = http
         self.__raw_response = raw_response
         self.__raw_tweet = raw_tweet
         self.__is_legacy_user = is_legacy_user
+        self.__replied_to = None
+        self._get_reply = get_reply
         self.__formatted_tweet = self._format_tweet()
         self.id = None
 
@@ -144,7 +98,6 @@ class Tweet(dict):
 
         for key, value in self.__formatted_tweet.items():
             setattr(self, key, value)
-
             self[key] = value
 
     def __repr__(self):
@@ -167,6 +120,7 @@ class Tweet(dict):
         created_on = dateutil.parser.parse(original_tweet.get("created_at"))
         author = UserLegacy(tweet_author) if self.__is_legacy_user else User(tweet_author, 3)
         is_retweet = self._is_retweet(original_tweet)
+        retweeted_tweet = self._get_retweeted_tweet(is_retweet,original_tweet)
         text = self._get_tweet_text(original_tweet, is_retweet)
         is_quoted = self._is_quoted(original_tweet)
         quoted_tweet = self._get_quoted_tweet(is_quoted)
@@ -174,7 +128,9 @@ class Tweet(dict):
         is_sensitive = self._is_sensitive(original_tweet)
         reply_counts = self._get_reply_counts(original_tweet)
         quote_counts = self._get_quote_counts(original_tweet)
+        replied_to = self.__replied_to = self._get_reply_to(is_reply, original_tweet, )
         vibe = self._get_vibe()
+        views = self._get_views()
 
         return {
             "created_on": created_on,
@@ -183,6 +139,7 @@ class Tweet(dict):
             "quoted_tweet": quoted_tweet,
             "quote_counts": quote_counts,
             "is_retweet": is_retweet,
+            "retweeted_tweet": retweeted_tweet,
             "is_reply": is_reply,
             "vibe": vibe,
             "reply_counts": reply_counts,
@@ -195,13 +152,14 @@ class Tweet(dict):
             "card": self._get_card(),
             "place": self._get_place(original_tweet),
             "retweet_counts": self._get_retweet_counts(original_tweet),
-            "source": self._get_source(original_tweet),
+            "source": self._get_source(self.__raw_tweet),
             "media": self._get_tweet_media(original_tweet),
             "user_mentions": self._get_tweet_mentions(original_tweet),
             "urls": self._get_tweet_urls(original_tweet),
             "hashtags": self._get_tweet_hashtags(original_tweet),
             "symbols": self._get_tweet_symbols(original_tweet),
-            "reply_to": original_tweet['in_reply_to_screen_name'] if is_reply else None,
+            "views": views,
+            "reply_to": replied_to,
             "threads": [],
             "comments": []
         }
@@ -222,6 +180,13 @@ class Tweet(dict):
 
         return self.__raw_tweet
 
+    def _get_retweeted_tweet(self, is_retweet, original_tweet):
+        if is_retweet:
+            retweet = original_tweet['retweeted_status_result']['result']
+            return Tweet(None, retweet, self.http)
+
+        return None
+
     def _get_threads(self):
         if not self.__raw_response:
             self.__raw_response = self.http.get_tweet_detail(self.id)  # noqa
@@ -232,8 +197,10 @@ class Tweet(dict):
                     try:
                         tweetType = item["item"]["itemContent"]["tweetDisplayType"]
                         tweet = item['item']['itemContent']['tweet_results']['result']
-                        self.__formatted_tweet['threads' if tweetType == "SelfThread" else 'comments'].append(
-                            Tweet(None, tweet, self.http))
+
+                        if not self.__replied_to or self.__replied_to.id != tweet['rest_id']:
+                            self.__formatted_tweet['threads' if tweetType == "SelfThread" else 'comments'].append(
+                                Tweet(None, tweet, self.http))
                     except KeyError as e:
                         pass
 
@@ -243,18 +210,21 @@ class Tweet(dict):
             raw_tweet = None
             if self.__raw_tweet.get("quoted_status_result"):
                 raw_tweet = self.__raw_tweet['quoted_status_result']['result']
-
-            if not raw_tweet and self.__raw_tweet.get("legacy"):
-                raw_tweet = self.__raw_tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
-
-            return Tweet(raw_response, raw_tweet, self.http)
+            try:
+                if not raw_tweet and self.__raw_tweet.get("legacy"):
+                    raw_tweet = self.__raw_tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
+                    return Tweet(raw_response, raw_tweet, self.http)
+            except:
+                return None
 
         return None
 
     def _get_card(self):
         if self.__raw_tweet.get("card"):
-            return Card(self.__raw_tweet['card'])
-
+            try:
+                return Card(self.__raw_tweet['card'])
+            except KeyError:
+                pass
         return None
 
     def _get_vibe(self):
@@ -264,6 +234,25 @@ class Tweet(dict):
             return f"{vibeImage} {vibeText}"
 
         return ""
+
+    def _get_views(self):
+        if self.__raw_tweet.get("views"):
+            return self.__raw_tweet['views'].get('count', 'Unavailable')
+
+        return 0
+
+    def _get_reply_to(self, is_reply, tweet):
+        if is_reply and self._get_reply:
+            tweet_id = tweet['in_reply_to_status_id_str']
+            response = self.http.get_tweet_detail(tweet_id)
+            for entry in response.json()['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
+                if str(entry['entryId']).split("-")[0] == "tweet":
+                    raw_tweet = entry['content']['itemContent']['tweet_results']['result']
+                    return Tweet(response, raw_tweet, self.http)
+
+        elif is_reply and not self._get_reply:
+            return tweet['in_reply_to_screen_name']
+        return None
 
     @staticmethod
     def _is_sensitive(original_tweet):
@@ -290,8 +279,8 @@ class Tweet(dict):
     @staticmethod
     def _is_reply(original_tweet):
         tweet_keys = list(original_tweet.keys())
-        required_keys = ["in_reply_to_status_id", "in_reply_to_user_id", "in_reply_to_screen_name"]
-        return any(x in tweet_keys for x in required_keys)
+        required_keys = ["in_reply_to_status_id_str", "in_reply_to_user_id_str", "in_reply_to_screen_name"]
+        return any(x in tweet_keys and original_tweet[x] is True for x in required_keys)
 
     @staticmethod
     def _is_quoted(original_tweet):
@@ -560,7 +549,7 @@ class User(dict):
         self.statuses_count = self._get_key(self.__dictionary, "statuses_count")
         self.translator_type = self._get_key(self.__dictionary, "translator_type")
         self.verified = self._get_key(self.__dictionary, "verified")
-        self.verified_type = self._get_key(self.__dictionary, "verified_type")
+        # self.verified_type = self._get_key(self.__dictionary, "verified_type")
         self.possibly_sensitive = self._get_key(self.__dictionary, "possibly_sensitive")
         self.pinned_tweets = self._get_key(self.__dictionary, "pinned_tweet_ids_str")
 
@@ -601,11 +590,13 @@ class User(dict):
     @staticmethod
     def _get_key(user, key):
         keyValue = None
+        print(user)
         if user.get("legacy"):
             keyValue = user['legacy'].get(key)
 
         if not keyValue and user.get(key):
             keyValue = user[key]
+        print(keyValue)
 
         return keyValue
 
@@ -630,8 +621,7 @@ class UserLegacy(dict):
         self.__dictionary = user_dict
         self.id = self.__dictionary.get("id")
         self.rest_id = self.__dictionary.get("id")
-        self.created_at = parser.parse(self.__dictionary.get("created_at")) if self.__dictionary.get(
-            "created_at") else None
+        self.created_at = parser.parse(self.__dictionary.get("created_at")) if self.__dictionary.get("created_at") else None
         self.default_profile = self.__dictionary.get("default_profile")
         self.default_profile_image = self.__dictionary.get("default_profile_image")
         self.description = self.__dictionary.get("description")
@@ -655,7 +645,7 @@ class UserLegacy(dict):
         self.statuses_count = self.__dictionary.get("statuses_count")
         self.translator_type = self.__dictionary.get("translator_type")
         self.verified = self.__dictionary.get("verified")
-        self.verified_type = self.__dictionary.get("verified_type")
+        # self.verified_type = self.__dictionary.get("verified_type")
         self.possibly_sensitive = self.__dictionary.get("possibly_sensitive")
         self.pinned_tweets = self.__dictionary.get("pinned_tweet_ids_str")
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)

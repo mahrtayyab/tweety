@@ -1,5 +1,6 @@
 import time
-from . import Tweet, Excel, get_graph_ql_query, deprecated
+import traceback
+from . import Tweet, Excel, deprecated
 
 
 class UserTweets(dict):
@@ -14,20 +15,13 @@ class UserTweets(dict):
         self._get_tweets(user_id, pages, get_replies, wait_time)
 
     @staticmethod
-    def _get_graph_query(get_replies, user_id, cursor):
-        if get_replies:
-            return str(get_graph_ql_query(2, user_id, cursor))
-        else:
-            return str(get_graph_ql_query(1, user_id, cursor))
+    def _get_entries(response):
+        instructions = response.json()['data']['user']['result']['timeline_v2']['timeline']['instructions']
+        for instruction in instructions:
+            if instruction.get("type") == "TimelineAddEntries":
+                return instruction['entries']
 
-    @staticmethod
-    def _get_tweets_index(response):
-        if response.json()['data']['user']['result']['timeline']['timeline']['instructions'][0]['type'] == "TimelineAddEntries":
-            tweets_index = 0
-        else:
-            tweets_index = 1
-
-        return tweets_index
+        return []
 
     @staticmethod
     def _get_tweet_content_key(tweet):
@@ -42,19 +36,19 @@ class UserTweets(dict):
     def get_next_page(self, user_id, get_replies):
         _tweets = []
         if self.is_next_page:
-            graph_request = self._get_graph_query(get_replies, user_id, self.cursor)
-            response = self.http.get_tweets(graph_request, replies=get_replies)
-            tweets_index = self._get_tweets_index(response)
+            response = self.http.get_tweets(user_id, replies=get_replies, cursor=self.cursor)
+            entries = self._get_entries(response)
 
-            for entry in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][tweets_index]['entries']:
+            for entry in entries:
                 tweets = self._get_tweet_content_key(entry)
                 for tweet in tweets:
                     try:
-                        _tweets.append(Tweet(None, tweet, self.http))
+                        _tweets.append(Tweet(response, tweet, self.http))
                     except:
+                        traceback.print_exc()
                         pass
 
-            self.is_next_page = self._get_cursor(response, tweets_index)
+            self.is_next_page = self._get_cursor(entries)
             for tweet in _tweets:
                 self.tweets.append(tweet)
 
@@ -62,21 +56,24 @@ class UserTweets(dict):
             self['is_next_page'] = self.is_next_page
             self['cursor'] = self.cursor
 
-            return _tweets
+            return self
 
     def _get_tweets(self, user_id, pages, get_replies, wait_time=2):
         for page in range(1, int(pages) + 1):
-            all_tweets = self.get_next_page(user_id, get_replies)
+            self.get_next_page(user_id, get_replies)
+
             if self.is_next_page and page != pages:
                 time.sleep(wait_time)
 
-    def _get_cursor(self, response, tweets_index):
-        for entry in response.json()['data']['user']['result']['timeline']['timeline']['instructions'][tweets_index]['entries']:
+    def _get_cursor(self, entries):
+        for entry in entries:
             if str(entry['entryId']).split("-")[0] == "cursor":
                 if entry['content']['cursorType'] == "Bottom":
                     newCursor = entry['content']['value']
+
                     if newCursor == self.cursor:
                         return False
+
                     self.cursor = newCursor
                     return True
 

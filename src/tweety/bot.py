@@ -4,7 +4,6 @@ from .http import Request
 from .types.usertweet import UserTweets
 from .types.search import Search
 from .types.twDataTypes import User, Trends, Tweet
-from .types import get_graph_ql_query
 
 
 def valid_profile(f):
@@ -57,13 +56,12 @@ class Twitter:
 
     def __verify_user(self):
         """
-        Private method to Verify the User
+        Protected method to Verify the User
 
         :return: User Json
         """
-        user = self.profile_url.split("/")[-1]
-        data = str(get_graph_ql_query(3, user))
-        return self.request.verify_user(data)
+        username = self.profile_url.split("/")[-1]
+        return self.request.verify_user(username)
 
     def get_user_info(self, banner_extensions: bool = False, image_extensions: bool = False):
         """
@@ -74,28 +72,27 @@ class Twitter:
 
         :return: .types.twDataTypes.User
         """
-        if self.profile_url:
-            json_ = self.__verify_user()
-
-            if json_ == 0:
-                raise UserNotFound("User {} not Found".format(self.profile_url.split("/")[-1]))
-
-            else:
-                if not banner_extensions or banner_extensions is False:
-                    try:
-                        del json_['data']['user']['result']['legacy']['profile_banner_extensions']
-                    except KeyError:
-                        pass
-
-                if not image_extensions or image_extensions is False:
-                    try:
-                        del json_['data']['user']['result']['legacy']['profile_image_extensions']
-                    except KeyError:
-                        pass
-
-                return User(json_)
-        else:
+        if not self.profile_url:
             raise ValueError("No Username Provided , Please initiate the class using a username or profile URL")
+
+        user_raw = self.__verify_user()
+
+        if not user_raw:
+            raise UserNotFound("User {} not Found".format(self.profile_url.split("/")[-1]))
+
+        if not banner_extensions or banner_extensions is False:
+            try:
+                del user_raw['data']['user']['result']['legacy']['profile_banner_extensions']
+            except KeyError:
+                pass
+
+        if not image_extensions or image_extensions is False:
+            try:
+                del user_raw['data']['user']['result']['legacy']['profile_image_extensions']
+            except KeyError:
+                pass
+
+        return User(user_raw)
 
     @property
     def user_id(self):
@@ -191,6 +188,9 @@ class Twitter:
             for entry in r.json()['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
                 if str(entry['entryId']).split("-")[0] == "tweet":
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                    return Tweet(r, raw_tweet, self.request, True)
+                    if raw_tweet['rest_id'] == str(identifier):
+                        return Tweet(r, raw_tweet, self.request, True, False, True)
+
+            raise InvalidTweetIdentifier()
         except KeyError:
-            raise InvalidTweetIdentifier("The Identifier provided of the tweet is either invalid or the tweet is private")
+            raise InvalidTweetIdentifier()

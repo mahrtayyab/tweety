@@ -15,25 +15,32 @@ class Search(dict):
         self._search(pages, wait_time)
 
     def __repr__(self):
-        return f"Search(keyword={self.keyword}, count={len(self.tweets)}, filter={self.filter})"
+        return "Search(keyword={}, count={}, filter={})".format(
+            self.keyword,
+            len(self.users) if self.filter == "users" else len(self.tweets),
+            self.filter
+        )
 
     def get_next_page(self):
         _tweets = []
         if self.is_next_page:
             response = self.http.perform_search(self.keyword, self.cursor, self.filter)
 
-            self._parse_response(response)
+            thisTweets = self._parse_response(response)
 
             self['is_next_page'] = self.is_next_page
             self['cursor'] = self.cursor
 
-            return _tweets
+            return thisTweets
 
     def _parse_response(self, response):
+        thisObjects = []
         if self.filter == "users":
             for raw_user in response.json()['globalObjects']['users'].values():
                 try:
-                    self.users.append(User(raw_user, 2))
+                    user = User(raw_user, 2)
+                    self.users.append(user)
+                    thisObjects.append(user)
                 except:
                     pass
             self['users'] = self.users
@@ -42,12 +49,16 @@ class Search(dict):
             for tweet_id, raw_tweet in response.json()['globalObjects']['tweets'].items():
                 try:
                     raw_tweet['rest_id'], raw_tweet['core'] = tweet_id, users.get(str(raw_tweet['user_id']))
-                    self.tweets.append(Tweet(response, raw_tweet, self.http, False, True))
+                    tweet = Tweet(response, raw_tweet, self.http, False, True)
+                    self.tweets.append(tweet)
+                    thisObjects.append(tweet)
                 except:
                     pass
+
             self['tweets'] = self.tweets
 
         self.is_next_page = self._get_cursor(response)
+        return thisObjects
 
     def _get_cursor(self, response):
         if self.filter == "users":
@@ -87,7 +98,8 @@ class Search(dict):
 
     def _search(self, pages, wait_time):
         for page in range(1, int(pages) + 1):
-            self.get_next_page()
+            this_tweets = self.get_next_page()
+
             if self.is_next_page and page != pages:
                 time.sleep(wait_time)
 

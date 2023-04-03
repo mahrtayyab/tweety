@@ -490,7 +490,7 @@ class InvalidTweetIdentifier(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, message):
+    def __init__(self, message="The Identifier provided of the tweet is either invalid or the tweet is private"):
         self.message = message
         super().__init__(self.message)
 
