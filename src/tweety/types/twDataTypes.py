@@ -8,7 +8,6 @@ try:
     import wget
 except ModuleNotFoundError:
     warnings.warn(' "wget" not found in system ,you will not be able to download the medias')
-
 WORKBOOK_HEADERS = ['Created on', 'author', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
                     'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
 
@@ -129,7 +128,8 @@ class Tweet(dict):
         is_sensitive = self._is_sensitive(original_tweet)
         reply_counts = self._get_reply_counts(original_tweet)
         quote_counts = self._get_quote_counts(original_tweet)
-        replied_to = self.__replied_to = self._get_reply_to(is_reply, original_tweet, )
+        replied_to = self.__replied_to = self._get_reply_to(is_reply, original_tweet)
+        bookmark_count = self._get_bookmark_count(original_tweet)
         vibe = self._get_vibe()
         views = self._get_views()
 
@@ -161,6 +161,7 @@ class Tweet(dict):
             "symbols": self._get_tweet_symbols(original_tweet),
             "views": views,
             "reply_to": replied_to,
+            "bookmark_count": bookmark_count,
             "threads": [],
             "comments": []
         }
@@ -206,11 +207,12 @@ class Tweet(dict):
                         pass
 
     def _get_quoted_tweet(self, is_quoted):
+        raw_tweet = None
         if is_quoted:
             raw_response = self.__raw_response
-            raw_tweet = None
             if self.__raw_tweet.get("quoted_status_result"):
                 raw_tweet = self.__raw_tweet['quoted_status_result']['result']
+                return Tweet(raw_response, raw_tweet, self.http)
             try:
                 if not raw_tweet and self.__raw_tweet.get("legacy"):
                     raw_tweet = self.__raw_tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
@@ -345,6 +347,10 @@ class Tweet(dict):
             return []
 
         return [ShortUser(user) for user in original_tweet['entities']['user_mentions']]
+
+    @staticmethod
+    def _get_bookmark_count(original_tweet):
+        return original_tweet.get("bookmark_count", None)
 
     @staticmethod
     def _get_tweet_urls(original_tweet):
@@ -591,13 +597,11 @@ class User(dict):
     @staticmethod
     def _get_key(user, key):
         keyValue = None
-        print(user)
         if user.get("legacy"):
             keyValue = user['legacy'].get(key)
 
         if not keyValue and user.get(key):
             keyValue = user[key]
-        print(keyValue)
 
         return keyValue
 
@@ -775,5 +779,4 @@ class Coordinates(dict):
 
     def __repr__(self):
         return f"Coordinates(latitude={self.latitude}, longitude={self.longitude})"
-
 
