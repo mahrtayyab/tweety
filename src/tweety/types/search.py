@@ -1,4 +1,6 @@
 import time
+import traceback
+
 from . import Tweet, Excel, User, deprecated
 
 
@@ -25,7 +27,6 @@ class Search(dict):
         _tweets = []
         if self.is_next_page:
             response = self.http.perform_search(self.keyword, self.cursor, self.filter)
-
             thisTweets = self._parse_response(response)
 
             self['is_next_page'] = self.is_next_page
@@ -36,23 +37,24 @@ class Search(dict):
     def _parse_response(self, response):
         thisObjects = []
         if self.filter == "users":
-            for raw_user in response.json()['globalObjects']['users'].values():
+            for raw_user in response['globalObjects']['users'].values():
                 try:
-                    user = User(raw_user, 2)
+                    user = User(raw_user)
                     self.users.append(user)
                     thisObjects.append(user)
                 except:
                     pass
             self['users'] = self.users
         else:
-            users = response.json()['globalObjects']['users']
-            for tweet_id, raw_tweet in response.json()['globalObjects']['tweets'].items():
+            users = response['globalObjects']['users']
+            for tweet_id, raw_tweet in response['globalObjects']['tweets'].items():
                 try:
-                    raw_tweet['rest_id'], raw_tweet['core'] = tweet_id, users.get(str(raw_tweet['user_id']))
+                    raw_tweet['rest_id'], raw_tweet['author'] = tweet_id, users.get(str(raw_tweet['user_id']))
                     tweet = Tweet(response, raw_tweet, self.http, False, True)
                     self.tweets.append(tweet)
                     thisObjects.append(tweet)
                 except:
+                    traceback.print_exc()
                     pass
 
             self['tweets'] = self.tweets
@@ -62,7 +64,7 @@ class Search(dict):
 
     def _get_cursor(self, response):
         if self.filter == "users":
-            for i in response.json()['timeline']['instructions'][-1]['addEntries']['entries']:
+            for i in response['timeline']['instructions'][-1]['addEntries']['entries']:
                 if str(i['entryId']).split("-")[0] == "cursor":
                     if i['content']['operation']['cursor']['cursorType'] == "Bottom":
                         newCursor = i['content']['operation']['cursor']['value']
@@ -71,7 +73,7 @@ class Search(dict):
                         self.cursor = newCursor
                         return True
         else:
-            for i in response.json()['timeline']['instructions'][0]['addEntries']['entries']:
+            for i in response['timeline']['instructions'][0]['addEntries']['entries']:
                 try:
                     if i['content']['operation']:
                         if i['content']['operation']['cursor']['cursorType'] == "Bottom":

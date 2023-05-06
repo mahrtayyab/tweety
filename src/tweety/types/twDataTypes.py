@@ -1,3 +1,6 @@
+import base64
+import os.path
+import re
 import sys
 import warnings
 from dateutil import parser
@@ -10,6 +13,10 @@ except ModuleNotFoundError:
     warnings.warn(' "wget" not found in system ,you will not be able to download the medias')
 WORKBOOK_HEADERS = ['Created on', 'author', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
                     'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
+
+
+def decodeBase64(encoded_string):
+    return str(base64.b64decode(bytes(encoded_string, "utf-8")))[2:-1]
 
 
 def deprecated(func):
@@ -90,15 +97,14 @@ class Tweet(dict):
         self.__is_legacy_user = is_legacy_user
         self.__replied_to = None
         self._get_reply = get_reply
-        self.__formatted_tweet = self._format_tweet()
-        self.id = None
+        self._format_tweet()
 
         if get_threads:
             self._get_threads()
 
-        for key, value in self.__formatted_tweet.items():
-            setattr(self, key, value)
-            self[key] = value
+        for key, value in vars(self).items():
+            if not str(key).startswith("_"):
+                self[key] = value
 
     def __repr__(self):
         return f"Tweet(id={self.id}, author={self.author}, created_on={self.created_on}, threads={len(self.threads) if self.threads else None})"  # noqa
@@ -108,63 +114,37 @@ class Tweet(dict):
             for thread_ in self.threads:  # noqa
                 yield thread_
 
-    @deprecated
-    def to_dict(self):
-        return self.__formatted_tweet
-
     def _format_tweet(self):
         original_tweet = self._get_original_tweet()
-        self.id = tweet_rest_id = self._get_id()
-        tweet_author = self.__raw_tweet['core']
-
-        created_on = dateutil.parser.parse(original_tweet.get("created_at"))
-        author = UserLegacy(tweet_author) if self.__is_legacy_user else User(tweet_author, 3)
-        is_retweet = self._is_retweet(original_tweet)
-        retweeted_tweet = self._get_retweeted_tweet(is_retweet,original_tweet)
-        text = self._get_tweet_text(original_tweet, is_retweet)
-        is_quoted = self._is_quoted(original_tweet)
-        quoted_tweet = self._get_quoted_tweet(is_quoted)
-        is_reply = self._is_reply(original_tweet)
-        is_sensitive = self._is_sensitive(original_tweet)
-        reply_counts = self._get_reply_counts(original_tweet)
-        quote_counts = self._get_quote_counts(original_tweet)
-        replied_to = self.__replied_to = self._get_reply_to(is_reply, original_tweet)
-        bookmark_count = self._get_bookmark_count(original_tweet)
-        vibe = self._get_vibe()
-        views = self._get_views()
-
-        return {
-            "created_on": created_on,
-            "author": author,
-            "is_quoted": is_quoted,
-            "quoted_tweet": quoted_tweet,
-            "quote_counts": quote_counts,
-            "is_retweet": is_retweet,
-            "retweeted_tweet": retweeted_tweet,
-            "is_reply": is_reply,
-            "vibe": vibe,
-            "reply_counts": reply_counts,
-            "is_possibly_sensitive": is_sensitive,
-            "id": tweet_rest_id,
-            "tweet_body": text,
-            "text": text,
-            "language": self._get_language(original_tweet),
-            "likes": self._get_likes(original_tweet),
-            "card": self._get_card(),
-            "place": self._get_place(original_tweet),
-            "retweet_counts": self._get_retweet_counts(original_tweet),
-            "source": self._get_source(self.__raw_tweet),
-            "media": self._get_tweet_media(original_tweet),
-            "user_mentions": self._get_tweet_mentions(original_tweet),
-            "urls": self._get_tweet_urls(original_tweet),
-            "hashtags": self._get_tweet_hashtags(original_tweet),
-            "symbols": self._get_tweet_symbols(original_tweet),
-            "views": views,
-            "reply_to": replied_to,
-            "bookmark_count": bookmark_count,
-            "threads": [],
-            "comments": []
-        }
+        self.id = self._get_id()
+        self.created_on = dateutil.parser.parse(original_tweet["created_at"])
+        self.author = self._get_author()
+        self.is_retweet = self._is_retweet(original_tweet)
+        self.retweeted_tweet = self._get_retweeted_tweet(self.is_retweet, original_tweet)
+        self.text = self.tweet_body = self._get_tweet_text(original_tweet, self.is_retweet)
+        self.is_quoted = self._is_quoted(original_tweet)
+        self.quoted_tweet = self._get_quoted_tweet(self.is_quoted)
+        self.is_reply = self._is_reply(original_tweet)
+        self.is_sensitive = self._is_sensitive(original_tweet)
+        self.reply_counts = self._get_reply_counts(original_tweet)
+        self.quote_counts = self._get_quote_counts(original_tweet)
+        self.replied_to = self.__replied_to = self._get_reply_to(self.is_reply, original_tweet)
+        self.bookmark_count = self._get_bookmark_count(original_tweet)
+        self.vibe = self._get_vibe()
+        self.views = self._get_views()
+        self.language = self._get_language(original_tweet)
+        self.likes = self._get_likes(original_tweet)
+        self.card = self._get_card()
+        self.place = self._get_place(original_tweet)
+        self.retweet_counts = self._get_retweet_counts(original_tweet)
+        self.source = self._get_source(self.__raw_tweet)
+        self.media = self._get_tweet_media(original_tweet)
+        self.user_mentions = self._get_tweet_mentions(original_tweet)
+        self.urls = self._get_tweet_urls(original_tweet)
+        self.hashtags = self._get_tweet_hashtags(original_tweet)
+        self.symbols = self._get_tweet_symbols(original_tweet)
+        self.threads = []
+        self.comments = []
 
     def _get_id(self):
         if self.__raw_tweet.get("rest_id"):
@@ -182,8 +162,16 @@ class Tweet(dict):
 
         return self.__raw_tweet
 
+    def _get_author(self):
+        if self.__raw_tweet.get("core"):
+            return User(self.__raw_tweet['core']['user_results']['result'])
+
+        if self.__raw_tweet.get("author"):
+            return User(self.__raw_tweet['author'])
+        return None
+
     def _get_retweeted_tweet(self, is_retweet, original_tweet):
-        if is_retweet:
+        if is_retweet and original_tweet.get("retweeted_status_result"):
             retweet = original_tweet['retweeted_status_result']['result']
             return Tweet(None, retweet, self.http)
 
@@ -193,7 +181,7 @@ class Tweet(dict):
         if not self.__raw_response:
             self.__raw_response = self.http.get_tweet_detail(self.id)  # noqa
 
-        for entry in self.__raw_response.json()['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
+        for entry in self.__raw_response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
             if str(entry['entryId']).split("-")[0] == "conversationthread":
                 for item in entry['content']['items']:
                     try:
@@ -201,8 +189,10 @@ class Tweet(dict):
                         tweet = item['item']['itemContent']['tweet_results']['result']
 
                         if not self.__replied_to or self.__replied_to.id != tweet['rest_id']:
-                            self.__formatted_tweet['threads' if tweetType == "SelfThread" else 'comments'].append(
-                                Tweet(None, tweet, self.http))
+                            if tweetType == "SelfThread":
+                                self.threads.append(Tweet(None, tweet, self.http))
+                            else:
+                                self.comments.append(Tweet(None, tweet, self.http))
                     except KeyError as e:
                         pass
 
@@ -210,10 +200,11 @@ class Tweet(dict):
         raw_tweet = None
         if is_quoted:
             raw_response = self.__raw_response
-            if self.__raw_tweet.get("quoted_status_result"):
-                raw_tweet = self.__raw_tweet['quoted_status_result']['result']
-                return Tweet(raw_response, raw_tweet, self.http)
             try:
+                if self.__raw_tweet.get("quoted_status_result"):
+                    raw_tweet = self.__raw_tweet['quoted_status_result']['result']
+                    return Tweet(raw_response, raw_tweet, self.http)
+
                 if not raw_tweet and self.__raw_tweet.get("legacy"):
                     raw_tweet = self.__raw_tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
                     return Tweet(raw_response, raw_tweet, self.http)
@@ -320,7 +311,11 @@ class Tweet(dict):
 
     @staticmethod
     def _get_tweet_text(original_tweet, is_retweet):
-        if is_retweet:
+        if is_retweet and original_tweet.get("retweeted_status_result"):
+
+            if not original_tweet['retweeted_status_result']['result'].get("legacy"):
+                return original_tweet['retweeted_status_result']['result']['tweet']['legacy']['full_text']
+
             return original_tweet['retweeted_status_result']['result']['legacy']['full_text']
 
         if original_tweet.get('full_text'):
@@ -328,15 +323,14 @@ class Tweet(dict):
 
         return ""
 
-    @staticmethod
-    def _get_tweet_media(original_tweet):
+    def _get_tweet_media(self, original_tweet):
         if not original_tweet.get("extended_entities"):
             return []
 
         if not original_tweet['extended_entities'].get("media"):
             return []
 
-        return [Media(media) for media in original_tweet['extended_entities']['media']]
+        return [Media(media, self.http) for media in original_tweet['extended_entities']['media']]
 
     @staticmethod
     def _get_tweet_mentions(original_tweet):
@@ -384,22 +378,23 @@ class Tweet(dict):
 
 
 class Media(dict):
-    def __init__(self, media_dict):
+    def __init__(self, media_dict, http):
         super().__init__()
         self.__dictionary = media_dict
+        self.__http = http
         self.display_url = self.__dictionary.get("display_url")
         self.expanded_url = self.__dictionary.get("expanded_url")
         self.id = self.__dictionary.get("id_str")
         self.indices = self.__dictionary.get("indices")
-        self.media_url_https = self.__dictionary.get("media_url_https")
+        self.media_url_https = self.direct_url = self.__dictionary.get("media_url_https")
         self.type = self.__dictionary.get("type")
         self.url = self.__dictionary.get("url")
         self.features = self.__dictionary.get("features")
         self.media_key = self.__dictionary.get("media_key")
         self.mediaStats = self.__dictionary.get("mediaStats")
-        self.sizes = self.__dictionary.get("sizes")
+        self.sizes = [MediaSize(k, v) for k, v in self.__dictionary.get("sizes").items() if self.__dictionary.get('sizes')]
         self.original_info = self.__dictionary.get("original_info")
-        self.file_format = self.media_url_https.split(".")[-1] if self.type == "photo" else None
+        self.file_format = self._get_file_format()
         self.streams = []
         if self.type == "video" or self.type == "animated_gif":
             self.__parse_video_streams()
@@ -408,52 +403,37 @@ class Media(dict):
             if not k.startswith("_"):
                 self[k] = v
 
+    def _get_file_format(self):
+        filename = os.path.basename(self.media_url_https).split("?")[0]
+        return filename.split(".")[-1] if self.type == "photo" else "mp4"
+
     def __parse_video_streams(self):
         videoDict = self.__dictionary.get("video_info")
-        if videoDict:
-            for i in videoDict.get("variants"):
-                if not i.get("content_type").split("/")[-1] == "x-mpegURL":
-                    self.streams.append(
-                        Stream(i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio"))
-                    )
+        if not videoDict:
+            return
+
+        for i in videoDict.get("variants"):
+            if not i.get("content_type").split("/")[-1] == "x-mpegURL":
+                self.streams.append(Stream(i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio"), self.__http))
 
     def __repr__(self):
         return f"Media(id={self.id}, type={self.type})"
 
-    def download(self, filename_, show_progress=True):
-        if show_progress:
-            show_progress = bar_progress
-        else:
-            show_progress = None
-
+    def download(self, filename=None, show_progress=True):
         if self.type == "photo":
-            filename = f"{filename_}.{self.file_format}"
-            wget.download(url=self.media_url_https, out=filename, bar=show_progress)
-            if show_progress:
-                sys.stdout.write("\n")
-            return filename
-
+            return self.__http.download_media(self.direct_url, filename, show_progress)
         elif self.type == "video":
-            _res = [int(stream.res) for stream in self.streams if stream.res]
+            _res = [eval(stream.res) for stream in self.streams if stream.res]
             max_res = max(_res)
             for stream in self.streams:
-                if int(stream.res) == max_res:
+                if eval(stream.res) == max_res:
                     file_format = stream.content_type.split("/")[-1]
                     if not file_format == "x-mpegURL":
-                        filename = f"{filename_}.{file_format}"
-                        wget.download(url=stream.url, out=filename, bar=show_progress)
-                        if show_progress:
-                            sys.stdout.write("\n")
-                        return filename
-
+                        return self.__http.download_media(stream.url, filename, show_progress)
         elif self.type == "animated_gif":
             file_format = self.streams[0].content_type.split("/")[-1]
             if not file_format == "x-mpegURL":
-                filename = f"{filename_}.{file_format}"
-                wget.download(url=self.streams[0].url, out=filename, bar=show_progress)
-                if show_progress:
-                    sys.stdout.write("\n")
-                return filename
+                return self.__http.download_media(self.streams[0].url, filename, show_progress)
         return None
 
     @deprecated
@@ -462,43 +442,49 @@ class Media(dict):
 
 
 class Stream(dict):
-    def __init__(self, videoDict, length, ratio):
+    def __init__(self, videoDict, length, ratio, http):
         super().__init__()
         self.__dictionary = videoDict
+        self.__http = http
         self.bitrate = self.__dictionary.get("bitrate")
         self.content_type = self.__dictionary.get("content_type")
-        self.url = self.__dictionary.get("url")
+        self.url = self.direct_url = self.__dictionary.get("url")
         self.length = length
         self.aspect_ratio = ratio
-        try:
-            self.res = int(self.url.split("/")[7].split("x")[0]) * int(self.url.split("/")[7].split("x")[1])
-        except (ValueError, IndexError):
-            try:
-                self.res = int(self.url.split("/")[6].split("x")[0]) * int(self.url.split("/")[6].split("x")[1])
-            except (ValueError, IndexError):
-                self.res = None
+        self.res = self._get_resolution()
 
         for k, v in vars(self).items():
             if not k.startswith("_"):
                 self[k] = v
 
+    def _get_resolution(self):
+        result = re.findall("/(\d+)x(\d+)/", self.url)
+        if result:
+            result = result[0]
+            return f"{result[0]}*{result[1]}"
+
+        return None
+
     def __repr__(self):
         return f"Stream(content_type={self.content_type}, length={self.length}, bitrate={self.bitrate}, res={self.res})"
 
     def download(self, filename_=None, show_progress=False):
-        if show_progress:
-            show_progress = bar_progress
-        else:
-            show_progress = None
-        file_format = self.content_type.split("/")[-1]
-        if filename_:
-            filename = f"{filename_}.{file_format}"
-        else:
-            filename = None
-        wget.download(url=self.url, out=filename, bar=show_progress)
-        if show_progress:
-            sys.stdout.write("\n")
-        return filename
+        return self.__http.download_media(self.url, filename_, show_progress)
+
+
+class MediaSize(dict):
+    def __init__(self, name, data):
+        super().__init__()
+        self._json = data
+        self.name = self['name'] = name
+        self.width = self['width'] = self._json['w']
+        self.height = self['height'] = self._json['h']
+        self.resize = self['resize'] = self._json['resize']
+
+    def __repr__(self):
+        return "MediaSize(name={}, width={}, height={}, resize={})".format(
+            self.name, self.width, self.height, self.resize
+        )
 
 
 class ShortUser(dict):
@@ -520,92 +506,6 @@ class ShortUser(dict):
         return self.__dictionary
 
 
-class User(dict):
-    def __init__(self, user_dict, type_=1):
-        super().__init__()
-        if type_ == 1:
-            self.__dictionary = user_dict['data']['user']['result']
-        elif type_ == 2:
-            self.__dictionary = user_dict
-        else:
-            self.__dictionary = user_dict['user_results']['result']
-
-        self.id = self.__dictionary.get("id")
-        self.rest_id = self._get_rest_id(self.__dictionary)
-        self.created_at = self._get_created_at(self.__dictionary)
-        self.default_profile = self._get_key(self.__dictionary, "default_profile")
-        self.default_profile_image = self._get_key(self.__dictionary, "default_profile_image")
-        self.description = self._get_key(self.__dictionary, "description")
-        self.entities = self._get_key(self.__dictionary, "entities")
-        self.fast_followers_count = self._get_key(self.__dictionary, "fast_followers_count")
-        self.favourites_count = self._get_key(self.__dictionary, "favourites_count")
-        self.followers_count = self._get_key(self.__dictionary, "followers_count")
-        self.friends_count = self._get_key(self.__dictionary, "friends_count")
-        self.has_custom_timelines = self._get_key(self.__dictionary, "has_custom_timelines")
-        self.is_translator = self._get_key(self.__dictionary, "is_translator")
-        self.listed_count = self._get_key(self.__dictionary, "listed_count")
-        self.location = self._get_key(self.__dictionary, "location")
-        self.media_count = self._get_key(self.__dictionary, "media_count")
-        self.name = self._get_key(self.__dictionary, "name")
-        self.normal_followers_count = self._get_key(self.__dictionary, "normal_followers_count")
-        self.profile_banner_url = self._get_key(self.__dictionary, "profile_banner_url")
-        self.profile_image_url_https = self._get_key(self.__dictionary, "profile_image_url_https")
-        self.profile_interstitial_type = self._get_key(self.__dictionary, "profile_interstitial_type")
-        self.protected = self._get_key(self.__dictionary, "protected")
-        self.screen_name = self.username = self._get_key(self.__dictionary, "screen_name")
-        self.statuses_count = self._get_key(self.__dictionary, "statuses_count")
-        self.translator_type = self._get_key(self.__dictionary, "translator_type")
-        self.verified = self._get_key(self.__dictionary, "verified")
-        # self.verified_type = self._get_key(self.__dictionary, "verified_type")
-        self.possibly_sensitive = self._get_key(self.__dictionary, "possibly_sensitive")
-        self.pinned_tweets = self._get_key(self.__dictionary, "pinned_tweet_ids_str")
-
-        self.profile_url = "https://twitter.com/{}".format(self.screen_name)
-
-        for k, v in vars(self).items():
-            if not k.startswith("_"):
-                self[k] = v
-
-    def __repr__(self):
-        return f"User(id={self.rest_id}, name={self.name}, username={self.screen_name}, followers={self.followers_count}, verified={self.verified})"
-
-    @deprecated
-    def to_dict(self):
-        return self.__dictionary
-
-    @staticmethod
-    def _get_rest_id(user):
-        if user.get("rest_id"):
-            return user['rest_id']
-
-        if user.get("id_str"):
-            return user['id_str']
-
-        return None
-
-    @staticmethod
-    def _get_created_at(user):
-        date = None
-        if user.get("legacy"):
-            date = user['legacy']['created_at']
-
-        if not date and user.get("created_at"):
-            date = user["created_at"]
-
-        return parser.parse(date) if date else None
-
-    @staticmethod
-    def _get_key(user, key):
-        keyValue = None
-        if user.get("legacy"):
-            keyValue = user['legacy'].get(key)
-
-        if not keyValue and user.get(key):
-            keyValue = user[key]
-
-        return keyValue
-
-
 class Trends:
     def __init__(self, trends_dict):
         self.__dictionary = trends_dict
@@ -615,52 +515,6 @@ class Trends:
 
     def __repr__(self):
         return f"Trends(name={self.name})"
-
-    def to_dict(self):
-        return self.__dictionary
-
-
-class UserLegacy(dict):
-    def __init__(self, user_dict):
-        super().__init__()
-        self.__dictionary = user_dict
-        self.id = self.__dictionary.get("id")
-        self.rest_id = self.__dictionary.get("id")
-        self.created_at = parser.parse(self.__dictionary.get("created_at")) if self.__dictionary.get("created_at") else None
-        self.default_profile = self.__dictionary.get("default_profile")
-        self.default_profile_image = self.__dictionary.get("default_profile_image")
-        self.description = self.__dictionary.get("description")
-        self.entities = self.__dictionary.get("entities")
-        self.fast_followers_count = self.__dictionary.get("fast_followers_count")
-        self.favourites_count = self.__dictionary.get("favourites_count")
-        self.followers_count = self.__dictionary.get("followers_count")
-        self.friends_count = self.__dictionary.get("friends_count")
-        self.has_custom_timelines = self.__dictionary.get("has_custom_timelines")
-        self.is_translator = self.__dictionary.get("is_translator")
-        self.listed_count = self.__dictionary.get("listed_count")
-        self.location = self.__dictionary.get("location")
-        self.media_count = self.__dictionary.get("media_count")
-        self.name = self.__dictionary.get("name")
-        self.normal_followers_count = self.__dictionary.get("normal_followers_count")
-        self.profile_banner_url = self.__dictionary.get("profile_banner_url")
-        self.profile_image_url_https = self.__dictionary.get("profile_image_url_https")
-        self.profile_interstitial_type = self.__dictionary.get("profile_interstitial_type")
-        self.protected = self.__dictionary.get("protected")
-        self.screen_name = self.__dictionary.get("screen_name")
-        self.statuses_count = self.__dictionary.get("statuses_count")
-        self.translator_type = self.__dictionary.get("translator_type")
-        self.verified = self.__dictionary.get("verified")
-        # self.verified_type = self.__dictionary.get("verified_type")
-        self.possibly_sensitive = self.__dictionary.get("possibly_sensitive")
-        self.pinned_tweets = self.__dictionary.get("pinned_tweet_ids_str")
-        self.profile_url = "https://twitter.com/{}".format(self.screen_name)
-
-        for k, v in vars(self).items():
-            if not k.startswith("_"):
-                self[k] = v
-
-    def __repr__(self):
-        return f"User(id={self.rest_id}, name={self.name}, followers={self.followers_count} , verified={self.verified})"
 
     def to_dict(self):
         return self.__dictionary
@@ -677,7 +531,7 @@ class Card(dict):
         self.end_time = None
         self.last_updated_time = None
         self.duration = None
-        self.user_ref = [User(user, 2) for user in self._dict['legacy']["user_refs"]] if self._dict['legacy'].get("user_refs") else []
+        self.user_ref = [User(user) for user in self._dict['legacy']["user_refs"]] if self._dict['legacy'].get("user_refs") else []
         self.__parse_choices()
 
         for k, v in vars(self).items():
@@ -755,6 +609,9 @@ class Place(dict):
 
     def parse_coordinates(self):
         results = []
+        if not self.__dict.get("bounding_box"):
+            return results
+
         for i in self.__dict['bounding_box'].get("coordinates"):
             for p in i:
                 coordinates = [p[1], p[0]]
@@ -780,3 +637,81 @@ class Coordinates(dict):
     def __repr__(self):
         return f"Coordinates(latitude={self.latitude}, longitude={self.longitude})"
 
+
+class User(dict):
+    def __init__(self, user_data):
+        super().__init__()
+        self._json = user_data
+        self.id = self.rest_id = self.get_id()
+        self.created_at = self.get_created_at()
+        self.description = self._get_key("description")
+        self.fast_followers_count = self._get_key("fast_followers_count")
+        self.favourites_count = self._get_key("favourites_count")
+        self.followers_count = self._get_key("followers_count")
+        self.friends_count = self._get_key("friends_count")
+        self.has_custom_timelines = self._get_key("has_custom_timelines")
+        self.is_translator = self._get_key("is_translator")
+        self.listed_count = self._get_key("listed_count")
+        self.location = self._get_key("location")
+        self.media_count = self._get_key("media_count")
+        self.name = self._get_key("name")
+        self.normal_followers_count = self._get_key("normal_followers_count")
+        self.profile_banner_url = self._get_key("profile_banner_url")
+        self.profile_image_url_https = self._get_key("profile_image_url_https")
+        self.profile_interstitial_type = self._get_key("profile_interstitial_type")
+        self.protected = self._get_key("protected")
+        self.screen_name = self.username = self._get_key("screen_name")
+        self.statuses_count = self._get_key("statuses_count")
+        self.translator_type = self._get_key("translator_type")
+        self.verified = self._get_verified()
+        # self.verified_type = self._get_key("verified_type")
+        self.possibly_sensitive = self._get_key("possibly_sensitive")
+        self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
+        self.profile_url = "https://twitter.com/{}".format(self.screen_name)
+
+    def __repr__(self):
+        return "User(id={}, username={}, name={}, verified={})".format(
+            self.id, self.username, self.name, self.verified
+        )
+
+    def _get_verified(self):
+        verified = self._get_key("verified", False)
+        if verified is False:
+            verified = self._get_key("is_blue_verified", False)
+
+        if verified is False:
+            verified = self._get_key("ext_is_blue_verified", False)
+
+        return False if verified in (None, False) else True
+
+    def get_id(self):
+        raw_id = self._json.get("id")
+        if not str(raw_id).isdigit():
+            raw_id = decodeBase64(raw_id).split(":")[-1]
+
+        return int(raw_id)
+
+    def get_created_at(self):
+        date = None
+        if self._json.get("legacy"):
+            date = self._json['legacy']['created_at']
+
+        if not date and self._json.get("created_at"):
+            date = self._json["created_at"]
+
+        return parser.parse(date) if date else None
+
+    def _get_key(self, key, default=None):
+        user = self._json
+        keyValue = default
+        if user.get("legacy"):
+            keyValue = user['legacy'].get(key)
+
+        if not keyValue and user.get(key):
+            keyValue = user[key]
+
+        if str(keyValue).isdigit():
+            keyValue = int(keyValue)
+
+        return keyValue
+        

@@ -1,5 +1,6 @@
 import time
 import traceback
+from ..exceptions_ import UserProtected, UserNotFound
 from . import Tweet, Excel, deprecated
 
 
@@ -12,11 +13,11 @@ class UserTweets(dict):
         self.is_next_page = True
         self.http = http
         self.user_id = user_id
-        self._get_tweets(user_id, pages, get_replies, wait_time)
+        self._get_tweets(pages, wait_time)
 
     @staticmethod
     def _get_entries(response):
-        instructions = response.json()['data']['user']['result']['timeline_v2']['timeline']['instructions']
+        instructions = response['data']['user']['result']['timeline_v2']['timeline']['instructions']
         for instruction in instructions:
             if instruction.get("type") == "TimelineAddEntries":
                 return instruction['entries']
@@ -29,26 +30,35 @@ class UserTweets(dict):
             return [tweet['content']['itemContent']['tweet_results']['result']]
 
         if str(tweet['entryId']).split("-")[0] == "homeConversation":
-            return [item['item']['itemContent']['tweet_results']['result']['tweet'] for item in tweet["content"]["items"]]
+            return [item['item']['itemContent']['tweet_results']['result'] for item in tweet["content"]["items"]]
 
         return []
 
-    def get_next_page(self, user_id, get_replies):
+    def get_next_page(self):
         _tweets = []
         if self.is_next_page:
-            response = self.http.get_tweets(user_id, replies=get_replies, cursor=self.cursor)
+            response = self.http.get_tweets(self.user_id, replies=self.get_replies, cursor=self.cursor)
+
+            if not response['data']['user'].get("result"):
+                raise UserNotFound(error_code=50, error_name="GenericUserNotFound", response=response)
+
+            if response['data']['user']['result']['__typename'] == "UserUnavailable":
+                raise UserProtected(403, "UserUnavailable", None)
+
             entries = self._get_entries(response)
 
             for entry in entries:
                 tweets = self._get_tweet_content_key(entry)
                 for tweet in tweets:
                     try:
-                        _tweets.append(Tweet(response, tweet, self.http))
+                        parsed = Tweet(response, tweet, self.http)
+                        _tweets.append(parsed)
+                        # yield parsed
                     except:
-                        traceback.print_exc()
                         pass
 
             self.is_next_page = self._get_cursor(entries)
+
             for tweet in _tweets:
                 self.tweets.append(tweet)
 
@@ -58,9 +68,9 @@ class UserTweets(dict):
 
             return self
 
-    def _get_tweets(self, user_id, pages, get_replies, wait_time=2):
+    def _get_tweets(self, pages, wait_time=2):
         for page in range(1, int(pages) + 1):
-            self.get_next_page(user_id, get_replies)
+            self.get_next_page()
 
             if self.is_next_page and page != pages:
                 time.sleep(wait_time)

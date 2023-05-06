@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='tweety-ns',
     packages=['tweety', 'tweety.types'],
-    version='0.6.0',
+    version='0.7.0',
     license='MIT',
     description='An easy Twitter Scraper',
     author='Tayyab Kharl',
@@ -14,7 +14,8 @@ setup(
         'beautifulsoup4',
         'openpyxl',
         'httpx',
-        'dateutils'
+        'dateutils',
+        'tqdm'
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

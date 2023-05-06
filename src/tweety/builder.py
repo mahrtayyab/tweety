@@ -8,11 +8,10 @@ REQUEST_PLATFORMS = ['Linux', 'Windows']
 
 
 def return_with_headers(func):
-
     @wraps(func)
     def wrapper(self, *arg, **kw):
-        url = func(self, *arg, **kw)
-        return dict(headers=self._get_headers(), url=url)
+        method, url = func(self, *arg, **kw)
+        return dict(method=method, headers=self._get_headers(), url=url)
 
     return wrapper
 
@@ -26,9 +25,10 @@ class UrlBuilder:
     URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
     URL_SEARCH = "https://twitter.com/i/api/2/search/adaptive.json"
     URL_TWEET_DETAILS = "https://twitter.com/i/api/graphql/1oIoGPTOJN2mSjbbXlQifA/TweetDetail"
+    URL_AUSER_SETTINGS = "https://api.twitter.com/1.1/account/settings.json" # noqa
 
-    def __init__(self, profile_url):
-        self.username = profile_url.split("/")[-1] if profile_url else None
+    def __init__(self, cookies=None):
+        self.cookies = cookies
         self.user_id = None
         self.guest_token = None
 
@@ -52,16 +52,20 @@ class UrlBuilder:
             'x-twitter-client-language': 'en',
         }
 
-        if self.guest_token:
+        if self.guest_token or self.cookies:
             headers['content-type'] = 'application/json'
-            headers['referer'] = f'https://twitter.com/{self.username}'
+            # headers['referer'] = f'https://twitter.com/{self.username}'
             headers['sec-fetch-site'] = 'same-origin'
-            headers['x-guest-token'] = self.guest_token
+
+            if self.guest_token:
+                headers['x-guest-token'] = self.guest_token
 
         return headers
 
-    @staticmethod
-    def _get_csrf():
+    def _get_csrf(self):
+        if self.cookies and self.cookies.get("ct0"):
+            return self.cookies.get("ct0")
+
         return ''.join(random.choices(string.ascii_letters + string.digits, k=32))
 
     @staticmethod
@@ -70,11 +74,11 @@ class UrlBuilder:
 
     @return_with_headers
     def get_guest_token(self):
-        return self.URL_GUEST_TOKEN
+        return "POST", self.URL_GUEST_TOKEN
 
     @return_with_headers
     def init_api(self):
-        return self.URL_API_INIT
+        return "POST", self.URL_API_INIT
 
     @return_with_headers
     def user_by_screen_name(self, username):
@@ -82,7 +86,7 @@ class UrlBuilder:
             'variables': f'{{"screen_name":"{username}","withSafetyModeUserFields":true,"withSuperFollowsUserFields":true}}',
             'features': '{"responsive_web_twitter_blue_verified_badge_is_enabled":true,"responsive_web_graphql_exclude_directive_enabled":false,"verified_phone_label_enabled":false,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true}',
         }
-        return self._build(self.URL_USER_BY_SCREEN_NAME, urlencode(params))
+        return "GET", self._build(self.URL_USER_BY_SCREEN_NAME, urlencode(params))
 
     @return_with_headers
     def user_tweets(self, user_id, replies=False, cursor=None):
@@ -109,7 +113,7 @@ class UrlBuilder:
                 'variables': f'{{"userId":"{user_id}","count":40,"cursor":"{cursor}","includePromotedContent":true,"withQuickPromoteEligibilityTweetFields":true,"withSuperFollowsUserFields":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withSuperFollowsTweetFields":true,"withVoice":true,"withV2Timeline":true}}',
                 'features': '{"responsive_web_twitter_blue_verified_badge_is_enabled":true,"responsive_web_graphql_exclude_directive_enabled":false,"verified_phone_label_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":false,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"responsive_web_enhance_cards_enabled":false}',
             }
-        return self._build(self.URL_USER_TWEETS, urlencode(params))
+        return "GET", self._build(self.URL_USER_TWEETS, urlencode(params))
 
     @return_with_headers
     def trends(self):
@@ -150,7 +154,7 @@ class UrlBuilder:
             'entity_tokens': 'false',
             'ext': 'mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,enrichments,superFollowMetadata,unmentionInfo,editControl,collab_control,vibe',
         }
-        return self._build(self.URL_TRENDS, urlencode(params))
+        return "GET", self._build(self.URL_TRENDS, urlencode(params))
 
     @return_with_headers
     def search(self, keyword, cursor, filter_):
@@ -166,6 +170,7 @@ class UrlBuilder:
             'include_ext_has_nft_avatar': '1',
             'include_ext_is_blue_verified': '1',
             'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
             'skip_status': '1',
             'cards_platform': 'Web-12',
             'include_cards': '1',
@@ -184,13 +189,13 @@ class UrlBuilder:
             'send_error_codes': 'true',
             'simple_quoted_tweet': 'true',
             'q': keyword,
-            'query_source': '',
-            'count': '20',
+            'query_source': 'typeahead_click',
+            'count': '40',
             'requestContext': 'launch',
             'pc': '1',
             'spelling_corrections': '1',
             'include_ext_edit_control': 'true',
-            'ext': 'mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,enrichments,superFollowMetadata,unmentionInfo,editControl,vibe',
+            'ext': 'mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,enrichments,superFollowMetadata,unmentionInfo,editControl,vibe',
         }
 
         if filter_ and filter_ == "latest":
@@ -205,7 +210,7 @@ class UrlBuilder:
         if cursor:
             params['cursor'] = cursor
 
-        return self._build(self.URL_SEARCH, urlencode(params))
+        return "GET", self._build(self.URL_SEARCH, urlencode(params))
 
     @return_with_headers
     def tweet_detail(self, tweet_id):
@@ -213,4 +218,19 @@ class UrlBuilder:
             'variables': f'{{"focalTweetId":"{tweet_id}","with_rux_injections":false,"includePromotedContent":true,"withCommunity":true,"withQuickPromoteEligibilityTweetFields":true,"withBirdwatchNotes":true,"withDownvotePerspective":false,"withReactionsMetadata":false,"withReactionsPerspective":false,"withVoice":true,"withV2Timeline":true}}',
             'features': '{"blue_business_profile_image_shape_enabled":false,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"tweetypie_unmention_optimization_enabled":true,"vibe_api_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":false,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":false,"interactive_text_enabled":true,"responsive_web_text_conversations_enabled":false,"longform_notetweets_richtext_consumption_enabled":false,"responsive_web_enhance_cards_enabled":false}',
         }
-        return self._build(self.URL_TWEET_DETAILS, urlencode(params))
+        return "GET", self._build(self.URL_TWEET_DETAILS, urlencode(params))
+
+    @return_with_headers
+    def aUser_settings(self):
+        params = {
+            'include_mention_filter': 'true',
+            'include_nsfw_user_flag': 'true',
+            'include_nsfw_admin_flag': 'true',
+            'include_ranked_timeline': 'true',
+            'include_alt_text_compose': 'true',
+            'ext': 'ssoConnections',
+            'include_country_code': 'true',
+            'include_ext_dm_nsfw_media_filter': 'true',
+            'include_ext_sharing_audiospaces_listening_data_with_followers': 'true',
+        }
+        return "GET", self._build(self.URL_AUSER_SETTINGS, urlencode(params))

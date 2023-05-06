@@ -1,460 +1,6 @@
 import traceback
 
-TWITTER_ERRORS = {
-    "DefaultApiError": 0,
-    "InvalidCoordinates": 3,
-    "InvalidGranularity": 4,
-    "InvalidAccuracy": 5,
-    "NoDataForPoint": 6,
-    "NoDataForPointRadius": 7,
-    "InvalidId": 8,
-    "InvalidMaxResults": 9,
-    "RockdoveError": 10,
-    "InvalidIp": 11,
-    "MustProvideCoordinatesIpQueryOrAttributes": 12,
-    "NoLocationForIp": 13,
-    "OverlimitAddressBookApi": 14,
-    "AddressBookDarkmoded": 15,
-    "AddressBookPermissionsError": 16,
-    "AddressBookLookupNotFound": 17,
-    "TooManyTerms": 18,
-    "RetweetDarkmoded": 19,
-    "NoScreenNameProvided": 20,
-    "ContributorsNotEnabled": 21,
-    "NotAuthorizedToViewUser": 22,
-    "BulkLookupDarkmoded": 23,
-    "UnsupportedProfileImageSize": 24,
-    "MissingQuery": 25,
-    "AutocompleteMustBeTrueOrFalse": 26,
-    "AccountLocked": 27,
-    "GenericDarkmode": 28,
-    "TimeOut": 29,
-    "WoeidDataUnavailable": 30,
-    "InvalidTimescale": 31,
-    "InvalidCredentials": 32,
-    "OverLimit": 33,
-    "GenericNotFound": 34,
-    "TrendDataUnavailable": 35,
-    "CantReportYourselfAsSpam": 36,
-    "GenericAccessDenied": 37,
-    "MissingParameter": 38,
-    "InvalidCreationToken": 39,
-    "RockdoveInvalidArgumentError": 41,
-    "InvalidAttribute": 42,
-    "AttributeAccessDenied": 43,
-    "InvalidParameter": 44,
-    "InvalidPlaceJson": 46,
-    "InvalidRequestUrl": 47,
-    "TimeoutRequestRainbird": 48,
-    "NoFollowRequest": 49,
-    "GenericUserNotFound": 50,
-    "PromotedContentOfflineError": 51,
-    "PromotedSearchNoQuery": 52,
-    "BasicAuthDisabled": 53,
-    "CassowaryError": 54,
-    "ResourceNotFound": 55,
-    "InvalidEmailAddress": 56,
-    "PasswordResetPermissionsError": 57,
-    "PasswordResetExpiredToken": 58,
-    "PasswordResetInvalidHash": 59,
-    "PasswordResetMismatchedEntries": 60,
-    "ClientNotPermitted": 61,
-    "CustomSaveErrors": 62,
-    "OtherUserSuspended": 63,
-    "CurrentUserSuspended": 64,
-    "StrictMustBeTrueOrFalse": 65,
-    "RequireActivityMustBeTrueOrFalse": 66,
-    "BackendServiceUnavailable": 67,
-    "EndpointDeprecated": 68,
-    "TalonUrlMalware": 69,
-    "InvalidPromotedContentLogEvent": 70,
-    "EmailDeliveryError": 71,
-    "ApplicationNotFound": 72,
-    "ApplicationNotDeleted": 73,
-    "ApplicationDomainNotRevoked": 74,
-    "ApplicationKeysNotReset": 75,
-    "ApplicationImageNotProcessed": 76,
-    "ApplicationNoManageRight": 77,
-    "ApplicationNoAdminRight": 78,
-    "InvalidTrimPlace": 79,
-    "CurationDarkmoded": 80,
-    "ContributorsAccessLevelNotValid": 81,
-    "ContributorsTargetUserNotSpecified": 82,
-    "ContributorsTargetUserNotValid": 83,
-    "TalonUrlUnrenderable": 84,
-    "ValidationFailure": 85,
-    "WrongHttpMethod": 86,
-    "ClientNotPrivileged": 87,
-    "RateLimitExceeded": 88,
-    "BadOauthToken": 89,
-    "ContributionNotPermitted": 90,
-    "InvalidUtf8": 91,
-    "SslRequired": 92,
-    "DmAccessRequired": 93,
-    "PageIsForbidden": 94,
-    "InvalidLanguage": 95,
-    "InvalidIds": 96,
-    "EndpointFeatureDeprecated": 97,
-    "FlagPossiblySensitiveScribeError": 98,
-    "AuthenticityTokenError": 99,
-    "GenericThriftException": 100,
-    "InvalidReverseAuthCredentials": 101,
-    "DarkmodedFeature": 102,
-    "TrendsAvailableTransientException": 103,
-    "ListAdminRightsError": 104,
-    "MaximumMembersExceeded": 105,
-    "AddBlockedUserError": 106,
-    "NoTargetUser": 107,
-    "TargetUserNotFound": 108,
-    "TargetUserNotRelatedToList": 109,
-    "ListNotAMemberError": 110,
-    "TargetUserSuspended": 111,
-    "InsufficientListParameters": 112,
-    "InsufficientTargetUserParameters": 113,
-    "InvalidCurrentPassword": 114,
-    "ListUnauthorizedSubscriptionError": 115,
-    "PasswordSmsResetPwSeedNotExist": 116,
-    "PasswordSmsResetOptOut": 117,
-    "ArgumentTooLarge": 118,
-    "NarrowcastNotSupported": 119,
-    "AccountUpdateFailure": 120,
-    "InvalidHexColor": 121,
-    "UpdateProfileColorsError": 122,
-    "ImageUpdateError": 123,
-    "AttributeUpdateError": 124,
-    "GeolocationError": 125,
-    "LoggedOut": 126,
-    "ArchiveDeprecated": 127,
-    "LocationUpdateFailure": 128,
-    "EmailRateLimitExceeded": 129,
-    "OverCapacity": 130,
-    "InternalError": 131,
-    "UnusedBackgroundUploadError": 132,
-    "NoSelectedBackgroundError": 133,
-    "TooManyDevices": 134,
-    "OauthTimestampException": 135,
-    "BlockedUserError": 136,
-    "PushForbidden": 137,
-    "FollowingInformationUnavailable": 138,
-    "DuplicateFavorite": 139,
-    "FollowingStatusUnauthorized": 140,
-    "InactiveUser": 141,
-    "ProtectedStatusFavoriteError": 142,
-    "FavoriteRateLimitExceeded": 143,
-    "StatusNotFound": 144,
-    "RecordInvalid": 145,
-    "OtherUserNotBlocked": 146,
-    "SelfBlockError": 147,
-    "UnsupportedDevice": 148,
-    "InvalidEnabledFor": 149,
-    "DirectMessageOtherUserNotFollowing": 150,
-    "MessageSendError": 151,
-    "DirectMessageDestroyPermissionsError": 152,
-    "DirectMessageDeleteError": 153,
-    "DirectMessageNotFound": 154,
-    "MessageSendUnknownError": 155,
-    "DowntimeAlert": 156,
-    "VerifiedDeviceNotFound": 157,
-    "SelfFollowError": 158,
-    "GenericSuspended": 159,
-    "DuplicateFollowRequest": 160,
-    "FollowRateLimitExceeded": 161,
-    "FollowBlockedUserError": 162,
-    "IndeterminateSource": 163,
-    "TargetUserNotSpecified": 164,
-    "MultipleMissingParameters": 165,
-    "MultipleUserNotFound": 166,
-    "FollowError": 167,
-    "StatusNotFoundForbidden": 168,
-    "StatusRelatedResultsForbidden": 169,
-    "ForbiddenMissingParameter": 170,
-    "SearchDeletionError": 171,
-    "SearchCreationError": 172,
-    "ConfirmEmailExpiredCode": 173,
-    "ConfirmEmailInvalidCode": 174,
-    "ConfirmEmailInvalidStateChange": 175,
-    "ConfirmEmailAlreadyConfirmed": 176,
-    "ConfirmEmailSuccessChanged": 177,
-    "ConfirmEmailSuccessNew": 178,
-    "StatusViewForbidden": 179,
-    "GenericEndpointOffline": 180,
-    "TimeParameterOrderError": 181,
-    "ParameterDeprecated": 182,
-    "StatusActionPermissionError": 183,
-    "StatusUpdateError": 184,
-    "OverStatusUpdateLimit": 185,
-    "StatusTooLongError": 186,
-    "DuplicateStatusError": 187,
-    "StatusMalwareError": 188,
-    "StatusCreationError": 189,
-    "UnknownInterpreterError": 190,
-    "OverPhotoLimit": 191,
-    "OverMediaEntitiesPerUpdateLimit": 192,
-    "MediaTooLarge": 193,
-    "StatusUpdateForbidden": 194,
-    "InvalidRequestUrlForbidden": 195,
-    "TimelineAuthorizationRequired": 196,
-    "CategoryNotFound": 197,
-    "ContactLoadError": 198,
-    "IdsOfContactsError": 199,
-    "GenericForbidden": 200,
-    "GetRequired": 201,
-    "InternalApplicationAuthenticationDenied": 202,
-    "DeviceError": 203,
-    "DestinationError": 204,
-    "SpamRateLimitExceeded": 205,
-    "InvalidDeviceRelationship": 206,
-    "AlreadyActivated": 207,
-    "FormatNotSupported": 208,
-    "DirectMessageMustFollowFirst": 209,
-    "TokenLimitExceeded": 210,
-    "InvalidBrandBanner": 211,
-    "ProfileBannerUploadsDisabled": 212,
-    "ProcessingInProgress": 213,
-    "GenericBadRequest": 214,
-    "BadAuthenticationData": 215,
-    "ShareViaEmailRateLimitExceeded": 216,
-    "ProtectedStatusShareViaEmailError": 217,
-    "RestrictedAccessShareViaEmailError": 218,
-    "ShareViaEmailIpRateLimitExceeded": 219,
-    "RestrictedAuthToken": 220,
-    "CursorInvalid": 221,
-    "TieredActionSignupSpammer": 222,
-    "EmailTweetSendingError": 223,
-    "MissingEmailAddress": 224,
-    "TieredActionFollowSpammer": 225,
-    "TieredActionTweetSpammer": 226,
-    "TieredActionFollowCreeper": 227,
-    "TieredActionTweetCreeper": 228,
-    "AmbiguousCredentials": 229,
-    "UserSleeping": 230,
-    "RequiresLoginVerification": 231,
-    "CannotEnableLoginVerificationPhone": 232,
-    "CannotEnableLoginVerificationAlreadyEnabled": 233,
-    "CannotEnableLoginVerificationUnconfirmedEmail": 234,
-    "ExpiredLoginVerificationRequest": 235,
-    "IncorrectChallengeResponse": 236,
-    "MissingLoginVerificationRequest": 237,
-    "NewPasswordWeak": 238,
-    "BadGuestToken": 239,
-    "TieredActionSignupSpammerPhoneVerify": 240,
-    "RejectedLoginVerificationRequest": 241,
-    "DeactivatedUser": 242,
-    "OverLimitLogin": 243,
-    "ForcePasswordReset": 244,
-    "OverLimitLoginVerificationStart": 245,
-    "OverLimitLoginVerificationAttempt": 246,
-    "CannotEnableLoginVerificationPush": 247,
-    "LoginVerificationAlreadyEnabled": 248,
-    "CloudIpRestricted": 249,
-    "UserMustBeAlcoholAgeScreened": 250,
-    "EndpointRetired": 251,
-    "DmSpamTimeout": 252,
-    "NotYetApprovedLoginVerification": 253,
-    "OfflineCodeSync": 254,
-    "RequiresTemporaryPassword": 255,
-    "CannotFollowFromCountry": 256,
-    "BadDeviceToken": 257,
-    "AppsCreateRequiresConfirmedEmail": 258,
-    "AppsCreateRequiresVerifiedPhone": 259,
-    "AppsCreateRejectedForAbuse": 260,
-    "AppInReadOnlyMode": 261,
-    "CurrentUserNeedsPhoneVerification": 262,
-    "TieredActionChallengeCaptcha": 263,
-    "TargetUserNotFollowing": 264,
-    "TargetUserNotFavoriteFollowing": 265,
-    "FailureSendingLoginVerificationRequest": 266,
-    "InvalidCredentialsOneFactorEligible": 267,
-    "MissingOneFactorLoginVerificationParams": 268,
-    "UserIsNotSdkUser": 269,
-    "AppsUpdateSettingsRequiresVerifiedPhone": 270,
-    "SelfMuteError": 271,
-    "NotMutingTargetUser": 272,
-    "ScheduledInPast": 273,
-    "ScheduledTooFarInFuture": 274,
-    "TooLateToEdit": 275,
-    "ScheduleInvalid": 276,
-    "DirectMessageRecipientDoesNotFollowSenderWithUnverifiedPhoneNumber": 277,
-    "DirectMessageUserNotInConversation": 278,
-    "DirectMessageConversationNotFound": 279,
-    "DirectMessageTooManyParticipants": 280,
-    "DirectMessageTooFewParticipants": 281,
-    "DirectMessageRecipientBlocksSender": 282,
-    "TieredActionFavoriteSpammer": 283,
-    "DeviceRegistrationGeneralError": 284,
-    "DeviceAlreadyRegistered": 285,
-    "DeviceOperatorUnsupported": 286,
-    "UserAlreadyHasVerifiedPhone": 287,
-    "CannotReuseCurrentPassword": 288,
-    "DevicePinInvalid": 289,
-    "DevicePinRequired": 290,
-    "UnexpectedDeviceProvided": 291,
-    "TieredActionConversationSpammer": 292,
-    "SmsVerifyGeneralError": 293,
-    "SmsVerifyInvalidPin": 294,
-    "SmsVerifyRateLimitExceeded": 295,
-    "DtabOverrideDarkmoded": 296,
-    "DirectMessageCannotHaveBothTweetAndMedia": 297,
-    "DirectMessageTweetNotFound": 298,
-    "DeviceRegistrationRateExceeded": 299,
-    "DeviceRegistrationInvalidInput": 300,
-    "DeviceRegistrationPending": 301,
-    "DeviceRegistrationOperationFailed": 302,
-    "DeviceRegistrationPhoneNormalizationFailed": 303,
-    "DeviceRegistrationPhoneCountryDetectionFailed": 304,
-    "CannotIdentifyByEmail": 305,
-    "TieredActionAccessTokenGrantSpam": 306,
-    "TieredActionAccessTokenRevokeSpam": 307,
-    "NoSmsVerifyExists": 308,
-    "DeviceNotVerified": 309,
-    "ExpiredPin": 310,
-    "DirectMessageDuplicate": 311,
-    "LocationNameMustBeSpecified": 312,
-    "EULANotAccepted": 313,
-    "VideoTranscodingError": 314,
-    "ClientCaptchaRequired": 315,
-    "CannotContributeToYourself": 316,
-    "AccountHasTooManyContributors": 317,
-    "AccountHasTooManyContributees": 318,
-    "CannotChangePassword": 319,
-    "ContributorsAccessLevelInsufficient": 320,
-    "DirectMessageConversationNameTooLong": 321,
-    "DirectMessageGenericUserCouldNotBeAdded": 322,
-    "AnimatedGifMultipleImages": 323,
-    "InvalidMediaId": 324,
-    "MediaNotFound": 325,
-    "AccessDeniedByBouncer": 326,
-    "AlreadyRetweeted": 327,
-    "InvalidRetweetForStatus": 328,
-    "NonsupportingClientRequiresLoginVerification": 329,
-    "ContributorsGenericUserCouldNotBeAdded": 330,
-    "MobileSettingsUserNotFound": 331,
-    "MobileSettingsTemplateNotFound": 332,
-    "MobileSettingsFileNotFound": 333,
-    "MobileSettingsUnsupportedTransport": 334,
-    "MobileSettingsSettingNotFound": 335,
-    "MobileSettingsInvalidValueFound": 336,
-    "MobileSettingsSettingObjectNotFound": 337,
-    "MobileSettingsEnabledForMissing": 338,
-    "MobileSettingsNoDevicesFound": 339,
-    "MobileSettingsNoIncomingPushSettings": 340,
-    "MobileSettingsNoIncomingSmsSettings": 341,
-    "MobileSettingsIncorrectApplicationId": 342,
-    "MobileSettingsNoIncomingSettings": 343,
-    "UserActionRateLimitExceeded": 344,
-    "OneFactorMethodIsNotSupported": 345,
-    "UserIsNotOneFactorEligible": 346,
-    "InvalidRequestToken": 347,
-    "ClientApplicationNotPermitted": 348,
-    "DirectMessageCannotDmOtherUser": 349,
-    "OauthException": 350,
-    "MobileSettingsCouldNotUpdateSleep": 351,
-    "ParameterLimitExceeded": 352,
-    "DeniedByApiCsrfProtection": 353,
-    "DirectMessageTooLongError": 354,
-    "GenericConflict": 355,
-    "GenericValidationFailure": 356,
-    "RequiredFieldMissing": 357,
-    "JsonProcessingError": 358,
-    "ValueTooLarge": 359,
-    "ValueTooSmall": 360,
-    "ValueCannotBeEmpty": 361,
-    "TimeNotFuture": 362,
-    "InvalidCountryCodes": 363,
-    "InvalidTimeGranularity": 364,
-    "InvalidUUID": 365,
-    "InvalidValues": 366,
-    "SizeOutOfRange": 367,
-    "TimeNotPast": 368,
-    "InvalidJsonSyntax": 369,
-    "DigitsCannotReuseCurrentEmail": 370,
-    "MentionLimitInTweetExceeded": 371,
-    "UrlLimitInTweetExceeded": 372,
-    "HashtagLimitInTweetExceeded": 373,
-    "ExpiredQrCode": 374,
-    "InvalidQrCode": 375,
-    "MissingCredentials": 376,
-    "TokenRetrievalException": 377,
-    "TokenMissing": 378,
-    "DataminrUserNotLinked": 379,
-    "ABLiveSyncIsDisabled": 380,
-    "SoftUserCreationSpamDenied": 381,
-    "SoftUserActionSpamDenied": 382,
-    "CashtagLimitInTweetExceeded": 383,
-    "HashtagLengthLimitInTweetExceeded": 384,
-    "InReplyToTweetNotFound": 385,
-    "AttachmentTypesLimitInTweetExceeded": 386,
-    "NotEnoughFollowers": 387,
-    "FeatureAccessLimited": 388,
-    "DirectMessagesSenderBlocksRecipient": 389,
-    "SearchRecordingNotFound": 390,
-    "MaximumSearchRecordingsExceeded": 391,
-    "SessionNotFound": 392,
-    "SessionModificationNotAuthorized": 393,
-    "SessionModificationFailed": 394,
-    "VoiceVerifyRateLimitExceeded": 395,
-    "BlockUserFailed": 396,
-    "InvalidMetricsJson": 397,
-    "OnboardingFlowFailure": 398,
-    "OnboardingFlowRetriableFailure": 399,
-    "NoTwoFactorAuthMethodFound": 400,
-    "MomentCapsuleAccessError": 401,
-    "CannotEnrollLoginVerificationNotYetEnabled": 402,
-    "IneligibleFor2faAfterModification": 403,
-    "CookiesRequired": 404,
-    "DuplicateBookmark": 405,
-    "ProtectedTweetBookmarkError": 406,
-    "DirectMessageInactiveDevice": 407,
-    "InvalidUrl": 408,
-    "BirthdateRequired": 409,
-    "PasswordVerificationRequired": 410,
-    "DirectMessageSenderInSecretDmsDisabledCountry": 411,
-    "DirectMessageRecipientInSecretDmsDisabledCountry": 412,
-    "DirectMessageSenderDeviceIsNotActiveForSecretDms": 413,
-    "DirectMessageRecipientDeviceIsNotActiveForSecretDms": 414,
-    "CallbackUrlLocked": 415,
-    "InvalidOrSuspendedApp": 416,
-    "InvalidDesktopCallback": 417,
-    "DirectMessageSenderIsNotRegisteredForSecretDms": 418,
-    "DirectMessageRecipientIsNotRegisteredForSecretDms": 419,
-    "ReservedErrorCode": 420,
-    "TweetIsBounced": 421,
-    "TweetIsBounceDeleted": 422,
-    "InvalidHeaders": 423,
-    "MomentUnavailableForNewsCamera": 424,
-    "TweetEngagementsLimited": 425,
-    "InvalidRequestIpv6Token": 426,
-    "IpResolverNotAvailable": 427,
-    "ValidIpv6TokenRequired": 428,
-    "HarmfulLink": 429,
-    "ConversationControlNotAllowed": 430,
-    "ConversationControlNotSupported": 431,
-    "ConversationControlNotAuthorized": 432,
-    "ConversationControlReplyRestricted": 433,
-    "NotMutingTargetList": 434,
-    "ConversationControlInvalidParameter": 435,
-    "PassswordRequiredForEmailUpdate": 436,
-    "NewPasswordShort": 437,
-    "NewPasswordLong": 438,
-    "NudgeReceived": 439,
-    "CommunityUserNotAuthorized": 440,
-    "CommunityNotFound": 441,
-    "CommunityRetweetNotAllowed": 442,
-    "CommunityInvalidParams": 443,
-    "CommunityReplyTweetNotAllowed": 444,
-    "RestrictedSession": 445,
-    "TokenSecurityLevelAgreementPolicyFailure": 446,
-    "SuperFollowsCreateNotAuthorized": 447,
-    "SuperFollowsInvalidParams": 448,
-    "TOOMomentsList": 449,
-    "CommunityProtectedUserCannotTweet": 450,
-    "ExclusiveTweetEngagementNotAllowed": 451,
-    "SteamCreationException": 452,
-    "V11Restricted": 453,
-    "SteamGetException": 454,
-    "TrustedFriendsInvalidParams": 455,
-    "TrustedFriendsRetweetNotAllowed": 456
-}
+TWITTER_ERRORS = {0: 'DefaultApiError', 3: 'InvalidCoordinates', 4: 'InvalidGranularity', 5: 'InvalidAccuracy', 6: 'NoDataForPoint', 7: 'NoDataForPointRadius', 8: 'InvalidId', 9: 'InvalidMaxResults', 10: 'RockdoveError', 11: 'InvalidIp', 12: 'MustProvideCoordinatesIpQueryOrAttributes', 13: 'NoLocationForIp', 14: 'OverlimitAddressBookApi', 15: 'AddressBookDarkmoded', 16: 'AddressBookPermissionsError', 17: 'AddressBookLookupNotFound', 18: 'TooManyTerms', 19: 'RetweetDarkmoded', 20: 'NoScreenNameProvided', 21: 'ContributorsNotEnabled', 22: 'NotAuthorizedToViewUser', 23: 'BulkLookupDarkmoded', 24: 'UnsupportedProfileImageSize', 25: 'MissingQuery', 26: 'AutocompleteMustBeTrueOrFalse', 27: 'AccountLocked', 28: 'GenericDarkmode', 29: 'TimeOut', 30: 'WoeidDataUnavailable', 31: 'InvalidTimescale', 32: 'InvalidCredentials', 33: 'OverLimit', 34: 'GenericNotFound', 35: 'TrendDataUnavailable', 36: 'CantReportYourselfAsSpam', 37: 'GenericAccessDenied', 38: 'MissingParameter', 39: 'InvalidCreationToken', 41: 'RockdoveInvalidArgumentError', 42: 'InvalidAttribute', 43: 'AttributeAccessDenied', 44: 'InvalidParameter', 46: 'InvalidPlaceJson', 47: 'InvalidRequestUrl', 48: 'TimeoutRequestRainbird', 49: 'NoFollowRequest', 50: 'GenericUserNotFound', 51: 'PromotedContentOfflineError', 52: 'PromotedSearchNoQuery', 53: 'BasicAuthDisabled', 54: 'CassowaryError', 55: 'ResourceNotFound', 56: 'InvalidEmailAddress', 57: 'PasswordResetPermissionsError', 58: 'PasswordResetExpiredToken', 59: 'PasswordResetInvalidHash', 60: 'PasswordResetMismatchedEntries', 61: 'ClientNotPermitted', 62: 'CustomSaveErrors', 63: 'OtherUserSuspended', 64: 'CurrentUserSuspended', 65: 'StrictMustBeTrueOrFalse', 66: 'RequireActivityMustBeTrueOrFalse', 67: 'BackendServiceUnavailable', 68: 'EndpointDeprecated', 69: 'TalonUrlMalware', 70: 'InvalidPromotedContentLogEvent', 71: 'EmailDeliveryError', 72: 'ApplicationNotFound', 73: 'ApplicationNotDeleted', 74: 'ApplicationDomainNotRevoked', 75: 'ApplicationKeysNotReset', 76: 'ApplicationImageNotProcessed', 77: 'ApplicationNoManageRight', 78: 'ApplicationNoAdminRight', 79: 'InvalidTrimPlace', 80: 'CurationDarkmoded', 81: 'ContributorsAccessLevelNotValid', 82: 'ContributorsTargetUserNotSpecified', 83: 'ContributorsTargetUserNotValid', 84: 'TalonUrlUnrenderable', 85: 'ValidationFailure', 86: 'WrongHttpMethod', 87: 'ClientNotPrivileged', 88: 'RateLimitExceeded', 89: 'BadOauthToken', 90: 'ContributionNotPermitted', 91: 'InvalidUtf8', 92: 'SslRequired', 93: 'DmAccessRequired', 94: 'PageIsForbidden', 95: 'InvalidLanguage', 96: 'InvalidIds', 97: 'EndpointFeatureDeprecated', 98: 'FlagPossiblySensitiveScribeError', 99: 'AuthenticityTokenError', 100: 'GenericThriftException', 101: 'InvalidReverseAuthCredentials', 102: 'DarkmodedFeature', 103: 'TrendsAvailableTransientException', 104: 'ListAdminRightsError', 105: 'MaximumMembersExceeded', 106: 'AddBlockedUserError', 107: 'NoTargetUser', 108: 'TargetUserNotFound', 109: 'TargetUserNotRelatedToList', 110: 'ListNotAMemberError', 111: 'TargetUserSuspended', 112: 'InsufficientListParameters', 113: 'InsufficientTargetUserParameters', 114: 'InvalidCurrentPassword', 115: 'ListUnauthorizedSubscriptionError', 116: 'PasswordSmsResetPwSeedNotExist', 117: 'PasswordSmsResetOptOut', 118: 'ArgumentTooLarge', 119: 'NarrowcastNotSupported', 120: 'AccountUpdateFailure', 121: 'InvalidHexColor', 122: 'UpdateProfileColorsError', 123: 'ImageUpdateError', 124: 'AttributeUpdateError', 125: 'GeolocationError', 126: 'LoggedOut', 127: 'ArchiveDeprecated', 128: 'LocationUpdateFailure', 129: 'EmailRateLimitExceeded', 130: 'OverCapacity', 131: 'InternalError', 132: 'UnusedBackgroundUploadError', 133: 'NoSelectedBackgroundError', 134: 'TooManyDevices', 135: 'OauthTimestampException', 136: 'BlockedUserError', 137: 'PushForbidden', 138: 'FollowingInformationUnavailable', 139: 'DuplicateFavorite', 140: 'FollowingStatusUnauthorized', 141: 'InactiveUser', 142: 'ProtectedStatusFavoriteError', 143: 'FavoriteRateLimitExceeded', 144: 'StatusNotFound', 145: 'RecordInvalid', 146: 'OtherUserNotBlocked', 147: 'SelfBlockError', 148: 'UnsupportedDevice', 149: 'InvalidEnabledFor', 150: 'DirectMessageOtherUserNotFollowing', 151: 'MessageSendError', 152: 'DirectMessageDestroyPermissionsError', 153: 'DirectMessageDeleteError', 154: 'DirectMessageNotFound', 155: 'MessageSendUnknownError', 156: 'DowntimeAlert', 157: 'VerifiedDeviceNotFound', 158: 'SelfFollowError', 159: 'GenericSuspended', 160: 'DuplicateFollowRequest', 161: 'FollowRateLimitExceeded', 162: 'FollowBlockedUserError', 163: 'IndeterminateSource', 164: 'TargetUserNotSpecified', 165: 'MultipleMissingParameters', 166: 'MultipleUserNotFound', 167: 'FollowError', 168: 'StatusNotFoundForbidden', 169: 'StatusRelatedResultsForbidden', 170: 'ForbiddenMissingParameter', 171: 'SearchDeletionError', 172: 'SearchCreationError', 173: 'ConfirmEmailExpiredCode', 174: 'ConfirmEmailInvalidCode', 175: 'ConfirmEmailInvalidStateChange', 176: 'ConfirmEmailAlreadyConfirmed', 177: 'ConfirmEmailSuccessChanged', 178: 'ConfirmEmailSuccessNew', 179: 'StatusViewForbidden', 180: 'GenericEndpointOffline', 181: 'TimeParameterOrderError', 182: 'ParameterDeprecated', 183: 'StatusActionPermissionError', 184: 'StatusUpdateError', 185: 'OverStatusUpdateLimit', 186: 'StatusTooLongError', 187: 'DuplicateStatusError', 188: 'StatusMalwareError', 189: 'StatusCreationError', 190: 'UnknownInterpreterError', 191: 'OverPhotoLimit', 192: 'OverMediaEntitiesPerUpdateLimit', 193: 'MediaTooLarge', 194: 'StatusUpdateForbidden', 195: 'InvalidRequestUrlForbidden', 196: 'TimelineAuthorizationRequired', 197: 'CategoryNotFound', 198: 'ContactLoadError', 199: 'IdsOfContactsError', 200: 'GenericForbidden', 201: 'GetRequired', 202: 'InternalApplicationAuthenticationDenied', 203: 'DeviceError', 204: 'DestinationError', 205: 'SpamRateLimitExceeded', 206: 'InvalidDeviceRelationship', 207: 'AlreadyActivated', 208: 'FormatNotSupported', 209: 'DirectMessageMustFollowFirst', 210: 'TokenLimitExceeded', 211: 'InvalidBrandBanner', 212: 'ProfileBannerUploadsDisabled', 213: 'ProcessingInProgress', 214: 'GenericBadRequest', 215: 'BadAuthenticationData', 216: 'ShareViaEmailRateLimitExceeded', 217: 'ProtectedStatusShareViaEmailError', 218: 'RestrictedAccessShareViaEmailError', 219: 'ShareViaEmailIpRateLimitExceeded', 220: 'RestrictedAuthToken', 221: 'CursorInvalid', 222: 'TieredActionSignupSpammer', 223: 'EmailTweetSendingError', 224: 'MissingEmailAddress', 225: 'TieredActionFollowSpammer', 226: 'TieredActionTweetSpammer', 227: 'TieredActionFollowCreeper', 228: 'TieredActionTweetCreeper', 229: 'AmbiguousCredentials', 230: 'UserSleeping', 231: 'RequiresLoginVerification', 232: 'CannotEnableLoginVerificationPhone', 233: 'CannotEnableLoginVerificationAlreadyEnabled', 234: 'CannotEnableLoginVerificationUnconfirmedEmail', 235: 'ExpiredLoginVerificationRequest', 236: 'IncorrectChallengeResponse', 237: 'MissingLoginVerificationRequest', 238: 'NewPasswordWeak', 239: 'BadGuestToken', 240: 'TieredActionSignupSpammerPhoneVerify', 241: 'RejectedLoginVerificationRequest', 242: 'DeactivatedUser', 243: 'OverLimitLogin', 244: 'ForcePasswordReset', 245: 'OverLimitLoginVerificationStart', 246: 'OverLimitLoginVerificationAttempt', 247: 'CannotEnableLoginVerificationPush', 248: 'LoginVerificationAlreadyEnabled', 249: 'CloudIpRestricted', 250: 'UserMustBeAlcoholAgeScreened', 251: 'EndpointRetired', 252: 'DmSpamTimeout', 253: 'NotYetApprovedLoginVerification', 254: 'OfflineCodeSync', 255: 'RequiresTemporaryPassword', 256: 'CannotFollowFromCountry', 257: 'BadDeviceToken', 258: 'AppsCreateRequiresConfirmedEmail', 259: 'AppsCreateRequiresVerifiedPhone', 260: 'AppsCreateRejectedForAbuse', 261: 'AppInReadOnlyMode', 262: 'CurrentUserNeedsPhoneVerification', 263: 'TieredActionChallengeCaptcha', 264: 'TargetUserNotFollowing', 265: 'TargetUserNotFavoriteFollowing', 266: 'FailureSendingLoginVerificationRequest', 267: 'InvalidCredentialsOneFactorEligible', 268: 'MissingOneFactorLoginVerificationParams', 269: 'UserIsNotSdkUser', 270: 'AppsUpdateSettingsRequiresVerifiedPhone', 271: 'SelfMuteError', 272: 'NotMutingTargetUser', 273: 'ScheduledInPast', 274: 'ScheduledTooFarInFuture', 275: 'TooLateToEdit', 276: 'ScheduleInvalid', 277: 'DirectMessageRecipientDoesNotFollowSenderWithUnverifiedPhoneNumber', 278: 'DirectMessageUserNotInConversation', 279: 'DirectMessageConversationNotFound', 280: 'DirectMessageTooManyParticipants', 281: 'DirectMessageTooFewParticipants', 282: 'DirectMessageRecipientBlocksSender', 283: 'TieredActionFavoriteSpammer', 284: 'DeviceRegistrationGeneralError', 285: 'DeviceAlreadyRegistered', 286: 'DeviceOperatorUnsupported', 287: 'UserAlreadyHasVerifiedPhone', 288: 'CannotReuseCurrentPassword', 289: 'DevicePinInvalid', 290: 'DevicePinRequired', 291: 'UnexpectedDeviceProvided', 292: 'TieredActionConversationSpammer', 293: 'SmsVerifyGeneralError', 294: 'SmsVerifyInvalidPin', 295: 'SmsVerifyRateLimitExceeded', 296: 'DtabOverrideDarkmoded', 297: 'DirectMessageCannotHaveBothTweetAndMedia', 298: 'DirectMessageTweetNotFound', 299: 'DeviceRegistrationRateExceeded', 300: 'DeviceRegistrationInvalidInput', 301: 'DeviceRegistrationPending', 302: 'DeviceRegistrationOperationFailed', 303: 'DeviceRegistrationPhoneNormalizationFailed', 304: 'DeviceRegistrationPhoneCountryDetectionFailed', 305: 'CannotIdentifyByEmail', 306: 'TieredActionAccessTokenGrantSpam', 307: 'TieredActionAccessTokenRevokeSpam', 308: 'NoSmsVerifyExists', 309: 'DeviceNotVerified', 310: 'ExpiredPin', 311: 'DirectMessageDuplicate', 312: 'LocationNameMustBeSpecified', 313: 'EULANotAccepted', 314: 'VideoTranscodingError', 315: 'ClientCaptchaRequired', 316: 'CannotContributeToYourself', 317: 'AccountHasTooManyContributors', 318: 'AccountHasTooManyContributees', 319: 'CannotChangePassword', 320: 'ContributorsAccessLevelInsufficient', 321: 'DirectMessageConversationNameTooLong', 322: 'DirectMessageGenericUserCouldNotBeAdded', 323: 'AnimatedGifMultipleImages', 324: 'InvalidMediaId', 325: 'MediaNotFound', 326: 'AccessDeniedByBouncer', 327: 'AlreadyRetweeted', 328: 'InvalidRetweetForStatus', 329: 'NonsupportingClientRequiresLoginVerification', 330: 'ContributorsGenericUserCouldNotBeAdded', 331: 'MobileSettingsUserNotFound', 332: 'MobileSettingsTemplateNotFound', 333: 'MobileSettingsFileNotFound', 334: 'MobileSettingsUnsupportedTransport', 335: 'MobileSettingsSettingNotFound', 336: 'MobileSettingsInvalidValueFound', 337: 'MobileSettingsSettingObjectNotFound', 338: 'MobileSettingsEnabledForMissing', 339: 'MobileSettingsNoDevicesFound', 340: 'MobileSettingsNoIncomingPushSettings', 341: 'MobileSettingsNoIncomingSmsSettings', 342: 'MobileSettingsIncorrectApplicationId', 343: 'MobileSettingsNoIncomingSettings', 344: 'UserActionRateLimitExceeded', 345: 'OneFactorMethodIsNotSupported', 346: 'UserIsNotOneFactorEligible', 347: 'InvalidRequestToken', 348: 'ClientApplicationNotPermitted', 349: 'DirectMessageCannotDmOtherUser', 350: 'OauthException', 351: 'MobileSettingsCouldNotUpdateSleep', 352: 'ParameterLimitExceeded', 353: 'DeniedByApiCsrfProtection', 354: 'DirectMessageTooLongError', 355: 'GenericConflict', 356: 'GenericValidationFailure', 357: 'RequiredFieldMissing', 358: 'JsonProcessingError', 359: 'ValueTooLarge', 360: 'ValueTooSmall', 361: 'ValueCannotBeEmpty', 362: 'TimeNotFuture', 363: 'InvalidCountryCodes', 364: 'InvalidTimeGranularity', 365: 'InvalidUUID', 366: 'InvalidValues', 367: 'SizeOutOfRange', 368: 'TimeNotPast', 369: 'InvalidJsonSyntax', 370: 'DigitsCannotReuseCurrentEmail', 371: 'MentionLimitInTweetExceeded', 372: 'UrlLimitInTweetExceeded', 373: 'HashtagLimitInTweetExceeded', 374: 'ExpiredQrCode', 375: 'InvalidQrCode', 376: 'MissingCredentials', 377: 'TokenRetrievalException', 378: 'TokenMissing', 379: 'DataminrUserNotLinked', 380: 'ABLiveSyncIsDisabled', 381: 'SoftUserCreationSpamDenied', 382: 'SoftUserActionSpamDenied', 383: 'CashtagLimitInTweetExceeded', 384: 'HashtagLengthLimitInTweetExceeded', 385: 'InReplyToTweetNotFound', 386: 'AttachmentTypesLimitInTweetExceeded', 387: 'NotEnoughFollowers', 388: 'FeatureAccessLimited', 389: 'DirectMessagesSenderBlocksRecipient', 390: 'SearchRecordingNotFound', 391: 'MaximumSearchRecordingsExceeded', 392: 'SessionNotFound', 393: 'SessionModificationNotAuthorized', 394: 'SessionModificationFailed', 395: 'VoiceVerifyRateLimitExceeded', 396: 'BlockUserFailed', 397: 'InvalidMetricsJson', 398: 'OnboardingFlowFailure', 399: 'OnboardingFlowRetriableFailure', 400: 'NoTwoFactorAuthMethodFound', 401: 'MomentCapsuleAccessError', 402: 'CannotEnrollLoginVerificationNotYetEnabled', 403: 'IneligibleFor2faAfterModification', 404: 'CookiesRequired', 405: 'DuplicateBookmark', 406: 'ProtectedTweetBookmarkError', 407: 'DirectMessageInactiveDevice', 408: 'InvalidUrl', 409: 'BirthdateRequired', 410: 'PasswordVerificationRequired', 411: 'DirectMessageSenderInSecretDmsDisabledCountry', 412: 'DirectMessageRecipientInSecretDmsDisabledCountry', 413: 'DirectMessageSenderDeviceIsNotActiveForSecretDms', 414: 'DirectMessageRecipientDeviceIsNotActiveForSecretDms', 415: 'CallbackUrlLocked', 416: 'InvalidOrSuspendedApp', 417: 'InvalidDesktopCallback', 418: 'DirectMessageSenderIsNotRegisteredForSecretDms', 419: 'DirectMessageRecipientIsNotRegisteredForSecretDms', 420: 'ReservedErrorCode', 421: 'TweetIsBounced', 422: 'TweetIsBounceDeleted', 423: 'InvalidHeaders', 424: 'MomentUnavailableForNewsCamera', 425: 'TweetEngagementsLimited', 426: 'InvalidRequestIpv6Token', 427: 'IpResolverNotAvailable', 428: 'ValidIpv6TokenRequired', 429: 'HarmfulLink', 430: 'ConversationControlNotAllowed', 431: 'ConversationControlNotSupported', 432: 'ConversationControlNotAuthorized', 433: 'ConversationControlReplyRestricted', 434: 'NotMutingTargetList', 435: 'ConversationControlInvalidParameter', 436: 'PassswordRequiredForEmailUpdate', 437: 'NewPasswordShort', 438: 'NewPasswordLong', 439: 'NudgeReceived', 440: 'CommunityUserNotAuthorized', 441: 'CommunityNotFound', 442: 'CommunityRetweetNotAllowed', 443: 'CommunityInvalidParams', 444: 'CommunityReplyTweetNotAllowed', 445: 'RestrictedSession', 446: 'TokenSecurityLevelAgreementPolicyFailure', 447: 'SuperFollowsCreateNotAuthorized', 448: 'SuperFollowsInvalidParams', 449: 'TOOMomentsList', 450: 'CommunityProtectedUserCannotTweet', 451: 'ExclusiveTweetEngagementNotAllowed', 452: 'SteamCreationException', 453: 'V11Restricted', 454: 'SteamGetException', 455: 'TrustedFriendsInvalidParams', 456: 'TrustedFriendsRetweetNotAllowed'}
 
 
 class UserNotFound(Exception):
@@ -464,8 +10,11 @@ class UserNotFound(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, message):
+    def __init__(self, error_code, error_name, response, message="The User Account wasn't Found"):
         self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
         super().__init__(self.message)
 
 
@@ -477,8 +26,11 @@ class GuestTokenNotFound(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, message):
+    def __init__(self, error_code, error_name, response, message="The Guest Token couldn't be obtained"):
         self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
         super().__init__(self.message)
 
 
@@ -490,8 +42,11 @@ class InvalidTweetIdentifier(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, message="The Identifier provided of the tweet is either invalid or the tweet is private"):
+    def __init__(self, error_code, error_name, response, message="The Tweet Identifier is Invalid"):
         self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
         super().__init__(self.message)
 
 
@@ -503,7 +58,7 @@ class ProxyParseError(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self,message="Error while parsing the Proxy, please make sure you are passing the right formatted proxy"):
+    def __init__(self, message="Error while parsing the Proxy, please make sure you are passing the right formatted proxy"):
         self.message = message
         super().__init__(self.message)
 
@@ -516,8 +71,11 @@ class UserProtected(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, message):
+    def __init__(self, error_code, error_name, response, message="The User is Protected , please make sure you are authenticated and authorized"):
         self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
         super().__init__(self.message)
 
 
@@ -529,8 +87,41 @@ class UnknownError(Exception):
             message -- explanation of the error
         """
 
-    def __init__(self, message):
-        if not isinstance(message, UserProtected) or not isinstance(message, UserNotFound):
-            error = traceback.format_exc().splitlines()[-1]
-            self.message = error
-            super().__init__(self.message)
+    def __init__(self, error_code, error_name, response, message):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
+
+
+class InvalidCredentials(Exception):
+    """
+        Exception Raised when cookies credentials are invalid
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="The Cookies are Invalid"):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
+
+
+class AuthenticationRequired(Exception):
+    """
+        Exception Raised when cookies are required for making a specific request
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="You need to be authenticated to make this request"):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
