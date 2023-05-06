@@ -9,9 +9,9 @@ Before you begin, ensure you have met the following requirements:
 * Internet Connection
 * Python 3.6+
 * BeautifulSoup (Python Module)
-* Requests (Python Module)
+* httpx (Python Module)
 * openpyxl (Python Module)
-* wget (Python Module) [Optional , you need to install it manually]
+* tqdm
 
 ## Installation:
 ```bash
