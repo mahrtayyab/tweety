@@ -15,7 +15,8 @@ setup(
         'openpyxl',
         'httpx',
         'dateutils',
-        'tqdm'
+        'tqdm',
+        'PySocks~=1.7.1',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

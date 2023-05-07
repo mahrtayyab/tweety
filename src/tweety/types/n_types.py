@@ -2,11 +2,9 @@ from typing import Union
 import socks
 from ..exceptions_ import *
 
-PROXY_TYPES = Union[socks.SOCKS4, socks.SOCKS5, socks.HTTP]
-
 
 class Proxy:
-    def __init__(self, host: str, port: int, proxy_type: PROXY_TYPES, username: str = None, password: str = None):
+    def __init__(self, host: str, port: int, proxy_type: int, username: str = None, password: str = None):
         self.host = host
         self.password = password
         self.proxy_type = proxy_type

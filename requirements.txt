@@ -3,3 +3,4 @@ httpx
 openpyxl
 dateutils
 tqdm
+PySocks~=1.7.1
