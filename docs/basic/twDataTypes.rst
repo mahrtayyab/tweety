@@ -182,6 +182,11 @@ Tweet
 
             DateTime at which the Tweet was created
 
+        .. py:attribute:: date
+            :type: datetime.datetime
+
+            DateTime at which the Tweet was created
+
         .. py:attribute:: author
             :type: User
 
@@ -784,6 +789,26 @@ User
             :type: datetime.datetime
 
             DateTime at which the user was created
+
+        .. py:attribute:: date
+            :type: datetime.datetime
+
+            DateTime at which the Tweet was created
+
+        .. py:attribute:: description
+            :type: str
+
+            Bio / Description on User Profile
+
+        .. py:attribute:: bio
+            :type: str
+
+            Bio / Description on User Profile
+
+        .. py:attribute:: entities
+            :type: dict
+
+            Additional entities of user , usually links
 
         .. py:attribute:: fast_followers_count
             :type: int

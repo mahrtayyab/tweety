@@ -13,8 +13,9 @@ class Search(dict):
         self.cursor = cursor
         self.is_next_page = True
         self.http = http
+        self.pages = pages
+        self.wait_time = wait_time
         self.filter = filter_.lower().strip() if filter_ else None
-        self._search(pages, wait_time)
 
     def __repr__(self):
         return "Search(keyword={}, count={}, filter={})".format(
@@ -24,7 +25,6 @@ class Search(dict):
         )
 
     def get_next_page(self):
-        _tweets = []
         if self.is_next_page:
             response = self.http.perform_search(self.keyword, self.cursor, self.filter)
             thisTweets = self._parse_response(response)
@@ -34,6 +34,7 @@ class Search(dict):
 
             return thisTweets
 
+        return []
     def _parse_response(self, response):
         thisObjects = []
         if self.filter == "users":
@@ -85,7 +86,7 @@ class Search(dict):
                 except:
                     pass
                 try:
-                    for j in response.json()['timeline']['instructions']:
+                    for j in response['timeline']['instructions']:
                         for key in j.keys():
                             if key == "replaceEntry":
                                 if j['replaceEntry']['entry']['content']['operation']['cursor']['cursorType'] == "Bottom":
@@ -98,21 +99,21 @@ class Search(dict):
                     pass
         return False
 
-    def _search(self, pages, wait_time):
-        for page in range(1, int(pages) + 1):
+    def generator(self):
+        for page in range(1, int(self.pages) + 1):
             this_tweets = self.get_next_page()
 
-            if self.is_next_page and page != pages:
-                time.sleep(wait_time)
+            yield self, this_tweets
+
+            if self.is_next_page and page != self.pages:
+                time.sleep(self.wait_time)
+
+        return self
 
     def to_xlsx(self, filename=None):
         if self.filter == "users":
             return AttributeError("to_xlsx with 'users' filter isn't supported yet")
         return Excel(self.tweets, f"search-{self.keyword}", filename)
-
-    @deprecated
-    def to_dict(self):
-        return self.tweets
 
     def __getitem__(self, index):
         if self.filter == "users":

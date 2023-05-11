@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='tweety-ns',
     packages=['tweety', 'tweety.types'],
-    version='0.7.0',
+    version='0.7.1',
     license='MIT',
     description='An easy Twitter Scraper',
     author='Tayyab Kharl',

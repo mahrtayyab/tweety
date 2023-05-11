@@ -99,6 +99,57 @@ Get Tweets
            print(tweet)
 
 
+- .. py:method:: Twitter().iter_tweets(username: str , pages: int = 1, replies: bool = False, wait_time: int = 2, cursor: str = None)
+
+    Get the Tweets of the specified username as a generator
+
+    .. py:data:: Arguments
+
+        .. py:data:: username (Required)
+            :type: str
+
+            Username of the user you want to get Tweets of.
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: replies (optional)
+            :type: bool
+            :value: False
+
+            Fetch the Replied Tweets of the User
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator : (`UserTweets` , list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter()
+       for userTweetsObj, tweet in tweets.iter_tweets('elonmusk'):
+           print(tweet)
+
+
 Searching a Keyword
 ---------------------
 
@@ -155,6 +206,59 @@ Searching a Keyword
        cookies = "cookies_value"
        tweets = Twitter(cookies=cookies).search('elonmusk')
        for tweet in tweets:
+           print(tweet)
+
+- .. py:method:: Twitter().iter_search(keyword: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None)
+
+    Search for a keyword or hashtag on Twitter as a generator
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: keyword (Required)
+            :type: str
+
+            The keyword which is supposed to be searched
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: filter_ (optional)
+            :type: str | SearchFilter
+            :value: None
+
+            Filter you would like to apply on the search. More about :ref:`filter`
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`Search`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
+       for search_obj, tweet in tweets.iter_search('elonmusk'):
            print(tweet)
 
 

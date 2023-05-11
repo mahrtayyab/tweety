@@ -1,5 +1,4 @@
 import os
-import warnings
 import httpx as s
 from tqdm import tqdm
 
@@ -50,9 +49,12 @@ class Request:
         if isinstance(cookies, str):
             cookie_list = cookies.split(";")
             for cookie in cookie_list:
-                cookie_key = cookie.strip().split("=")[0]
-                cookie_value = cookie.strip().split("=")[1]
-                true_cookies[cookie_key] = cookie_value
+                split_cookie = cookie.strip().split("=")
+
+                if len(split_cookie) >= 2:
+                    cookie_key = split_cookie[0]
+                    cookie_value = split_cookie[1]
+                    true_cookies[cookie_key] = cookie_value
         elif isinstance(cookies, dict):
             true_cookies = cookies
         else:
@@ -94,6 +96,10 @@ class Request:
 
     def get_user(self, username=None):
         if not username:
+
+            if not self.username:
+                raise ValueError("'username' is required")
+
             username = self.username
 
         response = self.__get_response__(**self.__builder.user_by_screen_name(username))
@@ -117,7 +123,7 @@ class Request:
             keyword = f"%23{keyword[1:]}"
 
         request_data = self.__builder.search(keyword, cursor, filter_)
-        del request_data['headers']['content-type']
+        # del request_data['headers']['content-type']
         request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
 
         response = self.__get_response__(**request_data)

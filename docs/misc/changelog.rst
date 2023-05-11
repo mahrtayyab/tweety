@@ -65,3 +65,16 @@ Update 1.3:
 * Added ``tqdm`` for download progress
 * Removed `to_dict` in most methods , and all will be removed in future
 * **Please** do check the full documentation before upgrading
+
+Update 1.4:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.7.1
+* Fixed 'TypeError: Union[arg, ...]'
+* Completely Removed ``wget``
+* Completely removed `to_dict` method
+* Added ``bio`` ``description`` ``entities`` ``date`` attributes to `User`
+* Added ``date`` attribute to `Tweet`
+* Added New ``iter_tweets`` methods to `Twitter` ,  check `iter_tweets </basic/all-functions.html#id4>`_
+* Added New ``iter_search`` methods to `Twitter` ,  check `iter_search </basic/all-functions.html#id18>`_
+* **Please** do check the full documentation before upgrading

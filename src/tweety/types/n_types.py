@@ -1,6 +1,8 @@
-from typing import Union
-import socks
 from ..exceptions_ import *
+
+PROXY_TYPE_SOCKS4 = SOCKS4 = 1
+PROXY_TYPE_SOCKS5 = SOCKS5 = 2
+PROXY_TYPE_HTTP = HTTP = 3
 
 
 class Proxy:
@@ -22,12 +24,12 @@ class Proxy:
 
     def __parse__(self):
         proxy_url = self.__proxy_url__()
-        if self.proxy_type == socks.HTTP:
+        if self.proxy_type == HTTP:
             return dict(http=proxy_url, https=proxy_url)
-        elif self.proxy_type == socks.SOCKS4:
+        elif self.proxy_type == SOCKS4:
             socks_url = "socks4://{}".format(proxy_url)
             return dict(http=socks_url, https=socks_url)
-        elif self.proxy_type == socks.SOCKS5:
+        elif self.proxy_type == SOCKS5:
             socks_url = "socks5://{}".format(proxy_url)
             return dict(http=socks_url, https=socks_url)
 

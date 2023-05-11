@@ -1,4 +1,5 @@
 import functools
+import re
 from typing import Union
 
 from .types.n_types import Proxy
@@ -35,7 +36,7 @@ class Twitter:
 
     def get_user_info(self, username: str = None, banner_extensions: bool = False, image_extensions: bool = False):
         """
-        Get the User Info of the specified username or ``self`` if user is authenticated using ``cookies``
+        Get the User Info of the specified username
 
         :param username: (`str`) username to get information of
         :param banner_extensions: (`boolean`) Get the Banner extension on the user page
@@ -70,22 +71,7 @@ class Twitter:
 
         return self.user.rest_id if self.user else None
 
-    def get_tweets(self, username: Union[str, int, User], pages: int = 1, replies: bool = False, wait_time: int = 2, cursor: str = None):
-        """
-        Get the tweets from a user
-
-        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
-        :param: pages: (`int`) number of pages to be scraped
-        :param: replies: (`boolean`) get the replied tweets of the user too
-        :param: wait_time: (`int`) seconds to wait between multiple requests
-        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
-
-
-        :return: .types.usertweet.UserTweets
-        """
-        if wait_time is None:
-            wait_time = 0
-
+    def _get_user_id(self, username):
         if isinstance(username, User):
             user_id = username.rest_id
         elif isinstance(username, int):
@@ -95,7 +81,52 @@ class Twitter:
         else:
             user_id = self.get_user_info(username).rest_id
 
-        return UserTweets(user_id, self.request, pages, replies, wait_time, cursor)
+        return user_id
+
+    def get_tweets(self, username: Union[str, int, User], pages: int = 1, replies: bool = False, wait_time: int = 2, cursor: str = None):
+        """
+         Get the tweets from a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: replies: (`boolean`) get the replied tweets of the user too
+        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: .types.usertweet.UserTweets
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userTweets = UserTweets(user_id, self.request, pages, replies, wait_time, cursor)
+
+        # TODO : Find proper way to run the generator
+        results = [i for i in userTweets.generator()]
+
+        return userTweets
+
+    def iter_tweets(self,  username: Union[str, int, User], pages: int = 1, replies: bool = False, wait_time: int = 2, cursor: str = None):
+        """
+         Generator for getting the tweets from a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: replies: (`boolean`) get the replied tweets of the user too
+        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: (.types.usertweet.UserTweets, list[.types.twDataTypes.Tweet])
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userTweets = UserTweets(user_id, self.request, pages, replies, wait_time, cursor)
+
+        return userTweets.generator()
 
     def get_trends(self):
         """
@@ -134,12 +165,40 @@ class Twitter:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
 
-        :return: .types.search.Search
+        :return: .types.search.Search | if iter: (.types.search.Search, list[.types.twDataTypes.Tweet])
         """
         if wait_time is None:
             wait_time = 0
 
-        return Search(keyword, self.request, pages, filter_, wait_time, cursor)
+        search = Search(keyword, self.request, pages, filter_, wait_time, cursor)
+
+        # TODO : Find proper way to run the generator
+        results = [i for i in search.generator()]
+
+        return search
+
+    @AuthRequired
+    def iter_search(self, keyword: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None):
+        """
+        Search for a keyword or hashtag on Twitter
+
+        :param keyword: (`str`) The keyword which is supposed to be searched
+        :param pages: (`int`) The number of pages to get
+        :param filter_: (
+           `str`| `filters.SearchFilters.Users()`| `filters.SearchFilters.Latest()` | `filters.SearchFilters.Photos()` | `filters.SearchFilters.Videos()`
+        )
+        :param wait_time : (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+        :return: (.types.search.Search, list[.types.twDataTypes.Tweet])
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        search = Search(keyword, self.request, pages, filter_, wait_time, cursor)
+
+        return search.generator()
 
     def tweet_detail(self, identifier: str):
         """
@@ -150,14 +209,10 @@ class Twitter:
         :return: .types.twDataTypes.Tweet
         """
 
-        if str(identifier).startswith("https://"):
-            if str(identifier).endswith("/"):
-                tweetId = str(identifier)[:-1].split("/")[-1]
-            else:
-                tweetId = str(identifier).split("/")[-1]
-        else:
-            tweetId = identifier
+        tweetId = re.findall("\d+", identifier)[0]
+
         r = self.request.get_tweet_detail(tweetId)
+
         try:
             for entry in r['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
                 if str(entry['entryId']).split("-")[0] == "tweet":

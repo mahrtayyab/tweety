@@ -13,7 +13,9 @@ class UserTweets(dict):
         self.is_next_page = True
         self.http = http
         self.user_id = user_id
-        self._get_tweets(pages, wait_time)
+        self.pages = pages
+        self.wait_time = wait_time
+        # self._get_tweets(pages, wait_time)
 
     @staticmethod
     def _get_entries(response):
@@ -66,14 +68,16 @@ class UserTweets(dict):
             self['is_next_page'] = self.is_next_page
             self['cursor'] = self.cursor
 
-            return self
+        return self, _tweets
 
-    def _get_tweets(self, pages, wait_time=2):
-        for page in range(1, int(pages) + 1):
-            self.get_next_page()
+    def generator(self):
+        for page in range(1, int(self.pages) + 1):
+            _, tweets = self.get_next_page()
 
-            if self.is_next_page and page != pages:
-                time.sleep(wait_time)
+            yield self, tweets
+
+            if self.is_next_page and page != self.pages:
+                time.sleep(self.wait_time)
 
     def _get_cursor(self, entries):
         for entry in entries:

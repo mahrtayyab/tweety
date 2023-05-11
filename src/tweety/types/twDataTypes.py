@@ -56,7 +56,7 @@ class Excel:
 
     def _write_data(self):
         for tweet in self.tweets:
-            self.worksheet[f'A{self.max_row  + 1}'] = tweet.created_on
+            self.worksheet[f'A{self.max_row  + 1}'] = tweet.date
             self.worksheet[f'B{self.max_row  + 1}'] = tweet.author.name
             self.worksheet[f'C{self.max_row  + 1}'] = tweet.is_retweet
             self.worksheet[f'D{self.max_row  + 1}'] = tweet.is_reply
@@ -113,7 +113,7 @@ class Tweet(dict):
     def _format_tweet(self):
         original_tweet = self._get_original_tweet()
         self.id = self._get_id()
-        self.created_on = dateutil.parser.parse(original_tweet["created_at"])
+        self.created_on = self.date = dateutil.parser.parse(original_tweet["created_at"])
         self.author = self._get_author()
         self.is_retweet = self._is_retweet(original_tweet)
         self.retweeted_tweet = self._get_retweeted_tweet(self.is_retweet, original_tweet)
@@ -134,6 +134,7 @@ class Tweet(dict):
         self.place = self._get_place(original_tweet)
         self.retweet_counts = self._get_retweet_counts(original_tweet)
         self.source = self._get_source(self.__raw_tweet)
+        self.voice_info = None  # TODO
         self.media = self._get_tweet_media(original_tweet)
         self.user_mentions = self._get_tweet_mentions(original_tweet)
         self.urls = self._get_tweet_urls(original_tweet)
@@ -392,6 +393,7 @@ class Media(dict):
         self.original_info = self.__dictionary.get("original_info")
         self.file_format = self._get_file_format()
         self.streams = []
+
         if self.type == "video" or self.type == "animated_gif":
             self.__parse_video_streams()
 
@@ -431,10 +433,6 @@ class Media(dict):
             if not file_format == "x-mpegURL":
                 return self.__http.download_media(self.streams[0].url, filename, show_progress)
         return None
-
-    @deprecated
-    def to_dict(self):
-        return self.__dictionary
 
 
 class Stream(dict):
@@ -498,9 +496,6 @@ class ShortUser(dict):
     def __repr__(self):
         return f"ShortUser(id={self.id}, name={self.name})"
 
-    def to_dict(self):
-        return self.__dictionary
-
 
 class Trends:
     def __init__(self, trends_dict):
@@ -511,9 +506,6 @@ class Trends:
 
     def __repr__(self):
         return f"Trends(name={self.name})"
-
-    def to_dict(self):
-        return self.__dictionary
 
 
 class Card(dict):
@@ -639,8 +631,9 @@ class User(dict):
         super().__init__()
         self._json = user_data
         self.id = self.rest_id = self.get_id()
-        self.created_at = self.get_created_at()
-        self.description = self._get_key("description")
+        self.created_at = self.date = self.get_created_at()
+        self.entities = self._get_key("entities")
+        self.description = self.bio = self._get_key("description")
         self.fast_followers_count = self._get_key("fast_followers_count")
         self.favourites_count = self._get_key("favourites_count")
         self.followers_count = self._get_key("followers_count")
@@ -682,6 +675,7 @@ class User(dict):
 
     def get_id(self):
         raw_id = self._json.get("id")
+
         if not str(raw_id).isdigit():
             raw_id = decodeBase64(raw_id).split(":")[-1]
 
