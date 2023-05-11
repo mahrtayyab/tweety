@@ -32,7 +32,7 @@ class Request:
                 message="Unknown Error Occurs on Twitter"
             )
 
-        if response_json.get("errors"):
+        if response_json.get("errors") and not response_json.get("data"):
             error = response_json['errors'][0]
             return GenericError(
                 response, error.get("code"), error.get("message")
