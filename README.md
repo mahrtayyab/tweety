@@ -8,14 +8,21 @@ Before you begin, ensure you have met the following requirements:
 
 * Internet Connection
 * Python 3.6+
-* BeautifulSoup (Python Module)
-* httpx (Python Module)
-* openpyxl (Python Module)
+* httpx 
+* openpyxl
 * tqdm
 
-## Installation:
+## Installation: 
 ```bash
 pip install tweety-ns
+```
+
+## Keep synced with latest fixes
+
+##### **Pip might not be always updated , so to keep everything synced.**
+
+```bash
+pip install git+https://github.com/mahrtayyab/tweety.git --upgrade --force-reinstall
 ```
 
 ## A Quick Example:
