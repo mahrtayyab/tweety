@@ -29,9 +29,9 @@ pip install git+https://github.com/mahrtayyab/tweety.git --upgrade --force-reins
 ```python
   from tweety.bot import Twitter
   
-  app = Twitter("elonmusk")
+  app = Twitter()
   
-  all_tweets = app.get_tweets()
+  all_tweets = app.get_tweets("elonmusk")
   for tweet in all_tweets:
       print(tweet)
 ```
