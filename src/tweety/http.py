@@ -17,7 +17,6 @@ class Request:
         self.__session = s.Client(proxies=proxy, cookies=self._parse_cookies(cookies), timeout=60)
         self.__builder = UrlBuilder(self.__session.cookies)
         self.__guest_token = self._get_guest_token(max_retries)
-        self._init_api()
         self._verify_cookies()
 
     def __get_response__(self, **request_data):
