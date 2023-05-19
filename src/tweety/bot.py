@@ -22,16 +22,16 @@ def AuthRequired(f):
 
 
 class Twitter:
-    def __init__(self, max_retires: int = 10, proxy: Union[dict, Proxy] = None, cookies: Union[str, dict] = None):
+    def __init__(self, max_retries: int = 10, proxy: Union[dict, Proxy] = None, cookies: Union[str, dict] = None):
         """
         Constructor of the Twitter Public class
 
-        :param max_retires: (`int`) Number of retries the script would make , if the guest token wasn't found
+        :param max_retries: (`int`) Number of retries the script would make , if the guest token wasn't found
         :param proxy: (`dict` or `Proxy`) Provide the proxy you want to use while making a request
         :param cookies: (`str` or `dict`) Cookies which will be used for user authentication
         """
 
-        self.request = Request(max_retries=max_retires, proxy=proxy, cookies=cookies)
+        self.request = Request(max_retries=max_retries, proxy=proxy, cookies=cookies)
         self.user = self.get_user_info() if cookies is not None else None
 
     def get_user_info(self, username: str = None, banner_extensions: bool = False, image_extensions: bool = False):
