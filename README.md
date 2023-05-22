@@ -22,7 +22,7 @@ pip install tweety-ns
 ##### **Pip might not be always updated , so to keep everything synced.**
 
 ```bash
-pip install git+https://github.com/mahrtayyab/tweety.git --upgrade --force-reinstall
+pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade --force-reinstall
 ```
 
 ## A Quick Example:
