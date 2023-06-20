@@ -146,7 +146,7 @@ Get Tweets
        from tweety.bot import Twitter
 
        app = Twitter()
-       for userTweetsObj, tweet in tweets.iter_tweets('elonmusk'):
+       for userTweetsObj, tweet in app.iter_tweets('elonmusk'):
            print(tweet)
 
 
@@ -258,7 +258,7 @@ Searching a Keyword
 
        cookies = "cookies_value"
        app = Twitter(cookies=cookies)
-       for search_obj, tweet in tweets.iter_search('elonmusk'):
+       for search_obj, tweet in app.iter_search('elonmusk'):
            print(tweet)
 
 
@@ -278,6 +278,8 @@ Get Trends
     .. code-block:: python
 
        from tweety.bot import Twitter
+
+       app = Twitter()
 
        all_trends = app.get_trends()
        for trend in all_trends:
