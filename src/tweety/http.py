@@ -2,7 +2,7 @@ import os
 import httpx as s
 from tqdm import tqdm
 
-from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
+from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials, RateLimitError
 from .types.n_types import GenericError
 from .utils import custom_json
 from .builder import UrlBuilder
@@ -22,6 +22,14 @@ class Request:
     def __get_response__(self, **request_data):
         response = self.__session.request(**request_data)
         response_json = response.json_() # noqa
+
+        if response.status_code == 429:
+            raise RateLimitError(
+                error_code=429,
+                error_name="Too many requests",
+                response=response,
+                message="Rate limit exceeded"
+            )
 
         if not response_json:
             raise UnknownError(
@@ -130,6 +138,10 @@ class Request:
 
     def get_tweet_detail(self, tweetId):
         response = self.__get_response__(**self.__builder.tweet_detail(tweetId))
+        return response
+
+    def tweet_retweeters(self, tweetId, cursor):
+        response = self.__get_response__(**self.__builder.get_tweet_retweets(tweetId, cursor))
         return response
 
     def download_media(self, media_url, filename=None, show_progress=True):
