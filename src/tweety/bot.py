@@ -211,8 +211,8 @@ class Twitter:
 		"""
         Get Retweeters of a single tweet
 
-        :param identifier: (`str`) The unique identifier of the tweet, weather the `Tweet id` or `Tweet Link`
-
+        :param identifier: (`str`) The unique identifier of the tweet, the `Tweet id`
+		:return: typing.Generator[Dict]
         """
 
 		tweetId = re.findall("\d+", identifier)[0]
@@ -246,6 +246,47 @@ class Twitter:
 				paginate = False
 				break
 			retweets.clear()
+
+	def tweet_likes(self, identifier: str):
+		"""
+		Get likes of a single tweet
+
+		:param identifier: (`str`) The unique identifier of the tweet , `Tweet id`
+
+		:return: typing.Generator[Dict]
+		"""
+
+		tweetId = re.findall("\d+", identifier)[0]
+		likes = []
+		paginate = True
+		cursor = None
+
+		while paginate:
+			try:
+				response = self.request.tweet_likes(tweetId, cursor=cursor)
+				for entry in response["data"]["favoriters_timeline"]["timeline"]["instructions"][0]["entries"]:
+					entryId = str(entry['entryId']).split("-")[0]
+					if entryId == "user":
+						# Is a user entry - Get user details
+						raw_like = entry["content"]["itemContent"]["user_results"]["result"]
+						if raw_like["__typename"] == "User":
+							yield raw_like
+							likes.append(1)
+
+					elif entryId == "cursor":
+						# Is a cursor entry - Get bottom cursor
+						if entry["content"]["cursorType"] == "Bottom":
+							cursor = entry["content"]["value"]
+			except KeyError:
+				pass
+			# except src.tweety.exceptions_.UnknownError:
+			# 	pass
+
+			# TODO: Add delay
+			if len(likes) == 0:
+				paginate = False
+				break
+			likes.clear()
 
 	def tweet_detail(self, identifier: str):
 		"""

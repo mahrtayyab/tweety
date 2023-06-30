@@ -144,6 +144,10 @@ class Request:
         response = self.__get_response__(**self.__builder.get_tweet_retweets(tweetId, cursor))
         return response
 
+    def tweet_likes(self, tweetId, cursor):
+        response = self.__get_response__(**self.__builder.get_tweet_likes(tweetId, cursor))
+        return response
+
     def download_media(self, media_url, filename=None, show_progress=True):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
 
