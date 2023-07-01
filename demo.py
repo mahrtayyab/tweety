@@ -3,7 +3,7 @@ import json
 from env import cookies
 
 app = Twitter(cookies=cookies)
-tweet_id = "1674101384390782976"
+tweet_id = "1674458209577496577"
 limit = 3000
 
 print("Scraping retweets ...")
