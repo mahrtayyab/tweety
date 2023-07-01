@@ -235,7 +235,8 @@ class Twitter:
 						# Is a cursor entry - Get bottom cursor
 						if entry["content"]["cursorType"] == "Bottom":
 							cursor = entry["content"]["value"]
-			except KeyError:
+			except (KeyError,
+					IndexError):
 				pass
 			# TODO: Add delay
 			if len(retweets) == 0:
