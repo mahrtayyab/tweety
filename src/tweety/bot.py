@@ -4,7 +4,6 @@ import re
 import time
 from typing import Union, Generator, List, Dict
 
-import src.tweety.exceptions_
 from .types.n_types import Proxy
 from .exceptions_ import *
 from .http import Request
@@ -238,9 +237,6 @@ class Twitter:
 							cursor = entry["content"]["value"]
 			except KeyError:
 				pass
-			# except src.tweety.exceptions_.UnknownError:
-			# 	pass
-
 			# TODO: Add delay
 			if len(retweets) == 0:
 				paginate = False
@@ -279,8 +275,6 @@ class Twitter:
 							cursor = entry["content"]["value"]
 			except KeyError:
 				pass
-			# except src.tweety.exceptions_.UnknownError:
-			# 	pass
 
 			# TODO: Add delay
 			if len(likes) == 0:
