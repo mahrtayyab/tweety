@@ -117,3 +117,5 @@ dmypy.json
 # Custom ignores
 env.py
 .idea/
+.history/
+.vscode/

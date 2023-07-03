@@ -24,11 +24,13 @@ class UrlBuilder:
 	URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
 	URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/nrdle2catTyGnTyj1Qa7wA/UserTweetsAndReplies"
 	URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
-	URL_SEARCH = "https://twitter.com/i/api/2/search/adaptive.json"
+	URL_SEARCH = "https://twitter.com/i/api/graphql/nK1dw4oV3k4w5TdtcAdSww/SearchTimeline"
 	URL_TWEET_DETAILS = "https://twitter.com/i/api/graphql/1oIoGPTOJN2mSjbbXlQifA/TweetDetail"
 	URL_AUSER_SETTINGS = "https://api.twitter.com/1.1/account/settings.json"  # noqa
 	URL_TWEET_RETWEETERS = "https://twitter.com/i/api/graphql/QQOiGjGLYeTiGrGw2VKloQ/Retweeters"
 	URL_TWEET_LIKES = "https://twitter.com/i/api/graphql/H5cko0V7pQtjDL5apOPhEA/Favoriters"
+
+
 
 	def __init__(self, cookies=None):
 		self.cookies = cookies
@@ -168,57 +170,47 @@ class UrlBuilder:
 
 	@return_with_headers
 	def search(self, keyword, cursor, filter_):
-		params = {
-			'include_profile_interstitial_type': '1',
-			'include_blocking': '1',
-			'include_blocked_by': '1',
-			'include_followed_by': '1',
-			'include_want_retweets': '1',
-			'include_mute_edge': '1',
-			'include_can_dm': '1',
-			'include_can_media_tag': '1',
-			'include_ext_has_nft_avatar': '1',
-			'include_ext_is_blue_verified': '1',
-			'include_ext_verified_type': '1',
-			'include_ext_profile_image_shape': '1',
-			'skip_status': '1',
-			'cards_platform': 'Web-12',
-			'include_cards': '1',
-			'include_ext_alt_text': 'true',
-			'include_ext_limited_action_results': 'false',
-			'include_quote_count': 'true',
-			'include_reply_count': '1',
-			'tweet_mode': 'extended',
-			'include_ext_views': 'true',
-			'include_entities': 'true',
-			'include_user_entities': 'true',
-			'include_ext_media_color': 'true',
-			'include_ext_media_availability': 'true',
-			'include_ext_sensitive_media_warning': 'true',
-			'include_ext_trusted_friends_metadata': 'true',
-			'send_error_codes': 'true',
-			'simple_quoted_tweet': 'true',
-			'q': str(keyword),
-			'query_source': 'typed_query',
-			'count': '20',
-			'requestContext': 'launch',
-			'pc': '1',
-			'spelling_corrections': '1',
-			'include_ext_edit_control': 'true',
-			'ext': 'mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,enrichments,superFollowMetadata,unmentionInfo,editControl,vibe',
+		variables = {
+			"rawQuery":keyword,
+			"count":50,
+			"querySource":"typed_query",
+		}
+			
+		features = {
+			"rweb_lists_timeline_redesign_enabled": True,
+			"responsive_web_graphql_exclude_directive_enabled": True,
+			"verified_phone_label_enabled": False,
+			"creator_subscriptions_tweet_preview_api_enabled": True,
+			"responsive_web_graphql_timeline_navigation_enabled": True,
+			"responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+			"tweetypie_unmention_optimization_enabled": True,
+			"responsive_web_edit_tweet_api_enabled": True,
+			"graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+			"view_counts_everywhere_api_enabled": True,
+			"longform_notetweets_consumption_enabled": True,
+			"responsive_web_twitter_article_tweet_consumption_enabled": False,
+			"tweet_awards_web_tipping_enabled": False,
+			"freedom_of_speech_not_reach_fetch_enabled": True,
+			"standardized_nudges_misinfo": True,
+			"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+			"longform_notetweets_rich_text_read_enabled": True,
+			"longform_notetweets_inline_media_enabled": True,
+			"responsive_web_media_download_video_enabled": False,
+			"responsive_web_enhance_cards_enabled": False
 		}
 
-		if filter_ and filter_ == "latest":
-			params['tweet_search_mode'] = "live"
-		elif filter_ and filter_ == "users":
-			params['result_filter'] = "user"
-		elif filter_ and filter_ == "photos":
-			params['result_filter'] = "image"
-		elif filter_ and filter_ == "videos":
-			params['result_filter'] = "video"
+		fieldToggles = {
+			"withArticleRichContentState":False
+		}
+			
+		if filter_ in ["latest","users","photos","image","video"]:
+			variables["product"] = filter_.upper()
 
 		if cursor:
-			params['cursor'] = cursor
+			variables['cursor'] = cursor
+
+		params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
+				  'fieldToggles': str(json.dumps(fieldToggles))}
 
 		return "GET", self._build(self.URL_SEARCH, urlencode(params))
 
