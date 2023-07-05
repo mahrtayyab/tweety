@@ -50,6 +50,22 @@ class InvalidTweetIdentifier(Exception):
         super().__init__(self.message)
 
 
+class RateLimitReached(Exception):
+    """
+        Exception Raised when the tweet identifier is invalid
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="You have exceeded the Twitter Rate Limit"):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
+
+
 class ProxyParseError(Exception):
     """
     Exception Raised when an error occurs while parsing the provided proxy

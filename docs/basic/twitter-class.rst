@@ -10,7 +10,9 @@ Twitter Class
 
     This is main entry Class for the library you should be importing and using to make further method calls
 
-    .. note:: if `cookies` are provided all requests made to Twitter while be using that cookies.
+    Bases : `UpdateMethod`
+
+    .. note:: Cookies are now required.
 
     .. py:data:: Arguments
 
@@ -28,7 +30,7 @@ Twitter Class
 
             .. warning:: Proxy is not yet fully integrated
 
-        .. py:data:: cookies (optional)
+        .. py:data:: cookies
             :type: str | dict
             :value: None
 
@@ -44,6 +46,7 @@ Twitter Class
 .. code-block:: python
 
     from tweety.bot import Twitter
-    app = Twitter()
+    cookies = "cookies_value"
+    app = Twitter(cookies=cookies)
 
 

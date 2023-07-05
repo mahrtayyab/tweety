@@ -21,7 +21,7 @@ UserTweets
     .. py:data:: Attributes:
 
         .. py:attribute:: tweets
-            :type: list
+            :type: list[Tweet | TweetThread]
 
             List of User Tweets
 
@@ -67,7 +67,7 @@ UserTweets
             Get next page of tweets if available
 
             .. py:data:: Return
-                :type: list[Tweet]
+                :type: list[Tweet | TweetThread]
 
 
         .. py:method:: __repr__()
@@ -96,7 +96,7 @@ Reference `Search`_.
     .. py:data:: Attributes:
 
         .. py:attribute:: tweets
-            :type: list
+            :type: list[Tweet]
 
             List of User Tweets if filter isn't User Only
 
@@ -158,6 +158,144 @@ Reference `Search`_.
                 :type: str
 
                 :value: ``Search(keyword={keyword}, count={number_of_results}, filter={any_filter_which_is_used})``
+
+
+Mention
+---------------------
+
+.. py:class:: Mention
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.mentions.Mention`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list
+
+            List of User Tweets
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :return: ``Mention(user_id={user_id}, count={number_of_results})``
+
+Inbox
+---------------------
+
+.. py:class:: Inbox
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.inbox.Inbox`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: conversations
+            :type: list[Conversation]
+
+            List of User Conversation
+
+        .. py:attribute:: messages
+            :type: list[Message]
+
+            List of User Message
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Pagination cursor to get new message
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_conversation(conversation_id)
+
+            Get conversation of with specific User using its conversation id
+
+            .. py:data:: Arguments:
+
+                .. py:data:: conversation_id
+                    :type: str
+
+                    Conversation id of the specific user
+
+            .. py:data:: Return
+                :type: Conversation | None
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :return: ``Inbox(user_id={user_id}, count={number_of_results})``
+
+
+TweetThread
+---------------------
+
+.. py:class:: TweetThread
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.twDataTypes.TweetThread`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet | TweetThread]
+
+            List of Threaded Tweets
+
+    .. py:data:: Methods:
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :return: ``TweetThread(tweets=number_of_tweets_in_threads)``
+
 
 Tweet
 ---------------------
@@ -308,6 +446,60 @@ Tweet
             List of Comments sent in response to this Tweet
 
     .. py:data:: Methods:
+
+        .. py:method:: get_comments(pages=1, wait_time=2, cursor=None)
+
+            Get the comments / replies posted in response to this tweet
+
+            .. py:data:: Arguments:
+
+                .. py:data:: pages (optional)
+                    :type: int
+                    :value: 1
+
+                    How many pages to get
+
+                .. py:data:: wait_time (optional)
+                    :type: int
+                    :value: 2
+
+                    Number of seconds to wait between multiple requests
+
+                .. py:data:: cursor (optional)
+                    :type: str
+                    :value: None
+
+                    Pagination cursor to get the comments from that cursor up-to
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+        .. py:method:: iter_comments(pages=1, wait_time=2, cursor=None)
+
+            Generator method to get the comments / replies posted in response to this tweet
+
+            .. py:data:: Arguments:
+
+                .. py:data:: pages (optional)
+                    :type: int
+                    :value: 1
+
+                    How many pages to get
+
+                .. py:data:: wait_time (optional)
+                    :type: int
+                    :value: 2
+
+                    Number of seconds to wait between multiple requests
+
+                .. py:data:: cursor (optional)
+                    :type: str
+                    :value: None
+
+                    Pagination cursor to get the comments from that cursor up-to
+
+            .. py:data:: Return
+                :type:  Generator : (`Tweet` , list[`Tweet`])
 
         .. py:method:: __repr__()
 
@@ -805,6 +997,11 @@ User
 
             Bio / Description on User Profile
 
+        .. py:attribute:: can_dm
+            :type: bool
+
+            Can the authenticated user send dm to this user
+
         .. py:attribute:: entities
             :type: dict
 
@@ -910,4 +1107,259 @@ User
                 :type: str
 
                 :value: ``User(id=rest_id_of_user, name=name_of_the_user, username=username_of_the_user, followers=number_of_followers_of_user, verified=is_user_verified)``
+
+
+Conversation
+---------------------
+
+.. py:class:: Conversation
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.inbox.Conversation`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the conversation
+
+        .. py:attribute:: low_quality
+            :type: bool
+
+            Is the conversation low quality
+
+        .. py:attribute:: muted
+            :type: bool
+
+            Is this conversation muted
+
+        .. py:attribute:: notifications_disabled
+            :type: bool
+
+            Is the notifications for this conversation disabled
+
+        .. py:attribute:: nsfw
+            :type: bool
+
+            Is this conversation not suitable for work
+
+        .. py:attribute:: read_only
+            :type: bool
+
+            Is this conversation read only
+
+        .. py:attribute:: trusted
+            :type: bool
+
+            Is this conversation trusted by the user
+
+        .. py:attribute:: type
+            :type: str
+
+            Type of conversation (`GROUP_DM`, `ONE_TO_ONE`)
+
+        .. py:attribute:: participants
+            :type: list[User]
+
+            Participants of the conversation
+
+        .. py:attribute:: messages
+            :type: list[Message]
+
+            Messages of the conversation
+
+
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_all_messages()
+
+            Force get all the messages of the conversation
+
+            .. py:data:: Return
+                :type: list[Message]
+
+        .. py:method:: send_message(text)
+
+            Send Message in this conversation
+
+            .. py:data:: Arguments:
+
+                .. py:data:: text
+                    :type: str
+
+                    Content of the message to send
+
+            .. py:data:: Return
+                :type: Message
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``Conversation(id=id_of_conversation, muted=is muted, nsfw=is nsfw, participants=number of participants)``
+
+Message
+---------------------
+
+.. py:class:: Message
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.inbox.Message`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the message
+
+        .. py:attribute:: conversation_id
+            :type: str
+
+            Id of the conversation this message belongs to
+
+        .. py:attribute:: epoch_time
+            :type: int
+
+            Epoch Time at which the message was sent
+
+        .. py:attribute:: time
+            :type: datetime.datetime
+
+            Time at which the message was sent
+
+        .. py:attribute:: request_id
+            :type: str
+
+            Request ID of the message
+
+        .. py:attribute:: text
+            :type: str
+
+            Text of the message
+
+        .. py:attribute:: receiver
+            :type: User
+
+            The receiver of this message
+
+        .. py:attribute:: sender
+            :type: User
+
+            The sender of this message
+
+        .. py:attribute:: media
+            :type: Media | None
+
+            Media in the message
+
+    .. py:data:: Methods:
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``Message(id=id_of_the_message, conversation_id=id_of_the_conversation, time=time_of_the_message)``
+
+NewMessage
+---------------------
+
+.. py:class:: NewMessage
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.events.newmessage.NewMessageUpdate.NewMessage`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the message
+
+        .. py:attribute:: conversation_id
+            :type: str
+
+            Id of the conversation this message belongs to
+
+        .. py:attribute:: time
+            :type: datetime.datetime
+
+            Time at which the message was sent
+
+        .. py:attribute:: text
+            :type: str
+
+            Text of the message
+
+        .. py:attribute:: participants
+            :type: list[User]
+
+            Participants of the conversation
+
+        .. py:attribute:: receiver
+            :type: User
+
+            The receiver of this message
+
+        .. py:attribute:: sender
+            :type: User
+
+            The sender of this message
+
+        .. py:attribute:: media
+            :type: Media | None
+
+            Media in the message
+
+        .. py:attribute:: message
+            :type: Message
+
+            Actual message object
+
+        .. py:attribute:: conversation
+            :type: Conversation
+
+            Conversation object
+
+    .. py:data:: Methods:
+
+        .. py:method:: respond(text)
+
+            Send Message in this conversation
+
+            .. py:data:: Arguments:
+
+                .. py:data:: text
+                    :type: str
+
+                    Content of the message to send
+
+            .. py:data:: Return
+                :type: Message
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``Message(id=id_of_the_message, conversation_id=id_of_the_conversation, time=time_of_the_message)``
 

@@ -223,6 +223,42 @@ InvalidCredentials
 
             Raw Response returned by the Twitter
 
+RateLimitReached
+---------------------
+
+.. py:class:: RateLimitReached
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when you have exceeded the Twitter Rate Limit**
+
+    :reference: `tweety.exceptions_.RateLimitReached`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+            :value: You have exceeded the Twitter Rate Limit
+
+            Main Exception Message
+
+        .. py:attribute:: error_code
+            :type: int
+            :value: 88
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+            :value: RateLimitExceeded
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter
+
 UnknownError
 ---------------------
 

@@ -2,12 +2,13 @@ import base64
 import os.path
 import re
 import sys
+import time
 import warnings
 from dateutil import parser
 import openpyxl
 import dateutil
 
-WORKBOOK_HEADERS = ['Created on', 'author', 'is_retweet', 'is_reply', 'tweet_id', 'tweet_body', 'language', 'likes',
+WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'language', 'likes',
                     'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
 
 
@@ -40,41 +41,76 @@ def bar_progress(current, total, width=80):
 
 
 class Excel:
-    def __init__(self, tweets, user, filename=None):
+    def __init__(self, tweets, filename=None, append=False):
         self.tweets = tweets
-        self.user = user
         self.filename = filename
-        self.workbook = openpyxl.Workbook()
-        self.worksheet = self.workbook.create_sheet("tweets")
-        self._set_headers()
-        self.max_row = 1
+        self.author = self._get_author()
+        self._append = append
+        self._get_sheet()
+        self.max_row = self._get_max_row()
         self._write_data()
+
+    def _get_sheet(self):
+        if self._append and self.filename:
+            self.workbook = openpyxl.load_workbook(self.filename)
+            self.worksheet = self.workbook.active
+        else:
+            self._append = False
+            self.workbook = openpyxl.Workbook()
+            self.worksheet = self.workbook.create_sheet("tweets")
+
+    def _get_author(self):
+        for tweet in self.tweets:
+            if hasattr(tweet, "author"):
+                return tweet.author.username
+
+        return ""
+
+    def _get_max_row(self):
+        if self._append:
+            for row in reversed(self.worksheet.iter_rows(values_only=True)):
+                if any(cell for cell in row):
+                    return row[0].row
+
+        self._set_headers()
+        return 1
 
     def _set_headers(self):
         for index, value in enumerate(WORKBOOK_HEADERS, start=1):
             self.worksheet.cell(row=1, column=index).value = value
 
+    def _write_tweet(self, tweet):
+        self.worksheet[f'A{self.max_row + 1}'] = tweet.date
+        self.worksheet[f'B{self.max_row + 1}'] = tweet.author.name
+        self.worksheet[f'C{self.max_row + 1}'] = tweet.id
+        self.worksheet[f'D{self.max_row + 1}'] = tweet.text
+        self.worksheet[f'E{self.max_row + 1}'] = tweet.is_retweet
+        self.worksheet[f'F{self.max_row + 1}'] = tweet.is_reply
+        self.worksheet[f'G{self.max_row + 1}'] = tweet.language
+        self.worksheet[f'H{self.max_row + 1}'] = tweet.likes
+        self.worksheet[f'I{self.max_row + 1}'] = tweet.retweet_counts
+        self.worksheet[f'J{self.max_row + 1}'] = tweet.source
+        self.worksheet[f'K{self.max_row + 1}'] = ",".join(
+            [media.expanded_url for media in tweet.media]) if tweet.media else ""
+        self.worksheet[f'L{self.max_row + 1}'] = ",".join(
+            [user_mention.screen_name for user_mention in tweet.user_mentions]) if tweet.user_mentions else ""
+        self.worksheet[f'M{self.max_row + 1}'] = ",".join(
+            [url['expanded_url'] for url in tweet.urls]) if tweet.urls else ""
+        self.worksheet[f'N{self.max_row + 1}'] = ",".join(
+            [hashtag['text'] for hashtag in tweet.hashtags]) if tweet.hashtags else ""
+        self.worksheet[f'O{self.max_row + 1}'] = ",".join([symbol for symbol in tweet.symbols]) if tweet.symbols else ""
+        self.max_row += 1
+
     def _write_data(self):
         for tweet in self.tweets:
-            self.worksheet[f'A{self.max_row  + 1}'] = tweet.date
-            self.worksheet[f'B{self.max_row  + 1}'] = tweet.author.name
-            self.worksheet[f'C{self.max_row  + 1}'] = tweet.is_retweet
-            self.worksheet[f'D{self.max_row  + 1}'] = tweet.is_reply
-            self.worksheet[f'E{self.max_row  + 1}'] = tweet.id
-            self.worksheet[f'F{self.max_row  + 1}'] = tweet.text
-            self.worksheet[f'G{self.max_row  + 1}'] = tweet.language
-            self.worksheet[f'H{self.max_row  + 1}'] = tweet.likes
-            self.worksheet[f'I{self.max_row  + 1}'] = tweet.retweet_counts
-            self.worksheet[f'J{self.max_row  + 1}'] = tweet.source
-            self.worksheet[f'K{self.max_row  + 1}'] = ",".join([media.expanded_url for media in tweet.media]) if tweet.media else ""
-            self.worksheet[f'L{self.max_row  + 1}'] = ",".join([user_mention.screen_name for user_mention in tweet.user_mentions]) if tweet.user_mentions else ""
-            self.worksheet[f'M{self.max_row  + 1}'] = ",".join([url['expanded_url'] for url in tweet.urls]) if tweet.urls else ""
-            self.worksheet[f'N{self.max_row  + 1}'] = ",".join([hashtag['text'] for hashtag in tweet.hashtags]) if tweet.hashtags else ""
-            self.worksheet[f'O{self.max_row  + 1}'] = ",".join([symbol for symbol in tweet.symbols]) if tweet.symbols else ""
-            self.max_row += 1
+            if isinstance(tweet, Tweet):
+                self._write_tweet(tweet)
+            elif isinstance(tweet, TweetThread):
+                for _threadedTweet in tweet:
+                    self._write_tweet(_threadedTweet)
 
         if not self.filename:
-            self.filename = f"tweets-{self.user.screen_name}.xlsx"
+            self.filename = f"tweets-{self.author}.xlsx"
 
         try:
             self.workbook.remove("sheet")
@@ -84,26 +120,55 @@ class Excel:
         self.workbook.save(self.filename)
 
 
+class TweetThread(dict):
+    def __init__(self, response, http, _full_response=None):
+        super().__init__()
+        self._raw = response
+        self._http = http
+        self._full_response = _full_response
+        self.tweets = self['tweets'] = self.parse_tweets()
+
+    def parse_tweets(self):
+        _tweets = []
+        for tweet in self._raw:
+            try:
+                _tweets.append(Tweet(tweet, self._http, self._full_response))
+            except:
+                pass
+
+        return _tweets
+
+    def __getitem__(self, index):
+        return self.tweets[index]
+
+    def __iter__(self):
+        for __tweet in self.tweets:
+            yield __tweet
+
+    def __len__(self):
+        return len(self.tweets)
+
+    def __repr__(self):
+        return "TweetThread(tweets={})".format(
+            len(self.tweets)
+        )
+
+
 class Tweet(dict):
-    def __init__(self, raw_response, raw_tweet, http, get_threads=False, is_legacy_user=False, get_reply=False):  # noqa
+    def __init__(self, tweet, http, full_response=None):  # noqa
         super().__init__()
         self.http = http
-        self.__raw_response = raw_response
-        self.__raw_tweet = raw_tweet
-        self.__is_legacy_user = is_legacy_user
+        self.__tweet = tweet
+        self.__full_response = full_response
         self.__replied_to = None
-        self._get_reply = get_reply
         self._format_tweet()
-
-        if get_threads:
-            self._get_threads()
 
         for key, value in vars(self).items():
             if not str(key).startswith("_"):
                 self[key] = value
 
     def __repr__(self):
-        return f"Tweet(id={self.id}, author={self.author}, created_on={self.created_on}, threads={len(self.threads) if self.threads else None})"  # noqa
+        return f"Tweet(id={self.id}, author={self.author}, created_on={self.created_on})"  # noqa
 
     def __iter__(self):
         if self.threads:  # noqa
@@ -111,9 +176,9 @@ class Tweet(dict):
                 yield thread_
 
     def _format_tweet(self):
-        original_tweet = self._get_original_tweet()
+        original_tweet = self.__tweet['legacy'] if self.__tweet.get('legacy') else self.__tweet
         self.id = self._get_id()
-        self.created_on = self.date = dateutil.parser.parse(original_tweet["created_at"])
+        self.created_on = self.date = self._get_date(original_tweet)
         self.author = self._get_author()
         self.is_retweet = self._is_retweet(original_tweet)
         self.retweeted_tweet = self._get_retweeted_tweet(self.is_retweet, original_tweet)
@@ -124,125 +189,147 @@ class Tweet(dict):
         self.is_sensitive = self._is_sensitive(original_tweet)
         self.reply_counts = self._get_reply_counts(original_tweet)
         self.quote_counts = self._get_quote_counts(original_tweet)
-        self.replied_to = self.__replied_to = self._get_reply_to(self.is_reply, original_tweet)
+        self.replied_to = self._get_reply_to(self.is_reply)
         self.bookmark_count = self._get_bookmark_count(original_tweet)
         self.vibe = self._get_vibe()
         self.views = self._get_views()
         self.language = self._get_language(original_tweet)
         self.likes = self._get_likes(original_tweet)
-        self.card = self._get_card()
         self.place = self._get_place(original_tweet)
         self.retweet_counts = self._get_retweet_counts(original_tweet)
-        self.source = self._get_source(self.__raw_tweet)
+        self.source = self._get_source(self.__tweet)
         self.voice_info = None  # TODO
         self.media = self._get_tweet_media(original_tweet)
         self.user_mentions = self._get_tweet_mentions(original_tweet)
         self.urls = self._get_tweet_urls(original_tweet)
         self.hashtags = self._get_tweet_hashtags(original_tweet)
         self.symbols = self._get_tweet_symbols(original_tweet)
-        self.threads = []
         self.comments = []
 
+    def get_comments(self, pages=1, wait_time=2, cursor=None):
+        if not wait_time:
+            wait_time = 0
+
+        results = [i for i in self.iter_comments(pages, wait_time, cursor)]
+        return self.comments
+
+    def iter_comments(self, pages=1, wait_time=2, cursor=None):
+        if not wait_time:
+            wait_time = 0
+
+        cursor = cursor
+        _comments = []
+        pages = pages
+        for page in range(1, int(pages) + 1):
+            _, comments, new_cursor = self._get_comments(cursor, self.__full_response)
+
+            yield self, comments
+
+            if cursor != new_cursor and page != pages:
+                time.sleep(wait_time)
+            else:
+                break
+
+    def _get_comments(self, cursor=None, response=None):
+        _comments = []
+        _cursor = cursor
+
+        if not response:
+            response = self.http.get_tweet_detail(self.id, cursor)
+        else:
+            self.__full_response = None
+
+        for instruction in response['data']['threaded_conversation_with_injections_v2']['instructions']:
+            if instruction['type'] == "TimelineAddEntries":
+                for entry in instruction['entries']:
+                    if str(entry['entryId'].split("-")[0]) == "conversationthread":
+                        for item in entry['content']['items']:
+                            tweet = item['item']['itemContent']['tweet_results']['result']
+                            try:
+                                parsed = Tweet(tweet, self.http)
+                                _comments.append(parsed)
+                                self.comments.append(parsed)
+                            except:
+                                pass
+                    elif "cursor-bottom" in str(entry['entryId']):
+                        _cursor = entry['content']['itemContent']['value']
+
+        return self, _comments, _cursor
+
+    @staticmethod
+    def _get_date(original_tweet):
+        date = original_tweet.get("created_at")
+
+        if date:
+            return dateutil.parser.parse(date)
+
+        return None
+
     def _get_id(self):
-        if self.__raw_tweet.get("rest_id"):
-            return self.__raw_tweet['rest_id']
+        if self.__tweet.get("rest_id"):
+            return self.__tweet['rest_id']
 
-        if self.__raw_tweet.get("tweet"):
-            return self.__raw_tweet['tweet']['rest_id']
-
-    def _get_original_tweet(self):
-        if self.__raw_tweet.get("tweet"):
-            self.__raw_tweet = self.__raw_tweet['tweet']
-
-        if self.__raw_tweet.get("legacy"):
-            return self.__raw_tweet['legacy']
-
-        return self.__raw_tweet
+        if self.__tweet.get("tweet"):
+            return self.__tweet['tweet']['rest_id']
 
     def _get_author(self):
-        if self.__raw_tweet.get("core"):
-            return User(self.__raw_tweet['core']['user_results']['result'])
+        if self.__tweet.get("core"):
+            return User(self.__tweet['core']['user_results']['result'])
 
-        if self.__raw_tweet.get("author"):
-            return User(self.__raw_tweet['author'])
+        if self.__tweet.get("author"):
+            return User(self.__tweet['author'])
+
         return None
 
     def _get_retweeted_tweet(self, is_retweet, original_tweet):
         if is_retweet and original_tweet.get("retweeted_status_result"):
             retweet = original_tweet['retweeted_status_result']['result']
-            return Tweet(None, retweet, self.http)
+            return Tweet(retweet, self.http)
 
         return None
 
-    def _get_threads(self):
-        if not self.__raw_response:
-            self.__raw_response = self.http.get_tweet_detail(self.id)  # noqa
-
-        for entry in self.__raw_response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
-            if str(entry['entryId']).split("-")[0] == "conversationthread":
-                for item in entry['content']['items']:
-                    try:
-                        tweetType = item["item"]["itemContent"]["tweetDisplayType"]
-                        tweet = item['item']['itemContent']['tweet_results']['result']
-
-                        if not self.__replied_to or self.__replied_to.id != tweet['rest_id']:
-                            if tweetType == "SelfThread":
-                                self.threads.append(Tweet(None, tweet, self.http))
-                            else:
-                                self.comments.append(Tweet(None, tweet, self.http))
-                    except KeyError as e:
-                        pass
-
     def _get_quoted_tweet(self, is_quoted):
-        raw_tweet = None
         if is_quoted:
-            raw_response = self.__raw_response
             try:
-                if self.__raw_tweet.get("quoted_status_result"):
-                    raw_tweet = self.__raw_tweet['quoted_status_result']['result']
-                    return Tweet(raw_response, raw_tweet, self.http)
+                if self.__tweet.get("quoted_status_result"):
+                    raw_tweet = self.__tweet['quoted_status_result']['result']
+                    return Tweet(raw_tweet, self.http)
 
-                if not raw_tweet and self.__raw_tweet.get("legacy"):
-                    raw_tweet = self.__raw_tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
-                    return Tweet(raw_response, raw_tweet, self.http)
+                if self.__tweet.get("legacy"):
+                    raw_tweet = self.__tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
+                    return Tweet(raw_tweet, self.http)
+
+                return None
             except:
                 return None
 
         return None
 
-    def _get_card(self):
-        if self.__raw_tweet.get("card"):
-            try:
-                return Card(self.__raw_tweet['card'])
-            except KeyError:
-                pass
-        return None
-
     def _get_vibe(self):
-        if self.__raw_tweet.get("vibe"):
-            vibeImage = self.__raw_tweet['vibe']['imgDescription']
-            vibeText = self.__raw_tweet['vibe']['text']
+        if self.__tweet.get("vibe"):
+            vibeImage = self.__tweet['vibe']['imgDescription']
+            vibeText = self.__tweet['vibe']['text']
             return f"{vibeImage} {vibeText}"
 
         return ""
 
     def _get_views(self):
-        if self.__raw_tweet.get("views"):
-            return self.__raw_tweet['views'].get('count', 'Unavailable')
+        if self.__tweet.get("views"):
+            return self.__tweet['views'].get('count', 'Unavailable')
 
         return 0
 
-    def _get_reply_to(self, is_reply, tweet):
-        if is_reply and self._get_reply:
-            tweet_id = tweet['in_reply_to_status_id_str']
-            response = self.http.get_tweet_detail(tweet_id)
-            for entry in response.json()['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
-                if str(entry['entryId']).split("-")[0] == "tweet":
+    def _get_reply_to(self, is_reply):
+        if is_reply:
+            tweet_id = self.__tweet['legacy']['in_reply_to_status_id_str']
+            if not self.__full_response:
+                response = self.http.get_tweet_detail(tweet_id)
+            else:
+                response = self.__full_response
+            for entry in response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
+                if str(entry['entryId']).split("-")[0] == "tweet" and str(entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                    return Tweet(response, raw_tweet, self.http)
-
-        elif is_reply and not self._get_reply:
-            return tweet['in_reply_to_screen_name']
+                    return Tweet(raw_tweet, self.http)
         return None
 
     @staticmethod
@@ -373,6 +460,12 @@ class Tweet(dict):
 
         return [symbol for symbol in original_tweet['entities']['symbols']]
 
+    def __eq__(self, other):
+        if isinstance(other, Tweet):
+            return str(self.id) == str(other.id) and str(self.author.id) == str(other.author.id)
+
+        return str(self.id) == str(other)
+
 
 class Media(dict):
     def __init__(self, media_dict, http):
@@ -383,7 +476,7 @@ class Media(dict):
         self.expanded_url = self.__dictionary.get("expanded_url")
         self.id = self.__dictionary.get("id_str")
         self.indices = self.__dictionary.get("indices")
-        self.media_url_https = self.direct_url = self.__dictionary.get("media_url_https")
+        self.media_url_https = self.direct_url = self._get_direct_url()
         self.type = self.__dictionary.get("type")
         self.url = self.__dictionary.get("url")
         self.features = self.__dictionary.get("features")
@@ -400,6 +493,13 @@ class Media(dict):
         for k, v in vars(self).items():
             if not k.startswith("_"):
                 self[k] = v
+
+    def _get_direct_url(self):
+        url = self.__dictionary.get("media_url_https")
+        if url.startswith("https://ton.twitter.com"):
+            url = f"{url}:small"
+
+        return url
 
     def _get_file_format(self):
         filename = os.path.basename(self.media_url_https).split("?")[0]
@@ -653,6 +753,7 @@ class User(dict):
         self.statuses_count = self._get_key("statuses_count")
         self.translator_type = self._get_key("translator_type")
         self.verified = self._get_verified()
+        self.can_dm = self._get_key("can_dm")
         # self.verified_type = self._get_key("verified_type")
         self.possibly_sensitive = self._get_key("possibly_sensitive")
         self.pinned_tweets = self._get_key("pinned_tweet_ids_str")

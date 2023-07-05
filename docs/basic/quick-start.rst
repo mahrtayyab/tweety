@@ -9,7 +9,8 @@ has to offer.
 
     from tweety.bot import Twitter
 
-    app = Twitter()
+    cookies = "cookies_value"
+    app = Twitter(cookies=cookies)
     username = "elonmusk"
 
     user = app.get_user_info(username)

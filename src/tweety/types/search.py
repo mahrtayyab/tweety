@@ -35,68 +35,70 @@ class Search(dict):
             return thisTweets
 
         return []
+
+    @staticmethod
+    def _get_entries(response):
+        instructions = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions']
+        for instruction in instructions:
+            if instruction.get("type") == "TimelineAddEntries":
+                return instruction['entries']
+
+        return []
+
+    @staticmethod
+    def _get_tweet_content_key(response):
+        if str(response['entryId']).split("-")[0] == "tweet":
+            return [response['content']['itemContent']['tweet_results']['result']]
+
+        if str(response['entryId']).split("-")[0] == "user":
+            return [response['content']['itemContent']['user_results']['result']]
+
+        if str(response['entryId']).split("-")[0] == "homeConversation":
+            return [item['item']['itemContent']['tweet_results']['result'] for item in response["content"]["items"]]
+
+        return []
+
     def _parse_response(self, response):
         thisObjects = []
-        if self.filter == "users":
-            for raw_user in response['globalObjects']['users'].values():
-                try:
-                    user = User(raw_user)
-                    self.users.append(user)
-                    thisObjects.append(user)
-                except:
-                    pass
-            self['users'] = self.users
-        else:
-            users = response['globalObjects']['users']
-            for tweet_id, raw_tweet in response['globalObjects']['tweets'].items():
-                try:
-                    raw_tweet['rest_id'], raw_tweet['author'] = tweet_id, users.get(str(raw_tweet['user_id']))
-                    tweet = Tweet(response, raw_tweet, self.http, False, True)
-                    self.tweets.append(tweet)
-                    thisObjects.append(tweet)
-                except:
-                    traceback.print_exc()
-                    pass
+        entries = self._get_entries(response)
+        for entry in entries:
+            if self.filter == "users":
+                users = self._get_tweet_content_key(entry)
+                for user in users:
+                    try:
+                        user = User(user)
+                        self.users.append(user)
+                        thisObjects.append(user)
+                    except:
+                        pass
+                self['users'] = self.users
+            else:
+                tweets = self._get_tweet_content_key(entry)
+                for tweet in tweets:
+                    try:
+                        parsed = Tweet(response, tweet, self.http)
+                        self.tweets.append(parsed)
+                        thisObjects.append(parsed)
+                    except:
+                        pass
 
-            self['tweets'] = self.tweets
+                self['tweets'] = self.tweets
 
-        self.is_next_page = self._get_cursor(response)
+        self.is_next_page = self._get_cursor(entries)
         return thisObjects
 
-    def _get_cursor(self, response):
-        if self.filter == "users":
-            for i in response['timeline']['instructions'][-1]['addEntries']['entries']:
-                if str(i['entryId']).split("-")[0] == "cursor":
-                    if i['content']['operation']['cursor']['cursorType'] == "Bottom":
-                        newCursor = i['content']['operation']['cursor']['value']
-                        if newCursor == self.cursor:
-                            return False
-                        self.cursor = newCursor
-                        return True
-        else:
-            for i in response['timeline']['instructions'][0]['addEntries']['entries']:
-                try:
-                    if i['content']['operation']:
-                        if i['content']['operation']['cursor']['cursorType'] == "Bottom":
-                            newCursor = i['content']['operation']['cursor']['value']
-                            if newCursor == self.cursor:
-                                return False
-                            self.cursor = newCursor
-                            return True
-                except:
-                    pass
-                try:
-                    for j in response['timeline']['instructions']:
-                        for key in j.keys():
-                            if key == "replaceEntry":
-                                if j['replaceEntry']['entry']['content']['operation']['cursor']['cursorType'] == "Bottom":
-                                    newCursor = j['replaceEntry']['entry']['content']['operation']['cursor']['value']
-                                    if newCursor == self.cursor:
-                                        return False
-                                    self.cursor = newCursor
-                                    return True
-                except:
-                    pass
+    def _get_cursor(self, entries):
+        for entry in entries:
+            if str(entry['entryId']).split("-")[0] == "cursor":
+                if entry['content']['cursorType'] == "Bottom":
+                    newCursor = entry['content']['value']
+
+                    if newCursor == self.cursor:
+                        return False
+
+                    self.cursor = newCursor
+                    return True
+
         return False
 
     def generator(self):

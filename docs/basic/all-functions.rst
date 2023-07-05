@@ -41,8 +41,9 @@ Get User Info
     .. code-block:: python
 
        from tweety.bot import Twitter
-
-       user = Twitter().get_user_info('elonmusk')
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
+       user = app.get_user_info('elonmusk')
 
 
 Get Tweets
@@ -94,7 +95,9 @@ Get Tweets
 
        from tweety.bot import Twitter
 
-       tweets = Twitter().get_tweets('elonmusk')
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
+       tweets = app.get_tweets('elonmusk')
        for tweet in tweets:
            print(tweet)
 
@@ -145,8 +148,9 @@ Get Tweets
 
        from tweety.bot import Twitter
 
-       app = Twitter()
-       for userTweetsObj, tweet in tweets.iter_tweets('elonmusk'):
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
+       for userTweetsObj, tweet in app.iter_tweets('elonmusk'):
            print(tweet)
 
 
@@ -204,7 +208,8 @@ Searching a Keyword
        from tweety.bot import Twitter
 
        cookies = "cookies_value"
-       tweets = Twitter(cookies=cookies).search('elonmusk')
+       app = Twitter(cookies=cookies)
+       tweets = app.search('elonmusk')
        for tweet in tweets:
            print(tweet)
 
@@ -258,7 +263,7 @@ Searching a Keyword
 
        cookies = "cookies_value"
        app = Twitter(cookies=cookies)
-       for search_obj, tweet in tweets.iter_search('elonmusk'):
+       for search_obj, tweet in app.iter_search('elonmusk'):
            print(tweet)
 
 
@@ -279,6 +284,8 @@ Get Trends
 
        from tweety.bot import Twitter
 
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
        all_trends = app.get_trends()
        for trend in all_trends:
            print(trend)
@@ -307,6 +314,134 @@ Get a Tweet Detail
 
        from tweety.bot import Twitter
 
-       app = Twitter()
-
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
        tweet = app.tweet_detail("https://twitter.com/Microsoft/status/1442542812197801985")
+
+
+Getting Mentioned Tweets
+---------------------
+
+.. py:decorator:: AuthRequired
+
+- .. py:method:: Twitter().get_mentions(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Tweets in which the authenticated user is mentioned
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `Mention`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
+       tweets = app.get_mentions()
+       for tweet in tweets:
+           print(tweet)
+
+Getting Inbox
+---------------------
+
+.. py:decorator:: AuthRequired
+
+- .. py:method:: Twitter().get_inbox(user_id: Union[int, str, User] = None, cursor: str = None)
+
+    Getting the inbox of authenticated user
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: user_id (optional)
+            :type: Union[int, str, User]
+            :value: None
+
+            User ID of the user whom to get the conversation of (coming soon)
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+            Pagination cursor of inbox which will be used to get the new messages
+
+
+    .. py:data:: Return
+
+        :return: `Inbox`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
+       inbox = app.get_inbox()
+       for conversation in inbox:
+           print(conversation)
+
+Sending Message
+---------------------
+
+.. py:decorator:: AuthRequired
+
+- .. py:method:: Twitter().send_message(username: Union[str, int, User], text: str)
+
+    Sending Message to a User
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: username
+            :type: Union[int, str, User]
+
+            Username of User ID of the user whom to send the message
+
+        .. py:data:: text
+            :type: str
+
+            Content of the message to be sent
+
+
+    .. py:data:: Return
+
+        :return: `Message`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       cookies = "cookies_value"
+       app = Twitter(cookies=cookies)
+       message = app.send_message("user", "Hi")
+
+

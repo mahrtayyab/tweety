@@ -78,3 +78,16 @@ Update 1.4:
 * Added New ``iter_tweets`` methods to `Twitter` ,  check `iter_tweets </basic/all-functions.html#id4>`_
 * Added New ``iter_search`` methods to `Twitter` ,  check `iter_search </basic/all-functions.html#id18>`_
 * **Please** do check the full documentation before upgrading
+
+Update 1.5:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.8
+* Many bug fixes
+* Added new ``get_mentions`` , ``get_inbox``, ``send_message`` methods
+* Cookies are now necessary
+* Added ``can_dm`` attributes to `User`
+* Added `RateLimitReached` new Exception
+* Added New `Inbox`, `Conversation`, `Message`, `Mention`
+* Added Event Listener
+* **Please do check the full documentation before upgrading**

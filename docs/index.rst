@@ -46,6 +46,7 @@ You can also use the menu on the left to quickly skip over sections.
     :caption: Base Class
 
     basic/twitter-class
+    basic/updateMethods-class
 
 
 .. toctree::
@@ -56,6 +57,7 @@ You can also use the menu on the left to quickly skip over sections.
     basic/twDataTypes
     basic/exceptions
     basic/filter
+    basic/events
 
 .. toctree::
     :hidden:

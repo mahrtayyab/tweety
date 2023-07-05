@@ -1,5 +1,7 @@
 import time
 import traceback
+
+from .twDataTypes import TweetThread
 from ..exceptions_ import UserProtected, UserNotFound
 from . import Tweet, Excel, deprecated
 
@@ -15,7 +17,6 @@ class UserTweets(dict):
         self.user_id = user_id
         self.pages = pages
         self.wait_time = wait_time
-        # self._get_tweets(pages, wait_time)
 
     @staticmethod
     def _get_entries(response):
@@ -32,6 +33,9 @@ class UserTweets(dict):
             return [tweet['content']['itemContent']['tweet_results']['result']]
 
         if str(tweet['entryId']).split("-")[0] == "homeConversation":
+            return [item['item']['itemContent']['tweet_results']['result'] for item in tweet["content"]["items"]]
+
+        if str(tweet['entryId']).split("-")[0] == "profile" and str(tweet['entryId']).split("-")[1] == "conversation":
             return [item['item']['itemContent']['tweet_results']['result'] for item in tweet["content"]["items"]]
 
         return []
@@ -51,13 +55,14 @@ class UserTweets(dict):
 
             for entry in entries:
                 tweets = self._get_tweet_content_key(entry)
-                for tweet in tweets:
-                    try:
-                        parsed = Tweet(response, tweet, self.http)
-                        _tweets.append(parsed)
-                        # yield parsed
-                    except:
-                        pass
+                try:
+                    if len(tweets) > 1:
+                        parsed = TweetThread(tweets, self.http, response)
+                    else:
+                        parsed = Tweet(tweets[0], self.http, response)
+                    _tweets.append(parsed)
+                except:
+                    pass
 
             self.is_next_page = self._get_cursor(entries)
 
@@ -94,7 +99,7 @@ class UserTweets(dict):
         return False
 
     def to_xlsx(self, filename=None):
-        return Excel(self.tweets, self.tweets[0].author, filename)
+        return Excel(self, filename)
 
     def __getitem__(self, index):
         return self.tweets[index]
@@ -109,8 +114,5 @@ class UserTweets(dict):
     def __repr__(self):
         return f"UserTweets(user_id={self.user_id}, count={self.__len__()})"
 
-    @deprecated
-    def to_dict(self):
-        return self.tweets
 
 

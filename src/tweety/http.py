@@ -1,24 +1,28 @@
 import os
 import httpx as s
 from tqdm import tqdm
-
 from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
-from .utils import custom_json
+from .utils import custom_json, create_request_id
 from .builder import UrlBuilder
+
 
 s.Response.json_ = custom_json
 
 
 class Request:
     def __init__(self, max_retries=10, proxy=None, cookies=None):
+        self.user = None
         self.username = None
         self.__is_client = True if cookies else False
         self.__session = s.Client(proxies=proxy, cookies=self._parse_cookies(cookies), timeout=60)
         self.__builder = UrlBuilder(self.__session.cookies)
         self.__guest_token = self._get_guest_token(max_retries)
         self._verify_cookies()
-
+    
+    def set_user(self, user):
+        self.user = user
+    
     def __get_response__(self, **request_data):
         response = self.__session.request(**request_data)
         response_json = response.json_() # noqa
@@ -128,14 +132,57 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def get_tweet_detail(self, tweetId):
-        response = self.__get_response__(**self.__builder.tweet_detail(tweetId))
+    def get_tweet_detail(self, tweetId, cursor=None):
+        response = self.__get_response__(**self.__builder.tweet_detail(tweetId, cursor))
+        return response
+
+    def get_mentions(self, user_id, cursor=None):
+        response = self.__get_response__(**self.__builder.get_mentions(cursor))
+        return response
+
+    def get_inbox(self, user_id, cursor=None):
+        response = self.__get_response__(**self.__builder.get_inbox(cursor))
+        return response
+
+    def get_trusted_inbox(self, max_id):
+        response = self.__get_response__(**self.__builder.get_trusted_inbox(max_id))
+        return response
+
+    def get_untrusted_inbox(self, max_id, low_quality=False):
+        response = self.__get_response__(**self.__builder.get_untrusted_inbox(max_id, low_quality))
+        return response
+
+    def get_conversation(self, conversation_id, max_id=None):
+        response = self.__get_response__(**self.__builder.get_conversation_with_messages(conversation_id, max_id))
+        return response
+
+    def send_message(self, conversation_id, text):
+        request_id = create_request_id()
+        json_data = {
+            'conversation_id': conversation_id,
+            'recipient_ids': False,
+            'request_id': request_id,
+            'text': text,
+            'cards_platform': 'Web-12',
+            'include_cards': 1,
+            'include_quote_count': True,
+            'dm_users': False,
+        }
+        request_data = self.__builder.send_message()
+        request_data['json'] = json_data
+        response = self.__get_response__(**request_data)
         return response
 
     def download_media(self, media_url, filename=None, show_progress=True):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
+        headers = self.__session.headers
+        oldReferer = headers.get('Referer')
 
-        with self.__session.stream('GET', media_url) as response:
+        if media_url.startswith("https://ton.twitter.com"):
+            headers['Referer'] = "https://twitter.com/"
+            self.__session.header = headers
+
+        with self.__session.stream('GET', media_url, follow_redirects=True) as response:
             response.raise_for_status()
             content_length = int(response.headers['Content-Length'])
             f = open(filename, 'wb')
@@ -149,4 +196,5 @@ class Request:
                     f.write(chunk)
             f.close()
 
+        self.__session.header['Referer'] = oldReferer
         return filename

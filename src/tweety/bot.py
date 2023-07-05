@@ -7,7 +7,11 @@ from .exceptions_ import *
 from .http import Request
 from .types.usertweet import UserTweets
 from .types.search import Search
+from .types.mentions import Mention
+from .types.inbox import Inbox, SendMessage, Conversation
+from .updates import UpdateMethods
 from .types.twDataTypes import User, Trends, Tweet
+from .utils import create_conversation_id
 
 
 def AuthRequired(f):
@@ -21,7 +25,7 @@ def AuthRequired(f):
     return wrapper
 
 
-class Twitter:
+class Twitter(UpdateMethods):
     def __init__(self, max_retires: int = 10, proxy: Union[dict, Proxy] = None, cookies: Union[str, dict] = None):
         """
         Constructor of the Twitter Public class
@@ -31,8 +35,13 @@ class Twitter:
         :param cookies: (`str` or `dict`) Cookies which will be used for user authentication
         """
 
+        if not cookies:
+            raise AuthenticationRequired(200, "GenericForbidden", None)
+
         self.request = Request(max_retries=max_retires, proxy=proxy, cookies=cookies)
-        self.user = self.get_user_info() if cookies is not None else None
+        self.user = self.get_user_info()
+        super().__init__(self.request)
+        self.request.set_user(self.user)
 
     def get_user_info(self, username: str = None, banner_extensions: bool = False, image_extensions: bool = False):
         """
@@ -68,8 +77,7 @@ class Twitter:
 
         :return: int
         """
-
-        return self.user.rest_id if self.user else None
+        return self.user.id if self.user else None
 
     def _get_user_id(self, username):
         if isinstance(username, User):
@@ -136,7 +144,7 @@ class Twitter:
         """
         trends = []
         response = self.request.get_trends()
-        for i in response.json()['timeline']['instructions'][1]['addEntries']['entries'][1]['content']['timelineModule']['items']:
+        for i in response['timeline']['instructions'][1]['addEntries']['entries'][1]['content']['timelineModule']['items']:
             data = {
                 "name": i['item']['content']['trend']['name'],
                 "url": str(i['item']['content']['trend']['url']['url']).replace("twitter://",
@@ -200,6 +208,43 @@ class Twitter:
 
         return search.generator()
 
+    def get_mentions(self, pages: int = 1, wait_time: int = 2, cursor: str = None):
+        """
+
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return:
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        mentions = Mention(self.user.id, self.request, pages, wait_time, cursor)
+        results = [i for i in mentions.generator()]
+
+        return mentions
+
+    def get_inbox(self, user_id: Union[int, str, User] = None, cursor: str = None):
+        """
+        :param user_id : (`str`, `int`, `User`) User id or username of the user whom to get the messages of. Default is ALL
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+                                It is used to get the messages updates
+        :return:
+        """
+
+        if user_id:
+            user_id = self._get_user_id(user_id)
+
+        inbox = Inbox(user_id, self.request, cursor)
+
+        return inbox
+
+    def send_message(self, username: Union[str, int, User], text: str):
+        user_id = self._get_user_id(username)
+        conversation_id = create_conversation_id(self.user.id, user_id)
+        return SendMessage(self.request, conversation_id, text).send()
+
     def tweet_detail(self, identifier: str):
         """
         Get Detail of a single tweet
@@ -219,7 +264,7 @@ class Twitter:
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
 
                     if raw_tweet['rest_id'] == str(tweetId):
-                        return Tweet(r, raw_tweet, self.request, True, False, True)
+                        return Tweet(raw_tweet, self.request, r)
 
         except KeyError:
             raise InvalidTweetIdentifier(144, "StatusNotFound", r)

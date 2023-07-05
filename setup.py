@@ -2,8 +2,8 @@ from distutils.core import setup
 
 setup(
     name='tweety-ns',
-    packages=['tweety', 'tweety.types'],
-    version='0.7.1',
+    packages=['tweety', 'tweety.types', 'tweety.events'],
+    version='0.8',
     license='MIT',
     description='An easy Twitter Scraper',
     author='Tayyab Kharl',
@@ -16,7 +16,6 @@ setup(
         'httpx',
         'dateutils',
         'tqdm',
-        'PySocks~=1.7.1',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

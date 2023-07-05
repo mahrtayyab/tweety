@@ -39,7 +39,8 @@ class Proxy:
 class GenericError:
     EXCEPTIONS = {
         32: InvalidCredentials,
-        144: InvalidTweetIdentifier
+        144: InvalidTweetIdentifier,
+        88: RateLimitReached
     }
 
     def __init__(self, response, error_code, message=None):
