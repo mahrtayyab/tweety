@@ -22,16 +22,16 @@ pip install tweety-ns
 ##### **Pip might not be always updated , so to keep everything synced.**
 
 ```bash
-pip install git+https://github.com/mahrtayyab/tweety.git --upgrade --force-reinstall
+pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade --force-reinstall
 ```
 
 ## A Quick Example:
 ```python
   from tweety.bot import Twitter
   
-  app = Twitter("elonmusk")
+  app = Twitter()
   
-  all_tweets = app.get_tweets()
+  all_tweets = app.get_tweets("elonmusk")
   for tweet in all_tweets:
       print(tweet)
 ```

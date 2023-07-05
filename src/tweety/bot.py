@@ -30,7 +30,7 @@ class Twitter(UpdateMethods):
         """
         Constructor of the Twitter Public class
 
-        :param max_retires: (`int`) Number of retries the script would make , if the guest token wasn't found
+        :param max_retries: (`int`) Number of retries the script would make , if the guest token wasn't found
         :param proxy: (`dict` or `Proxy`) Provide the proxy you want to use while making a request
         :param cookies: (`str` or `dict`) Cookies which will be used for user authentication
         """
