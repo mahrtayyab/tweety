@@ -1,3 +1,4 @@
+import json
 import os
 import httpx as s
 from tqdm import tqdm
@@ -11,19 +12,23 @@ s.Response.json_ = custom_json
 
 
 class Request:
-    def __init__(self, max_retries=10, proxy=None, cookies=None):
+    def __init__(self, max_retries=10, proxy=None):
         self.user = None
         self.username = None
-        self.__is_client = True if cookies else False
-        self.__session = s.Client(proxies=proxy, cookies=self._parse_cookies(cookies), timeout=60)
-        self.__builder = UrlBuilder(self.__session.cookies)
+        self.__session = s.Client(proxies=proxy, timeout=60)
+        self.__builder = UrlBuilder()
         self.__guest_token = self._get_guest_token(max_retries)
+
+    def set_cookies(self, cookies):
+        self.__session.headers['Cookie'] = cookies
+        self.__builder.set_cookies(cookies)
         self._verify_cookies()
-    
+
     def set_user(self, user):
         self.user = user
-    
-    def __get_response__(self, **request_data):
+        self.__builder.set_cookies(self.__session.cookies)
+
+    def __get_response__(self, return_raw=False, **request_data):
         response = self.__session.request(**request_data)
         response_json = response.json_() # noqa
 
@@ -40,38 +45,12 @@ class Request:
             return GenericError(
                 response, error.get("code"), error.get("message")
             )
+        if return_raw:
+            return response
 
         return response_json
 
-    @staticmethod
-    def _parse_cookies(cookies):
-        if not cookies:
-            return None
-
-        true_cookies = dict()
-        if isinstance(cookies, str):
-            cookie_list = cookies.split(";")
-            for cookie in cookie_list:
-                split_cookie = cookie.strip().split("=")
-
-                if len(split_cookie) >= 2:
-                    cookie_key = split_cookie[0]
-                    cookie_value = split_cookie[1]
-                    true_cookies[cookie_key] = cookie_value
-        elif isinstance(cookies, dict):
-            true_cookies = cookies
-        else:
-            raise TypeError("cookies should be of class 'str' or 'dict' not {}".format(cookies.__class__))
-
-        if not true_cookies.get("ct0"):
-            raise InvalidCredentials(None, None, None, "'ct0' key in cookies isn't available")
-
-        return true_cookies
-
     def _get_guest_token(self, max_retries=10):
-        if self.__is_client:
-            return
-
         for retry in range(max_retries):
             response = self.__get_response__(**self.__builder.get_guest_token())
 
@@ -86,8 +65,6 @@ class Request:
         self.__get_response__(**data)
 
     def _verify_cookies(self):
-        if not self.__is_client:
-            return
 
         data = self.__builder.aUser_settings()
         response = self.__get_response__(**data)
@@ -111,6 +88,12 @@ class Request:
             return response
 
         raise UserNotFound(error_code=50, error_name="GenericUserNotFound", response=response)
+
+    def login(self, _url, _payload):
+        request_data = self.__builder.build_flow(_url)
+        request_data['json'] = _payload
+        response = self.__get_response__(True, **request_data)
+        return response
 
     def get_tweets(self, user_id, replies=False, cursor=None):
         request_data = self.__builder.user_tweets(user_id=user_id, replies=replies, cursor=cursor)

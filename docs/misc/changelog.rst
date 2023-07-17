@@ -91,3 +91,13 @@ Update 1.5:
 * Added New `Inbox`, `Conversation`, `Message`, `Mention`
 * Added Event Listener
 * **Please do check the full documentation before upgrading**
+
+Update 1.6:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9
+* Many bug fixes
+* Updated the `Twitter` Class
+* Added `sign_in` method with session support
+* Added `load_cookies` method
+* **Please do check the full documentation before upgrading**

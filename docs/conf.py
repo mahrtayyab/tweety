@@ -39,8 +39,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    "sphinx_rtd_dark_mode"
 ]
+default_dark_mode = False
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 3
 intersphinx_mapping = {
@@ -124,6 +126,8 @@ def setup(app):
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+# html_theme = 'insegel'
+# html_theme = 'sphinx_material'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -153,12 +157,10 @@ html_sidebars = {
     ]
 }
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Tweetydoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -188,7 +190,6 @@ latex_documents = [
      author, 'manual'),
 ]
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -197,7 +198,6 @@ man_pages = [
     (master_doc, 'tweety', 'Tweety Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 

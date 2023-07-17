@@ -2,9 +2,6 @@ import threading
 
 
 class UpdateMethods:
-    def __init__(self, request):
-        self.request = request
-        self._event_builders = []
 
     def on(self, event):
         def decorator(f):

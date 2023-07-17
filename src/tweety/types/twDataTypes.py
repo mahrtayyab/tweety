@@ -759,6 +759,10 @@ class User(dict):
         self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
 
+        for k, v in vars(self).items():
+            if not k.startswith("_"):
+                self[k] = v
+
     def __repr__(self):
         return "User(id={}, username={}, name={}, verified={})".format(
             self.id, self.username, self.name, self.verified

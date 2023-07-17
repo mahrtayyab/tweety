@@ -5,22 +5,19 @@
 Twitter Class
 =============
 
+The Twitter aggregates several mixin classes to provide all the common functionality in a nice, Pythonic interface. Each mixin has its own methods, which you all can use.
 
-.. py:class:: Twitter(max_retires: int = 10, proxy: Union[dict, Proxy] = None, cookies: Union[str, dict] = None)
+.. py:class:: Twitter(session_name: Union[str, Session], proxy: Union[dict, Proxy] = None)
 
-    This is main entry Class for the library you should be importing and using to make further method calls
 
-    Bases : `UpdateMethod`
-
-    .. note:: Cookies are now required.
+    Bases : `UpdateMethods` , `BotMethods`, `AuthMethods`
 
     .. py:data:: Arguments
 
-        .. py:data:: max_retires (optional)
-            :type: int
-            :value: 10
+        .. py:data:: session_name
+            :type: str | Session
 
-            The number of times you want to retry in case the ``Guest Token`` couldn't be obtained
+            This is the name of the session which will be saved and can be loaded later
 
         .. py:data:: proxy (optional)
             :type: dict | Proxy
@@ -30,23 +27,9 @@ Twitter Class
 
             .. warning:: Proxy is not yet fully integrated
 
-        .. py:data:: cookies
-            :type: str | dict
-            :value: None
-
-            Cookies you want to use when making the requests to Twitter (as authenticated user)
-
-            .. attention:: Some functions requires user authentication and will not work without it
-
-
     .. py:data:: Methods:
 
         All Methods are Here :ref:`all-functions`!
 
-.. code-block:: python
-
-    from tweety.bot import Twitter
-    cookies = "cookies_value"
-    app = Twitter(cookies=cookies)
 
 

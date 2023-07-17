@@ -4,12 +4,12 @@ from typing import Union
 
 from .types.n_types import Proxy
 from .exceptions_ import *
+from .session import Session
 from .http import Request
 from .types.usertweet import UserTweets
 from .types.search import Search
 from .types.mentions import Mention
-from .types.inbox import Inbox, SendMessage, Conversation
-from .updates import UpdateMethods
+from .types.inbox import Inbox, SendMessage
 from .types.twDataTypes import User, Trends, Tweet
 from .utils import create_conversation_id
 
@@ -25,23 +25,20 @@ def AuthRequired(f):
     return wrapper
 
 
-class Twitter(UpdateMethods):
-    def __init__(self, max_retires: int = 10, proxy: Union[dict, Proxy] = None, cookies: Union[str, dict] = None):
+class BotMethods:
+    def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None):
         """
         Constructor of the Twitter Public class
 
-        :param max_retries: (`int`) Number of retries the script would make , if the guest token wasn't found
+        :param session_name: (`str`, `Session`) This is the name of the session which will be saved and can be loaded later
         :param proxy: (`dict` or `Proxy`) Provide the proxy you want to use while making a request
-        :param cookies: (`str` or `dict`) Cookies which will be used for user authentication
         """
 
-        if not cookies:
-            raise AuthenticationRequired(200, "GenericForbidden", None)
-
-        self.request = Request(max_retries=max_retires, proxy=proxy, cookies=cookies)
-        self.user = self.get_user_info()
-        super().__init__(self.request)
-        self.request.set_user(self.user)
+        self._event_builders = []
+        self.session = Session(session_name) if isinstance(session_name, str) else session_name
+        self.logged_in = False
+        self.request = Request(max_retries=10, proxy=proxy)
+        self.user = None
 
     def get_user_info(self, username: str = None, banner_extensions: bool = False, image_extensions: bool = False):
         """
@@ -159,7 +156,6 @@ class Twitter(UpdateMethods):
             trends.append(Trends(data))
         return trends
 
-    @AuthRequired
     def search(self, keyword: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None):
         """
         Search for a keyword or hashtag on Twitter
@@ -185,7 +181,6 @@ class Twitter(UpdateMethods):
 
         return search
 
-    @AuthRequired
     def iter_search(self, keyword: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None):
         """
         Search for a keyword or hashtag on Twitter

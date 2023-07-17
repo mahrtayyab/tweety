@@ -4,9 +4,10 @@ Tweety's Documentation
 
 .. code-block:: python
 
-   from tweety.bot import Twitter
+   from tweety import Twitter
 
-   app = Twitter()
+   app = Twitter("session")
+   app.sign_in(username, password)
 
    all_tweets = app.get_tweets("elonmusk")
    for tweet in all_tweets:
@@ -46,13 +47,13 @@ You can also use the menu on the left to quickly skip over sections.
     :caption: Base Class
 
     basic/twitter-class
-    basic/updateMethods-class
 
 
 .. toctree::
     :hidden:
     :caption: References
 
+    basic/singing-in
     basic/all-functions
     basic/twDataTypes
     basic/exceptions

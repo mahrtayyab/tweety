@@ -76,7 +76,7 @@ class Search(dict):
                 tweets = self._get_tweet_content_key(entry)
                 for tweet in tweets:
                     try:
-                        parsed = Tweet(response, tweet, self.http)
+                        parsed = Tweet(tweet, self.http, response)
                         self.tweets.append(parsed)
                         thisObjects.append(parsed)
                     except:

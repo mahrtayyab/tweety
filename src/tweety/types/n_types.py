@@ -40,7 +40,9 @@ class GenericError:
     EXCEPTIONS = {
         32: InvalidCredentials,
         144: InvalidTweetIdentifier,
-        88: RateLimitReached
+        88: RateLimitReached,
+        399: InvalidCredentials,
+        220: InvalidCredentials
     }
 
     def __init__(self, response, error_code, message=None):
@@ -55,6 +57,7 @@ class GenericError:
                 error_code=self.error_code,
                 error_name=TWITTER_ERRORS[self.error_code],
                 response=self.response,
+                message=self.message
             )
 
         raise UnknownError(
@@ -64,3 +67,44 @@ class GenericError:
             message="[{}] {}".format(self.error_code, self.message)
         )
 
+
+class Cookies:
+    def __init__(self, cookies, is_http_response=False):
+        self._raw_cookies = cookies
+        self._is_http_response = is_http_response
+        self.parse_cookies()
+
+    def parse_cookies(self):
+        if self._is_http_response:
+            n = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+            for k, p in enumerate(self._raw_cookies.split(",")):
+                if k in n:
+                    key, value = str(p.split(';')[0]).split("=", 1)
+                    setattr(self, key.strip(), value.strip())
+        else:
+            true_cookies = dict()
+            if isinstance(self._raw_cookies, str):
+                cookie_list = self._raw_cookies.split(";")
+                for cookie in cookie_list:
+                    split_cookie = cookie.strip().split("=")
+
+                    if len(split_cookie) >= 2:
+                        cookie_key = split_cookie[0]
+                        cookie_value = split_cookie[1]
+                        true_cookies[cookie_key] = cookie_value
+            elif isinstance(self._raw_cookies, dict):
+                true_cookies = self._raw_cookies
+            else:
+                raise TypeError("cookies should be of class 'str' or 'dict' not {}".format(self._raw_cookies.__class__))
+
+            for key, value in true_cookies.items():
+                setattr(self, key.strip(), value.strip())
+
+    def __str__(self):
+        string = ""
+        for k, v in vars(self).items():
+
+            if not k.startswith("_"):
+                string += f"{k}={v};"
+
+        return string
