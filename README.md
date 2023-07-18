@@ -1,5 +1,5 @@
 # tweety
-Twitter's API is annoying to work with, and has lots of limitations — luckily their frontend (JavaScript) has it's own API, which I reverse–engineered. No API rate limits. No restrictions. Extremely fast.
+Twitter's API is annoying to work with, and has lots of limitations — luckily their frontend (JavaScript) has it's own API, which I reverse–engineered. xtremely fast.
 
 [![Downloads](https://static.pepy.tech/personalized-badge/tweety-ns?period=total&units=international_system&left_color=orange&right_color=blue&left_text=Downloads)](https://pepy.tech/project/tweety-ns)
 ## Prerequisites
@@ -22,12 +22,12 @@ pip install tweety-ns
 ##### **Pip might not be always updated , so to keep everything synced.**
 
 ```bash
-pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade --force-reinstall
+pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade 
 ```
 
 ## A Quick Example:
 ```python
-  from tweety.bot import Twitter
+  from tweety import Twitter
   
   app = Twitter()
   
