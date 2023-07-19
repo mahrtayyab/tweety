@@ -39,11 +39,14 @@ class Search(dict):
     @staticmethod
     def _get_entries(response):
         instructions = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions']
+        entries = []
         for instruction in instructions:
             if instruction.get("type") == "TimelineAddEntries":
-                return instruction['entries']
+                entries.extend(instruction['entries'])
+            elif instruction.get("type") == "TimelineReplaceEntry":
+                entries.append(instruction['entry'])
 
-        return []
+        return entries
 
     @staticmethod
     def _get_tweet_content_key(response):
