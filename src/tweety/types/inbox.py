@@ -81,6 +81,9 @@ class Inbox(dict):
         return None
 
     def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
         return self.conversations[index]
 
     def __iter__(self):
@@ -242,11 +245,12 @@ class Message(dict):
 
 
 class SendMessage:
-    def __init__(self, http, conversation_id, text):
+    def __init__(self, http, conversation_id, text, file=None):
         self._conv = conversation_id
         self._text = text
         self._http = http
+        self._file = file
 
     def send(self):
-        response = self._http.send_message(self._conv, self._text)
+        response = self._http.send_message(self._conv, self._text, self._file)
         return Message(response['entries'][0]['message'], response, self._http)

@@ -54,6 +54,7 @@ If the 'session' was passed as an argument of `session` to `Twitter` , your sess
 
 Now using the same session name ,you can load the previous session from file
 
+.. attention:: If the session file is in different directory , make sure to provide the relative path.
 
 .. code-block:: python
 
@@ -64,4 +65,5 @@ Now using the same session name ,you can load the previous session from file
     # as 'session.json' is already a authenticated session file , the session can be loaded using  `connect` method
 
     print(app.user)
+
 

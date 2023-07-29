@@ -1,4 +1,5 @@
-from .exceptions_ import InvalidCredentials
+from http.cookiejar import MozillaCookieJar
+from .exceptions_ import InvalidCredentials, DeniedLogin
 from .builder import FlowData
 from .types.n_types import Cookies
 
@@ -6,6 +7,9 @@ from .types.n_types import Cookies
 class AuthMethods:
 
     def connect(self):
+        """
+        This method will be used to connect to already saved session in disk
+        """
         if self.session.logged_in:
             self.request.set_cookies(str(self.session))
             self.user = self.get_user_info(self.request.username)
@@ -14,6 +18,15 @@ class AuthMethods:
             return
 
     def sign_in(self, username, password, *, extra=None):
+        """
+        - This method can be used to sign in to Twitter using username and password
+        - It will also check for the saved session for the username in the disk
+
+        :param username: (`str`) Username of the user
+        :param password: (`str`) Password of the user
+        :param extra: ## NotImplemented
+        :return:
+        """
         if self.session.logged_in and self.session.user['username'] == username:
             try:
                 return self.connect()
@@ -25,7 +38,13 @@ class AuthMethods:
         _extra = extra
         self._login(_username, _password, _extra)
 
-    def load_cookies(self, cookies: [str, dict]):
+    def load_cookies(self, cookies: [str, dict, MozillaCookieJar]):
+        """
+        This method can be used to load the already authenticated cookies from Twitter
+
+        :param cookies:  (`str`, `dict`, `MozillaCookieJar`) The Cookies to load
+        :return:
+        """
         self.cookies = Cookies(cookies, False)
         self.logged_in = True
         self.session.save_session(self.cookies)
@@ -51,7 +70,12 @@ class AuthMethods:
                     return
                 __login_payload = __login_flow.get(__login_flow_state, json_=json_, username=_username, password=_password)
             else:
-                raise ValueError(response.text)
+                raise DeniedLogin(
+                    error_code=37,
+                    error_name="GenericAccessDenied",
+                    response=None,
+                    message=response.text
+                )
 
 
 

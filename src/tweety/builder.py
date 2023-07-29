@@ -1,7 +1,8 @@
 import json
 from urllib.parse import urlencode
 import random
-import string
+from .exceptions_ import DeniedLogin
+from . import utils
 from functools import wraps
 
 REQUEST_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
@@ -11,8 +12,11 @@ REQUEST_PLATFORMS = ['Linux', 'Windows']
 def return_with_headers(func):
     @wraps(func)
     def wrapper(self, *arg, **kw):
-        method, url = func(self, *arg, **kw)
-        return dict(method=method, headers=self._get_headers(), url=url)
+        request_data = func(self, *arg, **kw)
+        if len(request_data) == 2:
+            return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1])
+        else:
+            return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1], json=request_data[2])
 
     return wrapper
 
@@ -32,6 +36,10 @@ class UrlBuilder:
     URL_AUSER_SETTINGS = "https://api.twitter.com/1.1/account/settings.json"  # noqa
     URL_AUSER_SEND_MESSAGE = "https://twitter.com/i/api/1.1/dm/new2.json"  # noqa
     URL_AUSER_CONVERSATION = "https://twitter.com/i/api/1.1/dm/conversation/{}.json"  # noqa
+    URL_AUSER_CREATE_TWEET = "https://twitter.com/i/api/graphql/tTsjMKyhajZvK4q76mpIBg/CreateTweet"  # noqa
+    URL_AUSER_CREATE_MEDIA = "https://upload.twitter.com/i/media/upload.json"  # noqa
+    URL_AUSER_CREATE_MEDIA_METADATA = "https://twitter.com/i/api/1.1/media/metadata/create.json"  # noqa
+    URL_AUSER_BOOKMARK = "https://twitter.com/i/api/graphql/bN6kl72VsPDRIGxDIhVu7A/Bookmarks"  # noqa
 
     def __init__(self):
         self.cookies = None
@@ -54,31 +62,31 @@ class UrlBuilder:
 
     def _get_headers(self):
         headers = {
-            'authority': 'twitter.com',
-            'accept': '*/*',
-            'accept-language': 'en-PK,en;q=0.9',
-            'authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
-            'content-type': 'application/x-www-form-urlencoded',
-            'referer': 'https://twitter.com/',
-            'sec-ch-ua': '"Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': f'"{random.choice(REQUEST_PLATFORMS)}"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
-            'user-agent': REQUEST_USER_AGENT,
-            'x-csrf-token': self._get_csrf(),
-            'x-twitter-active-user': 'yes',
-            'x-twitter-client-language': 'en',
+            # 'Authority': 'twitter.com',
+            'Accept': '*/*',
+            'Accept-Language': 'en-PK,en;q=0.9',
+            'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Referer': 'https://twitter.com/',
+            'Sec-Ch-Ua': '"Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': f'"{random.choice(REQUEST_PLATFORMS)}"',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': REQUEST_USER_AGENT,
+            'X-Csrf-Token': self._get_csrf(),
+            'X-Twitter-Active-User': 'yes',
+            'X-Twitter-Client-Language': 'en',
         }
 
         if self.guest_token or self.cookies:
-            headers['content-type'] = 'application/json'
+            headers['Content-Type'] = 'application/json'
             # headers['referer'] = f'https://twitter.com/{self.username}'
-            headers['sec-fetch-site'] = 'same-origin'
+            headers['Sec-Fetch-Site'] = 'same-origin'
 
             if self.guest_token:
-                headers['x-guest-token'] = self.guest_token
+                headers['X-Guest-Token'] = self.guest_token
 
         return headers
 
@@ -86,7 +94,7 @@ class UrlBuilder:
         if self.cookies and self.cookies.get("ct0"):
             return self.cookies.get("ct0")
 
-        return ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+        return utils.get_random_string(32)
 
     @staticmethod
     def _build(url, params):
@@ -481,7 +489,36 @@ class UrlBuilder:
         return "GET", self._build(self.URL_AUSER_CONVERSATION.format(conversation_id), urlencode(params))
 
     @return_with_headers
-    def send_message(self):
+    def get_bookmarks(self, cursor=None):
+        variables = {"count": 20, "includePromotedContent": True}
+        features = {"graphql_timeline_v2_bookmark_timeline": True, "rweb_lists_timeline_redesign_enabled": True,
+                    "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": False,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_media_download_video_enabled": False,
+                    "responsive_web_enhance_cards_enabled": False}
+        fieldToggles = {"withAuxiliaryUserLabels": False, "withArticleRichContentState": False}
+
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
+                  'fieldToggles': str(json.dumps(fieldToggles))}
+
+        return "GET", self._build(self.URL_AUSER_BOOKMARK, urlencode(params))
+
+    @return_with_headers
+    def send_message(self, conversation_id, text, media_id=None):
         params = {
             'ext': 'mediaColor,altText,mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
             'include_ext_alt_text': True,
@@ -495,7 +532,116 @@ class UrlBuilder:
             'supports_reactions': True,
         }
 
-        return "POST", self._build(self.URL_AUSER_SEND_MESSAGE, urlencode(params))
+        json_data = {
+            'conversation_id': conversation_id,
+            'recipient_ids': False,
+            'request_id': utils.create_request_id(),
+            'text': text,
+            'cards_platform': 'Web-12',
+            'include_cards': 1,
+            'include_quote_count': True,
+            'dm_users': False,
+        }
+        if media_id:
+            json_data['media_id'] = media_id
+
+        return "POST", self._build(self.URL_AUSER_SEND_MESSAGE, urlencode(params)), json_data
+
+    @return_with_headers
+    def create_tweet(self, text, files, filter_=None):
+        media_entities = utils.create_media_entities(files)
+        variables = {
+            'tweet_text': text,
+            'dark_request': False,
+            'media': {
+                'media_entities': media_entities,
+                'possibly_sensitive': False,
+            },
+            'semantic_annotation_ids': []
+        }
+
+        features = {
+            'tweetypie_unmention_optimization_enabled': True,
+            'responsive_web_edit_tweet_api_enabled': True,
+            'graphql_is_translatable_rweb_tweet_is_translatable_enabled': True,
+            'view_counts_everywhere_api_enabled': True,
+            'longform_notetweets_consumption_enabled': True,
+            'responsive_web_twitter_article_tweet_consumption_enabled': False,
+            'tweet_awards_web_tipping_enabled': False,
+            'longform_notetweets_rich_text_read_enabled': True,
+            'longform_notetweets_inline_media_enabled': True,
+            'responsive_web_graphql_exclude_directive_enabled': True,
+            'verified_phone_label_enabled': False,
+            'freedom_of_speech_not_reach_fetch_enabled': True,
+            'standardized_nudges_misinfo': True,
+            'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled': True,
+            'responsive_web_media_download_video_enabled': False,
+            'responsive_web_graphql_skip_user_profile_image_extensions_enabled': False,
+            'responsive_web_graphql_timeline_navigation_enabled': True,
+            'responsive_web_enhance_cards_enabled': False
+        }
+
+        fieldToggles = {
+            'withArticleRichContentState': False,
+            'withAuxiliaryUserLabels': False
+        }
+
+        if filter_:
+            variables['conversation_control'] = {"mode": filter_}
+
+        json_data = dict(
+            variables=variables,
+            features=features,
+            queryId=utils.create_query_id(),
+            fieldToggles=fieldToggles
+        )
+
+        return "POST", self.URL_AUSER_CREATE_TWEET, json_data
+
+    @return_with_headers
+    def set_media_metadata(self, media_id, alt_text, sensitive_tags):
+        if not sensitive_tags:
+            sensitive_tags = []
+
+        sensitive_media = utils.check_sensitive_media_tags(sensitive_tags)
+        json_data = {
+            'media_id': media_id,
+            'alt_text': {
+                'text': alt_text,
+            }
+        }
+        if sensitive_media:
+            json_data['sensitive_media_warning'] = sensitive_media
+
+        return "POST", self.URL_AUSER_CREATE_MEDIA_METADATA, json_data
+
+    @return_with_headers
+    def upload_media_init(self, size, mime_type, media_category):
+        params = {
+            'command': 'INIT',
+            'total_bytes': str(int(size)),
+            'media_type': mime_type,
+            'media_category': media_category,
+        }
+        return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
+
+    @return_with_headers
+    def upload_media_append(self, media_id, segment_index):
+        params = {
+            'command': 'APPEND',
+            'media_id': media_id,
+            'segment_index': segment_index,
+        }
+        return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
+
+    @return_with_headers
+    def upload_media_finalize(self, media_id, md5_hash):
+        params = {
+            'command': 'FINALIZE',
+            'media_id': media_id,
+            'original_md5': md5_hash,
+        }
+        return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
 
     @return_with_headers
     def aUser_settings(self):
@@ -540,7 +686,7 @@ class FlowData:
                 'flow_context': {
                     'debug_overrides': {},
                     'start_location': {
-                        'location': 'unknown',
+                        'location': 'manual_link',
                     },
                 },
             },
@@ -669,3 +815,48 @@ class FlowData:
                 }
             ]
         }
+
+    def LoginAcid(self, json_, username, password):
+        reason = json_['subtasks'][0]['enter_text']['secondary_text']['text']
+        print(reason)
+        getAlternate = input("> ")
+        return {
+            "flow_token": self.get_flow_token(json_),
+            "subtask_inputs": [
+                {
+                    "subtask_id": "LoginAcid",
+                    "enter_text": {
+                        "text": getAlternate,
+                        "link": "next_link"
+                    }
+                }
+            ]
+        }
+
+    def LoginTwoFactorAuthChallenge(self, json_, username, password):
+        reason = json_['subtasks'][0]['enter_text']['header']['primary_text']['text']
+        print(reason)
+        getAlternate = input("> ")
+        return {
+            "flow_token": self.get_flow_token(json_),
+            "subtask_inputs": [
+                {
+                    "subtask_id": "LoginTwoFactorAuthChallenge",
+                    "enter_text": {
+                        "text": getAlternate,
+                        "link": "next_link"
+                    }
+                }
+            ]
+        }
+
+    @staticmethod
+    def DenyLoginSubtask(json_, username, password):
+        text = json_['subtasks'][0]['cta']['primary_text']['text']
+        secondary_text = json_['subtasks'][0]['cta']['secondary_text']['text'].replace('\n', '')
+        raise DeniedLogin(
+            error_code=37,
+            error_name="GenericAccessDenied",
+            response=None,
+            message=f"{text} : {secondary_text}"
+        )

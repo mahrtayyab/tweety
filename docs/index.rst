@@ -57,8 +57,13 @@ You can also use the menu on the left to quickly skip over sections.
     basic/all-functions
     basic/twDataTypes
     basic/exceptions
-    basic/filter
     basic/events
+
+.. toctree::
+    :hidden:
+    :caption: Filters
+
+    basic/filter
 
 .. toctree::
     :hidden:

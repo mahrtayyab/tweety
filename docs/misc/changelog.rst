@@ -101,3 +101,18 @@ Update 1.6:
 * Added `sign_in` method with session support
 * Added `load_cookies` method
 * **Please do check the full documentation before upgrading**
+
+
+Update 1.7:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.95
+* Fixed sign in issues
+* Session file can only be saved and loaded from different directory
+* `send_message` can only send files too (only images)
+* Added `DeniedLogin` Exception
+* Added `create_tweet` method
+* Added `get_bookmarks` , `iter_bookmarks` method
+* Added ``MozillaCookieJar`` support to `load_cookies` method
+* Removed tqdm totally , you can now pass your own ``progress_callback`` function
+* **Please do check the full documentation before upgrading**

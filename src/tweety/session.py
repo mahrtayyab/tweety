@@ -5,11 +5,16 @@ import os.path
 class Session:
     def __init__(self, session_name):
         self.user = None
-        self.session_name = session_name
-        self.session_file_path = os.path.join(os.getcwd(), f"{self.session_name}.json")
+        self.session_name = os.path.basename(session_name)
+        self.session_file_path = self._get_session_file_path(session_name, self.session_name)
         self.logged_in = False
         self.cookies = ""
         self._load_session()
+
+    @staticmethod
+    def _get_session_file_path(session_path, session_name):
+        directory = os.path.dirname(session_path) or os.getcwd()
+        return os.path.abspath(os.path.join(directory, f"{session_name}.json"))
 
     def _load_session(self):
         if os.path.exists(self.session_file_path):

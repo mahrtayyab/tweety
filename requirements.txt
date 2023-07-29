@@ -2,4 +2,3 @@ beautifulsoup4
 httpx
 openpyxl
 dateutils
-tqdm

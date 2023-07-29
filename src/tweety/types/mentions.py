@@ -1,9 +1,8 @@
-import time
-import traceback
-from . import Tweet, Excel, deprecated
+from . import Tweet
+from .base import BaseGeneratorClass
 
 
-class Mention(dict):
+class Mention(BaseGeneratorClass):
     def __init__(self, user_id, http, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
@@ -28,7 +27,7 @@ class Mention(dict):
             for tweet_id, tweet in tweets.items():
                 user = users.get(str(tweet['user_id']))
                 tweet['author'], tweet['rest_id'] = user, tweet_id
-                parsed = Tweet(response, tweet, self.http)
+                parsed = Tweet(tweet, self.http, response)
                 _tweets.append(parsed)
 
             self.is_next_page = self._get_cursor(response)
@@ -42,32 +41,10 @@ class Mention(dict):
 
         return self, _tweets
 
-    def generator(self):
-        for page in range(1, int(self.pages) + 1):
-            _, tweets = self.get_next_page()
-
-            yield self, tweets
-
-            if self.is_next_page and page != self.pages:
-                time.sleep(self.wait_time)
-
-    def _get_cursor(self, response):
-        for instruction in response['timeline']['instructions']:
-            if instruction.get('addEntries'):
-                entries = instruction['addEntries']['entries']
-                for entry in entries:
-                    if str(entry['entryId']).split("-")[0] == "cursor":
-                        newCursor = entry['content']['operation']['cursor']['value']
-
-                        if newCursor == self.cursor:
-                            return False
-
-                        self.cursor = newCursor
-                        return True
-
-        return False
-
     def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
         return self.tweets[index]
 
     def __iter__(self):

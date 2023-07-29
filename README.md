@@ -10,7 +10,6 @@ Before you begin, ensure you have met the following requirements:
 * Python 3.6+
 * httpx 
 * openpyxl
-* tqdm
 
 ## Installation: 
 ```bash
@@ -29,7 +28,7 @@ pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade
 ```python
   from tweety import Twitter
   
-  app = Twitter()
+  app = Twitter("session")
   
   all_tweets = app.get_tweets("elonmusk")
   for tweet in all_tweets:

@@ -111,6 +111,23 @@ class UnknownError(Exception):
         super().__init__(self.message)
 
 
+class DeniedLogin(Exception):
+    """
+        Exception Raised when the Twitter deny the login request ,
+        could be due to multiple login attempts (or failed attempts)
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
+
+
 class InvalidCredentials(Exception):
     """
         Exception Raised when cookies credentials are invalid

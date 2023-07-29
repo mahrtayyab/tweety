@@ -1,12 +1,12 @@
 import json
 import os
+from typing import Callable
+
 import httpx as s
-from tqdm import tqdm
 from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
 from .utils import custom_json, create_request_id
 from .builder import UrlBuilder
-
 
 s.Response.json_ = custom_json
 
@@ -28,9 +28,12 @@ class Request:
         self.user = user
         self.__builder.set_cookies(self.__session.cookies)
 
-    def __get_response__(self, return_raw=False, **request_data):
+    def __get_response__(self, return_raw=False, ignoreNoneData=False, **request_data):
         response = self.__session.request(**request_data)
         response_json = response.json_() # noqa
+
+        if ignoreNoneData and len(response.text) == 0:
+            return None
 
         if not response_json:
             raise UnknownError(
@@ -45,6 +48,7 @@ class Request:
             return GenericError(
                 response, error.get("code"), error.get("message")
             )
+
         if return_raw:
             return response
 
@@ -123,6 +127,10 @@ class Request:
         response = self.__get_response__(**self.__builder.get_mentions(cursor))
         return response
 
+    def get_bookmarks(self, cursor=None):
+        response = self.__get_response__(**self.__builder.get_bookmarks(cursor))
+        return response
+
     def get_inbox(self, user_id, cursor=None):
         response = self.__get_response__(**self.__builder.get_inbox(cursor))
         return response
@@ -139,24 +147,41 @@ class Request:
         response = self.__get_response__(**self.__builder.get_conversation_with_messages(conversation_id, max_id))
         return response
 
-    def send_message(self, conversation_id, text):
-        request_id = create_request_id()
-        json_data = {
-            'conversation_id': conversation_id,
-            'recipient_ids': False,
-            'request_id': request_id,
-            'text': text,
-            'cards_platform': 'Web-12',
-            'include_cards': 1,
-            'include_quote_count': True,
-            'dm_users': False,
-        }
-        request_data = self.__builder.send_message()
-        request_data['json'] = json_data
+    def send_message(self, conversation_id, text, media_id):
+        request_data = self.__builder.send_message(conversation_id, text, media_id)
         response = self.__get_response__(**request_data)
         return response
 
-    def download_media(self, media_url, filename=None, show_progress=True):
+    def create_tweet(self, text, files, filter_):
+        request_data = self.__builder.create_tweet(text, files, filter_)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def set_media_set_metadata(self, media_id, alt_text, sensitive_tags):
+        request_data = self.__builder.set_media_metadata(media_id, alt_text, sensitive_tags)
+        response = self.__get_response__(ignoreNoneData=True, **request_data)
+        print(response)
+        return response
+
+    def upload_media_init(self, size, mime_type, media_category):
+        request_data = self.__builder.upload_media_init(size, mime_type, media_category)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def upload_media_append(self, media_id, payload, headers, segment_index):
+        request_data = self.__builder.upload_media_append(media_id, segment_index)
+        request_data['headers'].update(headers)
+        request_data['data'] = payload
+
+        response = self.__get_response__(ignoreNoneData=True, **request_data)
+        return response
+
+    def upload_media_finalize(self, media_id, md5_hash):
+        request_data = self.__builder.upload_media_finalize(media_id, md5_hash)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
         headers = self.__session.headers
         oldReferer = headers.get('Referer')
@@ -167,17 +192,19 @@ class Request:
 
         with self.__session.stream('GET', media_url, follow_redirects=True) as response:
             response.raise_for_status()
-            content_length = int(response.headers['Content-Length'])
+            total_size = int(response.headers['Content-Length'])
+            downloaded = 0
             f = open(filename, 'wb')
-            if show_progress:
-                with tqdm(total=content_length, unit='B', unit_scale=True, desc=f"[{filename}]") as pbar:
-                    for chunk in response.iter_bytes(chunk_size=8192):
-                        f.write(chunk)
-                        pbar.update(len(chunk))
-            else:
-                for chunk in response.iter_bytes(chunk_size=8192):
-                    f.write(chunk)
+            for chunk in response.iter_bytes(chunk_size=8192):
+                f.write(chunk)
+                downloaded += len(chunk)
+
+                if progress_callback:
+                    progress_callback(filename, total_size, downloaded)
+
             f.close()
 
-        self.__session.header['Referer'] = oldReferer
+        if oldReferer:
+            self.__session.headers['Referer'] = oldReferer
+
         return filename

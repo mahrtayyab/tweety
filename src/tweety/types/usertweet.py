@@ -1,12 +1,10 @@
-import time
-import traceback
-
 from .twDataTypes import TweetThread
 from ..exceptions_ import UserProtected, UserNotFound
 from . import Tweet, Excel, deprecated
+from .base import BaseGeneratorClass
 
 
-class UserTweets(dict):
+class UserTweets(BaseGeneratorClass):
     def __init__(self, user_id, http, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
@@ -64,7 +62,7 @@ class UserTweets(dict):
                 except:
                     pass
 
-            self.is_next_page = self._get_cursor(entries)
+            self.is_next_page = self._get_cursor(response)
 
             for tweet in _tweets:
                 self.tweets.append(tweet)
@@ -73,35 +71,15 @@ class UserTweets(dict):
             self['is_next_page'] = self.is_next_page
             self['cursor'] = self.cursor
 
-        return self, _tweets
-
-    def generator(self):
-        for page in range(1, int(self.pages) + 1):
-            _, tweets = self.get_next_page()
-
-            yield self, tweets
-
-            if self.is_next_page and page != self.pages:
-                time.sleep(self.wait_time)
-
-    def _get_cursor(self, entries):
-        for entry in entries:
-            if str(entry['entryId']).split("-")[0] == "cursor":
-                if entry['content']['cursorType'] == "Bottom":
-                    newCursor = entry['content']['value']
-
-                    if newCursor == self.cursor:
-                        return False
-
-                    self.cursor = newCursor
-                    return True
-
-        return False
+        return _tweets
 
     def to_xlsx(self, filename=None):
         return Excel(self, filename)
 
     def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
         return self.tweets[index]
 
     def __iter__(self):
@@ -111,8 +89,7 @@ class UserTweets(dict):
     def __len__(self):
         return len(self.tweets)
 
-    def __repr__(self):
-        return f"UserTweets(user_id={self.user_id}, count={self.__len__()})"
+
 
 
 

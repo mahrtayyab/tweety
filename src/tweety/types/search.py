@@ -1,10 +1,9 @@
 import time
-import traceback
-
 from . import Tweet, Excel, User, deprecated
+from .base import BaseGeneratorClass
 
 
-class Search(dict):
+class Search(BaseGeneratorClass):
     def __init__(self, keyword, http, pages=1, filter_=None, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
@@ -87,33 +86,8 @@ class Search(dict):
 
                 self['tweets'] = self.tweets
 
-        self.is_next_page = self._get_cursor(entries)
+        self.is_next_page = self._get_cursor(response)
         return thisObjects
-
-    def _get_cursor(self, entries):
-        for entry in entries:
-            if str(entry['entryId']).split("-")[0] == "cursor":
-                if entry['content']['cursorType'] == "Bottom":
-                    newCursor = entry['content']['value']
-
-                    if newCursor == self.cursor:
-                        return False
-
-                    self.cursor = newCursor
-                    return True
-
-        return False
-
-    def generator(self):
-        for page in range(1, int(self.pages) + 1):
-            this_tweets = self.get_next_page()
-
-            yield self, this_tweets
-
-            if self.is_next_page and page != self.pages:
-                time.sleep(self.wait_time)
-
-        return self
 
     def to_xlsx(self, filename=None):
         if self.filter == "users":
@@ -121,6 +95,9 @@ class Search(dict):
         return Excel(self.tweets, f"search-{self.keyword}", filename)
 
     def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
         if self.filter == "users":
             return self.users[index]
         else:

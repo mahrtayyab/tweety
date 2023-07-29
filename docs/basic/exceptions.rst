@@ -259,6 +259,39 @@ RateLimitReached
 
             Raw Response returned by the Twitter
 
+DeniedLogin
+---------------------
+
+.. py:class:: DeniedLogin
+
+    Bases : `Exception`
+
+    :description: **Exception Raised when the Twitter deny the login request , could be due to multiple login attempts (or failed attempts)**
+
+    :reference: `tweety.exceptions_.DeniedLogin`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+
+            Main Exception Message
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter
+
 UnknownError
 ---------------------
 

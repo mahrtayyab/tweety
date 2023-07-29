@@ -7,13 +7,7 @@ import warnings
 from dateutil import parser
 import openpyxl
 import dateutil
-
-WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'language', 'likes',
-                    'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
-
-
-def decodeBase64(encoded_string):
-    return str(base64.b64decode(bytes(encoded_string, "utf-8")))[2:-1]
+from ..utils import *
 
 
 def deprecated(func):
@@ -33,11 +27,6 @@ def deprecated(func):
     new_func.__dict__.update(func.__dict__)
     return new_func
 
-
-def bar_progress(current, total, width=80):
-    progress_message = "Downloading: %d%% [%d / %d] bytes" % (current / total * 100, current, total)
-    sys.stdout.write("\r" + progress_message)
-    sys.stdout.flush()
 
 
 class Excel:
@@ -517,9 +506,9 @@ class Media(dict):
     def __repr__(self):
         return f"Media(id={self.id}, type={self.type})"
 
-    def download(self, filename=None, show_progress=True):
+    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         if self.type == "photo":
-            return self.__http.download_media(self.direct_url, filename, show_progress)
+            return self.__http.download_media(self.direct_url, filename, progress_callback)
         elif self.type == "video":
             _res = [eval(stream.res) for stream in self.streams if stream.res]
             max_res = max(_res)
@@ -527,11 +516,11 @@ class Media(dict):
                 if eval(stream.res) == max_res:
                     file_format = stream.content_type.split("/")[-1]
                     if not file_format == "x-mpegURL":
-                        return self.__http.download_media(stream.url, filename, show_progress)
+                        return self.__http.download_media(stream.url, filename, progress_callback)
         elif self.type == "animated_gif":
             file_format = self.streams[0].content_type.split("/")[-1]
             if not file_format == "x-mpegURL":
-                return self.__http.download_media(self.streams[0].url, filename, show_progress)
+                return self.__http.download_media(self.streams[0].url, filename, progress_callback)
         return None
 
 
@@ -562,8 +551,8 @@ class Stream(dict):
     def __repr__(self):
         return f"Stream(content_type={self.content_type}, length={self.length}, bitrate={self.bitrate}, res={self.res})"
 
-    def download(self, filename_=None, show_progress=False):
-        return self.__http.download_media(self.url, filename_, show_progress)
+    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+        return self.__http.download_media(self.url, filename, progress_callback)
 
 
 class MediaSize(dict):
@@ -754,6 +743,7 @@ class User(dict):
         self.translator_type = self._get_key("translator_type")
         self.verified = self._get_verified()
         self.can_dm = self._get_key("can_dm")
+        self.following = self._get_key("following", False)
         # self.verified_type = self._get_key("verified_type")
         self.possibly_sensitive = self._get_key("possibly_sensitive")
         self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
@@ -809,4 +799,4 @@ class User(dict):
             keyValue = int(keyValue)
 
         return keyValue
-        
+

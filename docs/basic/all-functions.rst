@@ -41,8 +41,8 @@ Get User Info
     .. code-block:: python
 
        from tweety.bot import Twitter
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+
+       app = Twitter("session")
        user = app.get_user_info('elonmusk')
 
 
@@ -95,8 +95,7 @@ Get Tweets
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        tweets = app.get_tweets('elonmusk')
        for tweet in tweets:
            print(tweet)
@@ -148,8 +147,7 @@ Get Tweets
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        for userTweetsObj, tweet in app.iter_tweets('elonmusk'):
            print(tweet)
 
@@ -207,8 +205,7 @@ Searching a Keyword
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        tweets = app.search('elonmusk')
        for tweet in tweets:
            print(tweet)
@@ -261,8 +258,7 @@ Searching a Keyword
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        for search_obj, tweet in app.iter_search('elonmusk'):
            print(tweet)
 
@@ -284,8 +280,7 @@ Get Trends
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        all_trends = app.get_trends()
        for trend in all_trends:
            print(trend)
@@ -314,8 +309,7 @@ Get a Tweet Detail
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        tweet = app.tweet_detail("https://twitter.com/Microsoft/status/1442542812197801985")
 
 
@@ -360,10 +354,137 @@ Getting Mentioned Tweets
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        tweets = app.get_mentions()
        for tweet in tweets:
+           print(tweet)
+
+
+- .. py:method:: Twitter().iter_mentions(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Tweets in which the authenticated user is mentioned as a generator
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`Mention`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       for mention_obj, tweet in app.iter_mentions():
+           print(tweet)
+
+Getting Bookmarks
+---------------------
+
+.. py:decorator:: AuthRequired
+
+- .. py:method:: Twitter().get_bookmarks(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Bookmarked Tweets of authenticated user
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `Bookmarks`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweets = app.get_bookmarks()
+       for tweet in tweets:
+           print(tweet)
+
+
+- .. py:method:: Twitter().iter_bookmarks(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Bookmarked Tweets of authenticated user as a generator
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`Bookmarks`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       for bookmark_obj, tweet in app.iter_bookmarks():
            print(tweet)
 
 Getting Inbox
@@ -401,8 +522,7 @@ Getting Inbox
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        inbox = app.get_inbox()
        for conversation in inbox:
            print(conversation)
@@ -412,7 +532,7 @@ Sending Message
 
 .. py:decorator:: AuthRequired
 
-- .. py:method:: Twitter().send_message(username: Union[str, int, User], text: str)
+- .. py:method:: Twitter().send_message(username: Union[str, int, User], text: str, file: Union[str, UploadedMedia] = None)
 
     Sending Message to a User
 
@@ -430,6 +550,11 @@ Sending Message
 
             Content of the message to be sent
 
+        .. py:data:: file
+            :type: str
+
+            Filepath of the file to be sent
+
 
     .. py:data:: Return
 
@@ -440,10 +565,48 @@ Sending Message
 
        from tweety.bot import Twitter
 
-       cookies = "cookies_value"
-       app = Twitter(cookies=cookies)
+       app = Twitter("session")
        message = app.send_message("user", "Hi")
 
+Creating a Tweet
+---------------------
 
+.. py:decorator:: AuthRequired
+
+- .. py:method:: Twitter().create_tweet(text: str, files: list[Union[str, UploadedMedia, tuple[str, str]]] = None, filter_: str = None)
+
+    Create a Tweet using the authenticated user
+
+    .. attention:: This method requires user to be authenticated
+
+    .. py:data:: Arguments
+
+        .. py:data:: text
+            :type: str
+
+            Content of the message to be sent
+
+        .. py:data:: files
+            :type: list[Union[str, UploadedMedia, tuple[str, str]]]
+
+            List of Filepath of the files to be sent
+
+        .. py:data:: filter_
+            :type: Union[str, TweetConversationFilters]
+
+           Filter to be applied for Tweet Audience. More about :ref:`filter`
+
+
+    .. py:data:: Return
+
+        :return: `Tweet`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       message = app.send_message("user", "Hi")
 
 

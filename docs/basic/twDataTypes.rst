@@ -12,7 +12,7 @@ UserTweets
 
 .. py:class:: UserTweets
 
-    Bases : `dict`
+    Bases : `BaseGeneratorClass`
 
     .. note:: **This Object is JSON Serializable and Iterable**
 
@@ -87,7 +87,7 @@ Reference `Search`_.
 
 .. py:class:: Search
 
-    Bases : `dict`
+    Bases : `BaseGeneratorClass`
 
     .. note:: **This Object is JSON Serializable and Iterable**
 
@@ -165,7 +165,7 @@ Mention
 
 .. py:class:: Mention
 
-    Bases : `dict`
+    Bases : `BaseGeneratorClass`
 
     .. note:: **This Object is JSON Serializable and Iterable**
 
@@ -211,6 +211,59 @@ Mention
                 :type: str
 
                 :return: ``Mention(user_id={user_id}, count={number_of_results})``
+
+
+Bookmarks
+---------------------
+
+.. py:class:: Bookmarks
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.bookmarks.Bookmarks`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list
+
+            List of User Tweets
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :return: ``Bookmarks(user_id={user_id}, count={number_of_results})``
 
 Inbox
 ---------------------
@@ -566,7 +619,7 @@ Media
 
     .. py:data:: Methods:
 
-        .. py:method:: download(filename=None, show_progress=True)
+        .. py:method:: download(filename: str = None, progress_callback: Callable[[str, int, int], None] = None)
 
             Download the Media
 
@@ -578,11 +631,12 @@ Media
 
                     Filename of the Media
 
-                .. py:data:: show_progress (optional)
-                    :type: bool
-                    :value: True
+                .. py:data:: progress_callback (optional)
+                    :type: Callable[[str, int, int], None]
+                    :value: None
 
-                    Either to show the download progress or not
+                    Callback function which will called while downloading to track the progress.
+                    [filename, total_size_in_bytes, downloaded_in_bytes]
 
             .. py:data:: Return
                 :type: filename | None
@@ -643,7 +697,7 @@ Stream
 
     .. py:data:: Methods:
 
-        .. py:method:: download(filename=None, show_progress=True)
+        .. py:method:: download(filename: str = None, progress_callback: Callable[[str, int, int], None] = None)
 
             Download the Media
 
@@ -655,11 +709,12 @@ Stream
 
                     Filename of the Media
 
-                .. py:data:: show_progress (optional)
-                    :type: bool
-                    :value: True
+                .. py:data:: progress_callback (optional)
+                    :type: Callable[[str, int, int], None]
+                    :value: None
 
-                    Either to show the download progress or not
+                    Callback function which will called while downloading to track the progress.
+                    [filename, total_size_in_bytes, downloaded_in_bytes]
 
             .. py:data:: Return
                 :type: filename | None
