@@ -817,7 +817,7 @@ class FlowData:
         }
 
     def LoginAcid(self, json_, username, password):
-        reason = json_['subtasks'][0]['enter_text']['secondary_text']['text']
+        reason = json_['subtasks'][0]['enter_text']['header']['secondary_text']['text']
         print(reason)
         getAlternate = input("> ")
         return {
@@ -834,7 +834,7 @@ class FlowData:
         }
 
     def LoginTwoFactorAuthChallenge(self, json_, username, password):
-        reason = json_['subtasks'][0]['enter_text']['header']['primary_text']['text']
+        reason = json_['subtasks'][0]['enter_text']['header']['secondary_text']['text']
         print(reason)
         getAlternate = input("> ")
         return {
