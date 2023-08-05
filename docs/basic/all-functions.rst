@@ -7,12 +7,15 @@ All Available Functions
 
 This page contains all the public method available to work with
 
+.. attention:: All methods requires user to be authenticated
+
+
 Get User Info
 ---------------------
 
-- .. py:method:: Twitter().get_user_info(username: str = None, banner_extensions: bool = False, image_extensions: bool = False)
+- .. py:method:: Twitter().get_user_info(username: str = None)
 
-    Get the User Info of the specified username or ``self`` if user is authenticated using ``cookies``
+    Get the User Info of the specified username or ``self``
 
     .. py:data:: Arguments
 
@@ -21,16 +24,6 @@ Get User Info
             :value: None
 
             Username of the user you want to get info of.
-
-        .. py:data:: banner_extensions (optional)
-            :type: bool
-            :value: False
-
-
-        .. py:data:: image_extensions (optional)
-            :type: bool
-            :value: False
-
 
 
     .. py:data:: Return
@@ -155,13 +148,9 @@ Get Tweets
 Searching a Keyword
 ---------------------
 
-.. py:decorator:: AuthRequired
-
 - .. py:method:: Twitter().search(keyword: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None)
 
     Search for a keyword or hashtag on Twitter
-
-    .. attention:: This method requires user to be authenticated
 
     .. py:data:: Arguments
 
@@ -213,8 +202,6 @@ Searching a Keyword
 - .. py:method:: Twitter().iter_search(keyword: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None)
 
     Search for a keyword or hashtag on Twitter as a generator
-
-    .. attention:: This method requires user to be authenticated
 
     .. py:data:: Arguments
 
@@ -316,8 +303,6 @@ Get a Tweet Detail
 Getting Mentioned Tweets
 ---------------------
 
-.. py:decorator:: AuthRequired
-
 - .. py:method:: Twitter().get_mentions(pages: int = 1, wait_time: int = 2, cursor: str = None)
 
     Getting the Tweets in which the authenticated user is mentioned
@@ -364,8 +349,6 @@ Getting Mentioned Tweets
 
     Getting the Tweets in which the authenticated user is mentioned as a generator
 
-    .. attention:: This method requires user to be authenticated
-
     .. py:data:: Arguments
 
         .. py:data:: pages (optional)
@@ -403,13 +386,9 @@ Getting Mentioned Tweets
 Getting Bookmarks
 ---------------------
 
-.. py:decorator:: AuthRequired
-
 - .. py:method:: Twitter().get_bookmarks(pages: int = 1, wait_time: int = 2, cursor: str = None)
 
     Getting the Bookmarked Tweets of authenticated user
-
-    .. attention:: This method requires user to be authenticated
 
     .. py:data:: Arguments
 
@@ -451,8 +430,6 @@ Getting Bookmarks
 
     Getting the Bookmarked Tweets of authenticated user as a generator
 
-    .. attention:: This method requires user to be authenticated
-
     .. py:data:: Arguments
 
         .. py:data:: pages (optional)
@@ -490,13 +467,9 @@ Getting Bookmarks
 Getting Inbox
 ---------------------
 
-.. py:decorator:: AuthRequired
-
 - .. py:method:: Twitter().get_inbox(user_id: Union[int, str, User] = None, cursor: str = None)
 
     Getting the inbox of authenticated user
-
-    .. attention:: This method requires user to be authenticated
 
     .. py:data:: Arguments
 
@@ -530,13 +503,9 @@ Getting Inbox
 Sending Message
 ---------------------
 
-.. py:decorator:: AuthRequired
-
 - .. py:method:: Twitter().send_message(username: Union[str, int, User], text: str, file: Union[str, UploadedMedia] = None)
 
     Sending Message to a User
-
-    .. attention:: This method requires user to be authenticated
 
     .. py:data:: Arguments
 
@@ -571,13 +540,9 @@ Sending Message
 Creating a Tweet
 ---------------------
 
-.. py:decorator:: AuthRequired
-
 - .. py:method:: Twitter().create_tweet(text: str, files: list[Union[str, UploadedMedia, tuple[str, str]]] = None, filter_: str = None)
 
     Create a Tweet using the authenticated user
-
-    .. attention:: This method requires user to be authenticated
 
     .. py:data:: Arguments
 

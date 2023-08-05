@@ -22,14 +22,11 @@ Dependencies
 
 httpx_ : The library will be used to make the http/2 requests to Twitter
 
-tqdm_  : The library will be used to indicate the download progress of Media
-
 dateutil_ : The library will be used to parse the dates in the http response
 
 openpyxl_ : The library will be used to save the responses as an Excel Sheet
 
 
 .. _httpx: https://github.com/encode/httpx
-.. _tqdm: https://github.com/tqdm/tqdm
 .. _dateutil: https://github.com/dateutil/dateutil
 .. _openpyxl: https://github.com/theorchard/openpyxl

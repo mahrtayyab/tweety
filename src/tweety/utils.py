@@ -103,7 +103,7 @@ def check_sensitive_media_tags(tags):
     return [tag for tag in tags if tag in SENSITIVE_MEDIA_TAGS]
 
 
-def find_object(obj: dict, fn: Callable[[dict], bool]) -> Any | None:
+def find_object(obj: dict, fn: Callable[[dict], bool]) -> Any:
     if not isinstance(obj, dict):
         return None
 
@@ -112,11 +112,16 @@ def find_object(obj: dict, fn: Callable[[dict], bool]) -> Any | None:
 
     for _, v in obj.items():
         if isinstance(v, dict):
-            if res := find_object(v, fn):
+            res = find_object(v, fn)
+
+            if res:
                 return res
+
         elif isinstance(v, list):
             for x in v:
-                if res := find_object(x, fn):
+                res = find_object(x, fn)
+
+                if res:
                     return res
 
     return None

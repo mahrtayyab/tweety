@@ -23,7 +23,7 @@ You can login to Twitter on Tweety using your `username` and `password`
     print(app.user)
 
 
-- By running this code , the Tweety will login to Twitter using the ``username`` and ``password`` provided , and if the request was successful , the authentication cookies obtained from response will be saved in ``session.json`` (filename is subject to the name of session) file in your current directory
+- By running this code , the Tweety will login to Twitter using the ``username`` and ``password`` provided , and if the request was successful , the authentication cookies obtained from response will be saved in ``session.json`` (filename is subject to the name of session) file.
 
 Singing In using Cookies
 ----------------------------
@@ -42,7 +42,7 @@ you can also log-in to Twitter on Tweety using ``Cookies``.
     print(app.user)
 
 
-- By running this code ,if the request was successful , the authentication cookies obtained from response will be saved in ``session.json`` (filename is subject to the name of session) file in your current directory
+- By running this code ,if the request was successful , the authentication cookies obtained from response will be saved in ``session.json`` (filename is subject to the name of session) file.
 
 
 Singing In using previous session
