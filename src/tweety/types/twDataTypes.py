@@ -485,8 +485,8 @@ class Media(dict):
 
     def _get_direct_url(self):
         url = self.__dictionary.get("media_url_https")
-        if url.startswith("https://ton.twitter.com"):
-            url = f"{url}:small"
+        # if url.startswith("https://ton.twitter.com"):
+        #     url = f"{url}:small"
 
         return url
 

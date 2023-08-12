@@ -44,14 +44,14 @@ class Inbox(dict):
         self.last_seen_event_id = self['last_seen_event_id'] = _initial_inbox['last_seen_event_id']
         self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = _initial_inbox['trusted_last_seen_event_id']
         self.untrusted_last_seen_event_id = self['untrusted_last_seen_event_id'] = _initial_inbox['untrusted_last_seen_event_id']
+        if _initial_inbox.get("inbox_timelines"):
+            for key, value in _initial_inbox['inbox_timelines'].items():
+                new_thread = threading.Thread(target=self.get_more, args=(value, ))
+                _threads.append(new_thread)
+                new_thread.start()
 
-        for key, value in _initial_inbox['inbox_timelines'].items():
-            new_thread = threading.Thread(target=self.get_more, args=(value, ))
-            _threads.append(new_thread)
-            new_thread.start()
-
-        for _ in _threads:
-            _.join()
+            for _ in _threads:
+                _.join()
 
         self._parse_messages()
         return self, self.conversations
@@ -209,8 +209,9 @@ class Message(dict):
 
     def _get_text(self):
         text = self._get_message_data('text')
+
         if text:
-            return re.sub(r"https://t\.co/\S+", "", text)
+            return re.sub(r"https://t\.co/\S+", "", text).strip()
 
         return ""
 

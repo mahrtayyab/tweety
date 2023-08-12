@@ -7,7 +7,7 @@ class NewMessageUpdate:
     def __init__(self, request, callback):
         self.request = request
         self.callback_func = callback
-        self.inbox = Inbox(None, self.request)
+        self.inbox = Inbox(self.request.user.id, self.request)
         self.cursor = self.inbox.cursor
         self.wait_for_message()
 
@@ -39,6 +39,7 @@ class NewMessageUpdate:
             if new_chats.conversations:
                 for conv in new_chats.conversations:
                     for message in conv.messages:
+
                         if str(message.sender.id) != str(self.request.user.id):
                             event = self.NewMessage(conv, message)
                             threading.Thread(target=self.callback_func, args=(event,)).start()

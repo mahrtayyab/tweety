@@ -26,7 +26,6 @@ class Request:
 
     def set_user(self, user):
         self.user = user
-        self.__builder.set_cookies(self.__session.cookies)
 
     def __get_response__(self, return_raw=False, ignoreNoneData=False, **request_data):
         response = self.__session.request(**request_data)
@@ -183,14 +182,14 @@ class Request:
 
     def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
-        headers = self.__session.headers
+        headers = self.__builder._get_headers()
         oldReferer = headers.get('Referer')
 
         if media_url.startswith("https://ton.twitter.com"):
             headers['Referer'] = "https://twitter.com/"
             self.__session.header = headers
 
-        with self.__session.stream('GET', media_url, follow_redirects=True) as response:
+        with self.__session.stream('GET', media_url, follow_redirects=True, headers=headers) as response:
             response.raise_for_status()
             total_size = int(response.headers['Content-Length'])
             downloaded = 0

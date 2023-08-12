@@ -13,6 +13,7 @@ class AuthMethods:
         if self.session.logged_in:
             self.request.set_cookies(str(self.session))
             self.user = self.get_user_info(self.request.username)
+            self.request.set_user(self.user)
             self.session.set_session_user(self.user)
             self._is_connected = True
             return
