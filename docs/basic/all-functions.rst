@@ -540,7 +540,7 @@ Sending Message
 Creating a Tweet
 ---------------------
 
-- .. py:method:: Twitter().create_tweet(text: str, files: list[Union[str, UploadedMedia, tuple[str, str]]] = None, filter_: str = None, reply: str = None)
+- .. py:method:: Twitter().create_tweet(text: str, files: list[Union[str, UploadedMedia, tuple[str, str]]] = None, filter_: str = None, reply_to: str = None)
 
     Create a Tweet using the authenticated user
 
@@ -561,7 +561,7 @@ Creating a Tweet
 
            Filter to be applied for Tweet Audience. More about :ref:`filter`
 
-        .. py:data:: reply
+        .. py:data:: reply_to
             :type: str
 
             ID of tweet to reply to
@@ -577,6 +577,6 @@ Creating a Tweet
        from tweety.bot import Twitter
 
        app = Twitter("session")
-       message = app.create_tweet("user", reply="1690430294208483322")
+       message = app.create_tweet("user", reply_to="1690430294208483322")
 
 
