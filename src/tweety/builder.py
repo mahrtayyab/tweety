@@ -548,7 +548,7 @@ class UrlBuilder:
         return "POST", self._build(self.URL_AUSER_SEND_MESSAGE, urlencode(params)), json_data
 
     @return_with_headers
-    def create_tweet(self, text, files, filter_=None):
+    def create_tweet(self, text, files, filter_=None, reply=None):
         media_entities = utils.create_media_entities(files)
         variables = {
             'tweet_text': text,
@@ -559,6 +559,12 @@ class UrlBuilder:
             },
             'semantic_annotation_ids': []
         }
+
+        if reply:
+            variables['reply'] = {
+                'exclude_reply_user_ids': [],
+                'in_reply_to_tweet_id': reply
+            }
 
         features = {
             'tweetypie_unmention_optimization_enabled': True,
