@@ -151,8 +151,8 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def create_tweet(self, text, files, filter_):
-        request_data = self.__builder.create_tweet(text, files, filter_)
+    def create_tweet(self, text, files, filter_, reply):
+        request_data = self.__builder.create_tweet(text, files, filter_, reply)
         response = self.__get_response__(**request_data)
         return response
 
