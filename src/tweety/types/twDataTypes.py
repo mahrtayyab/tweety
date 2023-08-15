@@ -166,6 +166,7 @@ class Tweet(dict):
 
     def _format_tweet(self):
         original_tweet = self.__tweet['legacy'] if self.__tweet.get('legacy') else self.__tweet
+        self.original_tweet = original_tweet
         self.id = self._get_id()
         self.created_on = self.date = self._get_date(original_tweet)
         self.author = self._get_author()
@@ -315,10 +316,20 @@ class Tweet(dict):
                 response = self.http.get_tweet_detail(tweet_id)
             else:
                 response = self.__full_response
-            for entry in response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
-                if str(entry['entryId']).split("-")[0] == "tweet" and str(entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
-                    raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                    return Tweet(raw_tweet, self.http)
+
+            try:
+                if 'threaded_conversation_with_injections_v2' in response['data']:
+                    entries = response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']
+                else:
+                    entries = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions'][0]['entries']
+                
+                for entry in entries:
+                    if str(entry['entryId']).split("-")[0] == "tweet" and str(entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
+                        raw_tweet = entry['content']['itemContent']['tweet_results']['result']
+                        return Tweet(raw_tweet, self.http)
+            except:
+                pass
+
         return None
 
     @staticmethod
@@ -347,7 +358,7 @@ class Tweet(dict):
     def _is_reply(original_tweet):
         tweet_keys = list(original_tweet.keys())
         required_keys = ["in_reply_to_status_id_str", "in_reply_to_user_id_str", "in_reply_to_screen_name"]
-        return any(x in tweet_keys and original_tweet[x] is True for x in required_keys)
+        return any(x in tweet_keys for x in required_keys)
 
     @staticmethod
     def _is_quoted(original_tweet):
