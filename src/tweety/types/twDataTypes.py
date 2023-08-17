@@ -166,7 +166,7 @@ class Tweet(dict):
 
     def _format_tweet(self):
         original_tweet = self.__tweet['legacy'] if self.__tweet.get('legacy') else self.__tweet
-        self._original_tweet = original_tweet
+        self.original_tweet = original_tweet
         self.id = self._get_id()
         self.created_on = self.date = self._get_date(original_tweet)
         self.author = self._get_author()
@@ -311,14 +311,14 @@ class Tweet(dict):
 
     def _get_reply_to(self, is_reply):
         if is_reply:
-            tweet_id = self.__tweet['legacy']['in_reply_to_status_id_str']
+            tweet_id = self.original_tweet['in_reply_to_status_id_str']
             if not self.__full_response:
                 response = self.http.get_tweet_detail(tweet_id)
             else:
                 response = self.__full_response
 
             try:
-                if 'threaded_conversation_with_injections_v2' in response['data']:
+                if response['data'].get('threaded_conversation_with_injections_v2'):
                     entries = response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']
                 else:
                     entries = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions'][0]['entries']
@@ -358,7 +358,7 @@ class Tweet(dict):
     def _is_reply(original_tweet):
         tweet_keys = list(original_tweet.keys())
         required_keys = ["in_reply_to_status_id_str", "in_reply_to_user_id_str", "in_reply_to_screen_name"]
-        return any(x in tweet_keys for x in required_keys)
+        return all(x in tweet_keys for x in required_keys)
 
     @staticmethod
     def _is_quoted(original_tweet):
