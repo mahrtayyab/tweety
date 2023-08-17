@@ -229,7 +229,9 @@ class BotMethods:
             for entry in r['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
                 if str(entry['entryId']).split("-")[0] == "tweet":
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-
+                    if 'tweet' in raw_tweet:
+                        raw_tweet = raw_tweet['tweet']
+                    
                     if raw_tweet['rest_id'] == str(tweetId):
                         return Tweet(raw_tweet, self.request, r)
 
