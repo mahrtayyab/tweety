@@ -232,8 +232,7 @@ class BotMethods:
                     if raw_tweet.get('tweet'):
                         raw_tweet = raw_tweet['tweet']
                     
-                    if raw_tweet['rest_id'] == str(tweetId):
+                    if raw_tweet.get('rest_id') == str(tweetId):
                         return Tweet(raw_tweet, self.request, r)
-
         except KeyError:
             raise InvalidTweetIdentifier(144, "StatusNotFound", r)
