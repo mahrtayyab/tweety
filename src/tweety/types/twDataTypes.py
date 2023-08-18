@@ -346,8 +346,8 @@ class Tweet(dict):
 
     @staticmethod
     def _is_retweet(original_tweet):
-        if original_tweet.get("retweeted"):
-            return True
+        if 'retweeted' in original_tweet:
+            return original_tweet['retweeted']
 
         if str(original_tweet.get('full_text', "")).startswith("RT"):
             return True
