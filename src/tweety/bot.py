@@ -221,18 +221,25 @@ class BotMethods:
         :return: .types.twDataTypes.Tweet
         """
 
-        tweetId = re.findall("\d+", identifier)[0]
+        tweetId = re.findall("\d+", identifier)[-1]
 
         r = self.request.get_tweet_detail(tweetId)
 
         try:
             for entry in r['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
                 if str(entry['entryId']).split("-")[0] == "tweet":
+<<<<<<< Updated upstream
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
                     if raw_tweet.get('tweet'):
                         raw_tweet = raw_tweet['tweet']
                     
                     if raw_tweet.get('rest_id') == str(tweetId):
+=======
+
+                    raw_tweet = entry['content']['itemContent']['tweet_results']['result']['tweet']
+
+                    if raw_tweet['rest_id'] == str(tweetId):
+>>>>>>> Stashed changes
                         return Tweet(raw_tweet, self.request, r)
         except KeyError:
             raise InvalidTweetIdentifier(144, "StatusNotFound", r)

@@ -153,7 +153,7 @@ class UserMethods:
             text: str,
             files: list[Union[str, UploadedMedia, tuple[str, str]]] = None,
             filter_: str = None,
-            reply_to: str = None
+            reply_to: Union[str, Tweet] = None
     ) -> Tweet:
 
         """
@@ -162,7 +162,7 @@ class UserMethods:
         :param text: (`str`) Text content of Tweet
         :param files: (`list[Union[str, UploadedMedia, tuple[str, str]]]`) Files to be sent with Tweet (max 4)
         :param filter_: (`str`) Filter to applied for Tweet audience
-        :param reply_to: (`str`) ID of tweet to reply to
+        :param reply_to: (`str` | `Tweet`) ID of tweet to reply to
         :return: Tweet
         """
 
@@ -170,6 +170,9 @@ class UserMethods:
             files = self._upload_media(files)
         else:
             files = []
+
+        if isinstance(reply_to, Tweet):
+            reply_to = reply_to.id
 
         response = self.request.create_tweet(text, files, filter_, reply_to)
         return Tweet(response['data']['create_tweet']['tweet_results']['result'], self.request, response)
