@@ -146,8 +146,11 @@ class TweetThread(dict):
 class Tweet(dict):
     def __init__(self, tweet, http, full_response=None):  # noqa
         super().__init__()
+        if tweet.get('__typename') == 'TweetWithVisibilityResults':
+            self.__tweet = tweet['tweet']
+        else:
+            self.__tweet = tweet
         self.http = http
-        self.__tweet = tweet
         self.__full_response = full_response
         self.__replied_to = None
         self._format_tweet()
