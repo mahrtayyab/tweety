@@ -234,7 +234,7 @@ class BotMethods:
                         raw_tweet = raw_tweet['tweet']
                     
                     if raw_tweet.get('rest_id') == str(tweetId):
-                        raw_tweet = entry['content']['itemContent']['tweet_results']['result']['tweet']
+                        raw_tweet = entry['content']['itemContent']['tweet_results']['result']
 
                     if raw_tweet['rest_id'] == str(tweetId):
                         return Tweet(raw_tweet, self.request, r)
