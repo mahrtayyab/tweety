@@ -1,7 +1,6 @@
 import sys
 import traceback
-
-from .twDataTypes import TweetThread, SelfThread
+from .twDataTypes import SelfThread
 from ..exceptions_ import UserProtected, UserNotFound
 from ..utils import find_objects
 from . import Tweet, Excel, deprecated

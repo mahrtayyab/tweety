@@ -67,7 +67,7 @@ UserTweets
             Get next page of tweets if available
 
             .. py:data:: Return
-                :type: list[Tweet | TweetThread]
+                :type: list[Tweet | SelfThread]
 
 
         .. py:method:: __repr__()
@@ -200,7 +200,7 @@ TweetLikes
             Get next page of tweets if available
 
             .. py:data:: Return
-                :type: list[Tweet | TweetThread]
+                :type: list[Tweet]
 
 
         .. py:method:: __repr__()
@@ -253,7 +253,7 @@ TweetRetweets
             Get next page of tweets if available
 
             .. py:data:: Return
-                :type: list[Tweet | TweetThread]
+                :type: list[Tweet]
 
 
         .. py:method:: __repr__()

@@ -98,7 +98,7 @@ class Excel:
         for tweet in self.tweets:
             if isinstance(tweet, Tweet):
                 self._write_tweet(tweet)
-            elif isinstance(tweet, TweetThread):
+            elif isinstance(tweet, SelfThread):
                 for _threadedTweet in tweet:
                     self._write_tweet(_threadedTweet)
 

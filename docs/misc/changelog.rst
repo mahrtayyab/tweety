@@ -140,3 +140,11 @@ Update 1.8:
 * ``photos``, ``videos`` SearchFilter has been merged and renamed to `Media`
 * Added `reply_to` argument to `create_tweet`
 * **Please do check the full documentation before upgrading**
+
+Update 1.8.1:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.9.1
+* Fixed the Import Errors
+* Fixed the annotation Errors
+* **Please do check the full documentation before upgrading**

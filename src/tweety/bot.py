@@ -209,7 +209,7 @@ class BotMethods:
 
         return search.generator()
 
-    def get_audio_space(self, space_id: str):
+    def get_audio_space(self, space_id: Union[str, Tweet]):
         """
 
         :param space_id: Id of the Audio Space , or the Tweet Object that Space Audio is part of.

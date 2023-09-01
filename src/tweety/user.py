@@ -1,5 +1,5 @@
 import functools
-from typing import Union
+from typing import Union, Tuple, List
 from .types.inbox import Message
 from .utils import create_conversation_id, AuthRequired, find_objects
 from .types import User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes, TweetRetweets
@@ -287,7 +287,7 @@ class UserMethods:
     def create_tweet(
             self,
             text: str,
-            files: list[Union[str, UploadedMedia, tuple[str, str]]] = None,
+            files: List[Union[str, UploadedMedia, Tuple[str, str]]] = None,
             filter_: str = None,
             reply_to: Union[str, int, Tweet] = None
     ) -> Tweet:
