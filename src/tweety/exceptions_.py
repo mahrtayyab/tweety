@@ -42,7 +42,7 @@ class InvalidTweetIdentifier(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="The Tweet Identifier is Invalid"):
+    def __init__(self, error_code=144, error_name="StatusNotFound", response=None, message="The Tweet Identifier is Invalid"):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -120,6 +120,22 @@ class DeniedLogin(Exception):
             message -- explanation of the error
     """
 
+    def __init__(self, error_code=37, error_name="GenericAccessDenied", response=None, message=None):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
+
+
+class ActionRequired(Exception):
+    """
+        Exception Raised when the Twitter Login Request require an additional step from the user
+
+        Attributes:
+            message -- explanation of the error
+    """
+
     def __init__(self, error_code, error_name, response, message):
         self.message = message
         self.error_code = error_code
@@ -143,6 +159,21 @@ class InvalidCredentials(Exception):
         self.response = response
         super().__init__(self.message)
 
+class InvalidBroadcast(Exception):
+    """
+        Exception Raised when cookies are required for making a specific request
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="The Broadcast doesn't exists"):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
+
 
 class AuthenticationRequired(Exception):
     """
@@ -152,7 +183,7 @@ class AuthenticationRequired(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="You need to be authenticated to make this request"):
+    def __init__(self, error_code, error_name, response, message="You need to be authenticated and connected to make this request"):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name

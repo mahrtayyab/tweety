@@ -121,6 +121,22 @@ Update 1.7:
 Update 1.7.1:
 ------------
 
-* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.96
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.6
 * Fixed sign in issues once again
+* **Please do check the full documentation before upgrading**
+
+Update 1.8:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.9
+* Added interactive version of `sign_in` called `start`
+* Added New Exception `ActionRequired`
+* Reworked `tweet_detail` , it will be fixed now
+* Added New `get_home_timeline`, `iter_home_timeline`, `get_tweet_likes`, `iter_tweet_likes`, `get_tweet_retweets`, `iter_tweet_retweets`, `like_tweet`, `retweet_tweet`, `follow_user`, `unfollow_user` Methods
+* ``TweetThreads`` has been renamed to `SelfThreads`
+* Added new `ConversationThread`, `TweetRetweets`, `TweetLikes` Types
+* `comments` in `Tweet` now returns list of `ConversationThread` Object
+* Session file format renamed to ``tw_session``
+* ``photos``, ``videos`` SearchFilter has been merged and renamed to `Media`
+* Added `reply_to` argument to `create_tweet`
 * **Please do check the full documentation before upgrading**

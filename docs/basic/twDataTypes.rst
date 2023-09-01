@@ -21,7 +21,7 @@ UserTweets
     .. py:data:: Attributes:
 
         .. py:attribute:: tweets
-            :type: list[Tweet | TweetThread]
+            :type: list[Tweet | SelfThread]
 
             List of User Tweets
 
@@ -159,6 +159,111 @@ Reference `Search`_.
 
                 :value: ``Search(keyword={keyword}, count={number_of_results}, filter={any_filter_which_is_used})``
 
+TweetLikes
+---------------------
+
+.. py:class:: TweetLikes
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.likes.TweetLikes`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            List of Users
+
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet | TweetThread]
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :return: ``TweetLikes(tweet_id={id_of_tweet}, count={number_of_results})``
+
+TweetRetweets
+---------------------
+
+.. py:class:: TweetRetweets
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.likes.TweetRetweets`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            List of Users
+
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet | TweetThread]
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :return: ``TweetRetweets(tweet_id={id_of_tweet}, count={number_of_results})``
 
 Mention
 ---------------------
@@ -320,25 +425,34 @@ Inbox
                 :return: ``Inbox(user_id={user_id}, count={number_of_results})``
 
 
-TweetThread
+SelfThread
 ---------------------
 
-.. py:class:: TweetThread
+.. py:class:: SelfThread
 
     Bases : `dict`
 
     .. note:: **This Object is JSON Serializable and Iterable**
 
-    :reference: `tweety.types.twDataTypes.TweetThread`
+    :reference: `tweety.types.twDataTypes.SelfThread`
 
     .. py:data:: Attributes:
 
         .. py:attribute:: tweets
-            :type: list[Tweet | TweetThread]
+            :type: list[Tweet]
 
             List of Threaded Tweets
 
+        .. py:attribute:: all_tweets_id
+            :type: list[str]
+
+            List of all tweet ids in the thread
+
     .. py:data:: Methods:
+
+        .. py:method:: expand()
+
+            Try getting all the tweets of the thread (by default Twitter returns only 3 Tweets from Thread)
 
         .. py:method:: __repr__()
 
@@ -347,7 +461,45 @@ TweetThread
             .. py:data:: Return
                 :type: str
 
-                :return: ``TweetThread(tweets=number_of_tweets_in_threads)``
+                :return: ``SelfThread(tweets=number_of_tweets_in_threads)``
+
+ConversationThread
+---------------------
+
+.. py:class:: ConversationThread
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.twDataTypes.ConversationThread`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet]
+
+            List of Threaded Tweets
+
+        .. py:attribute:: parent
+            :type: Tweet
+
+            Parnet Tweet
+
+    .. py:data:: Methods:
+
+        .. py:method:: expand()
+
+            Try getting all the tweets of the thread (by default Twitter returns only 2 Tweets from Thread)
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :return: ``ConversationThread(tweets=number_of_tweets_in_threads)``
 
 
 Tweet
@@ -463,6 +615,11 @@ Tweet
 
             Source of Tweet
 
+        .. py:attribute:: audio_space_id
+            :type: str
+
+            Id of the Audio Space in the Tweet
+
         .. py:attribute:: media
             :type: list[Media]
 
@@ -488,13 +645,23 @@ Tweet
 
             Symbols mentioned in the Tweet
 
+        .. py:attribute:: community_note
+            :type: str | None
+
+            Community Note posted in response to the Tweet
+
+        .. py:attribute:: url
+            :type: str
+
+            URL of the Tweet
+
         .. py:attribute:: threads
             :type: list[Tweet]
 
             List of Threaded Tweets
 
         .. py:attribute:: comments
-            :type: list[Tweet]
+            :type: list[ConversationThread]
 
             List of Comments sent in response to this Tweet
 
@@ -553,6 +720,27 @@ Tweet
 
             .. py:data:: Return
                 :type:  Generator : (`Tweet` , list[`Tweet`])
+
+        .. py:method:: like()
+
+            Like the Tweet
+
+            .. py:data:: Return
+                :type: Bool
+
+        .. py:method:: retweet()
+
+            Retweet the Tweet
+
+            .. py:data:: Return
+                :type: Bool
+
+        .. py:method:: get_reply_to()
+
+            Get the Tweet to which this Tweet was sent in reply
+
+            .. py:data:: Return
+                :type: Tweet
 
         .. py:method:: __repr__()
 
@@ -1152,7 +1340,24 @@ User
 
             List of id of tweets pinned by the user
 
+
+
     .. py:data:: Methods:
+
+        .. py:method:: follow()
+
+            Follow the User
+
+            .. py:data:: Return
+                :type: User
+
+        .. py:method:: unfollow()
+
+            un-Follow the User
+
+            .. py:data:: Return
+                :type: User
+
 
         .. py:method:: __repr__()
 

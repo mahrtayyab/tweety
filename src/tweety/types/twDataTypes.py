@@ -1,9 +1,13 @@
 import base64
+import datetime
+import json
 import os.path
 import re
 import sys
 import time
+import traceback
 import warnings
+from typing import Callable
 from dateutil import parser
 import openpyxl
 import dateutil
@@ -109,50 +113,14 @@ class Excel:
         self.workbook.save(self.filename)
 
 
-class TweetThread(dict):
-    def __init__(self, response, http, _full_response=None):
-        super().__init__()
-        self._raw = response
-        self._http = http
-        self._full_response = _full_response
-        self.tweets = self['tweets'] = self.parse_tweets()
-
-    def parse_tweets(self):
-        _tweets = []
-        for tweet in self._raw:
-            try:
-                _tweets.append(Tweet(tweet, self._http, self._full_response))
-            except:
-                pass
-
-        return _tweets
-
-    def __getitem__(self, index):
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
-
-    def __repr__(self):
-        return "TweetThread(tweets={})".format(
-            len(self.tweets)
-        )
-
-
 class Tweet(dict):
-    def __init__(self, tweet, http, full_response=None):  # noqa
+    def __init__(self, tweet, client, full_http_response=None):  # noqa
         super().__init__()
-        if tweet.get('__typename') == 'TweetWithVisibilityResults':
-            self.__tweet = tweet['tweet']
-        else:
-            self.__tweet = tweet
-        self.http = http
-        self.__full_response = full_response
-        self.__replied_to = None
+
+        self._comments_cursor = None
+        self._raw = tweet
+        self._client = client
+        self._full_http_response = full_http_response
         self._format_tweet()
 
         for key, value in vars(self).items():
@@ -164,40 +132,99 @@ class Tweet(dict):
 
     def __iter__(self):
         if self.threads:  # noqa
-            for thread_ in self.threads:  # noqa
-                yield thread_
+            for thread in self.threads:  # noqa
+                yield thread
 
     def _format_tweet(self):
-        original_tweet = self.__tweet['legacy'] if self.__tweet.get('legacy') else self.__tweet
-        self.original_tweet = original_tweet
+        self._tweet = find_objects(self._raw, "__typename", ["Tweet", "TweetWithVisibilityResults"], recursive=False)
+        self.original_tweet = self._get_original_tweet()
         self.id = self._get_id()
-        self.created_on = self.date = self._get_date(original_tweet)
+        self.created_on = self.date = self._get_date()
         self.author = self._get_author()
-        self.is_retweet = self._is_retweet(original_tweet)
-        self.retweeted_tweet = self._get_retweeted_tweet(self.is_retweet, original_tweet)
-        self.text = self.tweet_body = self._get_tweet_text(original_tweet, self.is_retweet)
-        self.is_quoted = self._is_quoted(original_tweet)
-        self.quoted_tweet = self._get_quoted_tweet(self.is_quoted)
-        self.is_reply = self._is_reply(original_tweet)
-        self.is_sensitive = self._is_sensitive(original_tweet)
-        self.reply_counts = self._get_reply_counts(original_tweet)
-        self.quote_counts = self._get_quote_counts(original_tweet)
-        self.replied_to = self._get_reply_to(self.is_reply)
-        self.bookmark_count = self._get_bookmark_count(original_tweet)
+        self.is_retweet = self._is_retweet()
+        self.retweeted_tweet = self._get_retweeted_tweet()
+        self.text = self.tweet_body = self._get_tweet_text()
+        self.is_quoted = self._is_quoted()
+        self.quoted_tweet = self._get_quoted_tweet()
+        self.is_reply = self._is_reply()
+        self.is_sensitive = self._is_sensitive()
+        self.reply_counts = self._get_reply_counts()
+        self.quote_counts = self._get_quote_counts()
+        self.replied_to = None
+        self.bookmark_count = self._get_bookmark_count()
         self.vibe = self._get_vibe()
         self.views = self._get_views()
-        self.language = self._get_language(original_tweet)
-        self.likes = self._get_likes(original_tweet)
-        self.place = self._get_place(original_tweet)
-        self.retweet_counts = self._get_retweet_counts(original_tweet)
-        self.source = self._get_source(self.__tweet)
+        self.language = self._get_language()
+        self.likes = self._get_likes()
+        self.place = self._get_place()
+        self.retweet_counts = self._get_retweet_counts()
+        self.source = self._get_source()
+        self.audio_space_id = self._get_audio_space()
         self.voice_info = None  # TODO
-        self.media = self._get_tweet_media(original_tweet)
-        self.user_mentions = self._get_tweet_mentions(original_tweet)
-        self.urls = self._get_tweet_urls(original_tweet)
-        self.hashtags = self._get_tweet_hashtags(original_tweet)
-        self.symbols = self._get_tweet_symbols(original_tweet)
+        self.media = self._get_tweet_media()
+        self.user_mentions = self._get_tweet_mentions()
+        self.urls = self._get_tweet_urls()
+        self.hashtags = self._get_tweet_hashtags()
+        self.symbols = self._get_tweet_symbols()
+        self.community_note = self._get_community_note()
+        self.url = self._get_url()
+        self.threads = self.get_threads()
         self.comments = []
+
+    def _get_url(self):
+        return "https://twitter.com/{}/status/{}".format(
+            self.author.username, self.id
+        )
+
+    def like(self):
+        return self._client.like_tweet(self.id)
+
+    def retweet(self):
+        return self._client.retweet_tweet(self.id)
+
+
+    def _get_original_tweet(self):
+        tweet = self._tweet
+
+        if tweet.get('tweet'):
+            tweet = tweet['tweet']
+
+
+        return tweet['legacy'] if tweet.get('legacy') else tweet
+
+    def get_threads(self):
+        _threads = []
+        if not self._full_http_response:
+            return _threads
+
+        instruction = find_objects(self._full_http_response, "type", "TimelineAddEntries")
+        if not instruction:
+            return _threads
+
+        entries = instruction.get('entries', [])
+        for entry in entries:
+
+            if str(entry['entryId'].split("-")[0]) == "conversationthread":
+                _thread = [i for i in entry['content']['items']]
+                self_threads = [i for i in _thread if i['item']['itemContent'].get('tweetDisplayType') == "SelfThread"]
+
+                if len(self_threads) == 0:
+                    continue
+
+                for _ in self_threads:
+                    try:
+                        parsed = Tweet(_, self._client, None)
+                        _threads.append(parsed)
+                    except:
+                        pass
+
+            elif str(entry['entryId'].split("-")[0]) == "tweet" and entry['content']['itemContent']['tweetDisplayType'] == "SelfThread":
+                try:
+                    parsed = Tweet(entry, self._client, None)
+                    _threads.append(parsed)
+                except:
+                    pass
+        return _threads
 
     def get_comments(self, pages=1, wait_time=2, cursor=None):
         if not wait_time:
@@ -210,15 +237,14 @@ class Tweet(dict):
         if not wait_time:
             wait_time = 0
 
-        cursor = cursor
-        _comments = []
+        self._comments_cursor = cursor if cursor else self._comments_cursor
         pages = pages
         for page in range(1, int(pages) + 1):
-            _, comments, new_cursor = self._get_comments(cursor, self.__full_response)
+            _, comments, self._comments_cursor = self._get_comments(self._comments_cursor, self._full_http_response)
 
             yield self, comments
 
-            if cursor != new_cursor and page != pages:
+            if cursor != self._comments_cursor and page != pages:
                 time.sleep(wait_time)
             else:
                 break
@@ -228,30 +254,51 @@ class Tweet(dict):
         _cursor = cursor
 
         if not response:
-            response = self.http.get_tweet_detail(self.id, cursor)
-        else:
-            self.__full_response = None
+            response = self._client.http.get_tweet_detail(self.id, _cursor)
 
-        for instruction in response['data']['threaded_conversation_with_injections_v2']['instructions']:
-            if instruction['type'] == "TimelineAddEntries":
-                for entry in instruction['entries']:
-                    if str(entry['entryId'].split("-")[0]) == "conversationthread":
-                        for item in entry['content']['items']:
-                            tweet = item['item']['itemContent']['tweet_results']['result']
-                            try:
-                                parsed = Tweet(tweet, self.http)
-                                _comments.append(parsed)
-                                self.comments.append(parsed)
-                            except:
-                                pass
-                    elif "cursor-bottom" in str(entry['entryId']):
-                        _cursor = entry['content']['itemContent']['value']
+        instruction = find_objects(response, "type", "TimelineAddEntries")
+        for entry in instruction['entries']:
+            if str(entry['entryId'].split("-")[0]) == "conversationthread":
+                thread = [i for i in entry['content']['items']]
+
+                if len(thread) == 0:
+                    continue
+
+                try:
+                    parsed = ConversationThread(self, thread, self._client)
+                    _comments.append(parsed)
+                    self.comments.append(parsed)
+                except:
+                    pass
+
+
+            elif "cursor-bottom" in str(entry['entryId']):
+                _cursor = entry['content']['itemContent']['value']
 
         return self, _comments, _cursor
 
-    @staticmethod
-    def _get_date(original_tweet):
-        date = original_tweet.get("created_at")
+    def _get_audio_space(self):
+        if not self._tweet.get('card'):
+            return None
+
+        if "audiospace" not in self._tweet['card']['legacy'].get('name'):
+            return None
+
+        for value in self._tweet['card']['legacy'].get('binding_values', []):
+            if value['key'] == "id":
+                return value['value']['string_value']
+
+        return None
+
+
+    def _get_community_note(self):
+        if self._tweet.get("birdwatch_pivot"):
+            return self._tweet['birdwatch_pivot']['subtitle']['text']
+
+        return None
+
+    def _get_date(self):
+        date = self.original_tweet.get("created_at")
 
         if date:
             return dateutil.parser.parse(date)
@@ -259,209 +306,191 @@ class Tweet(dict):
         return None
 
     def _get_id(self):
-        if self.__tweet.get("rest_id"):
-            return self.__tweet['rest_id']
-
-        if self.__tweet.get("tweet"):
-            return self.__tweet['tweet']['rest_id']
+        return self._tweet.get('rest_id')
 
     def _get_author(self):
-        if self.__tweet.get("core"):
-            return User(self.__tweet['core']['user_results']['result'])
+        if self._tweet.get("core"):
+            return User(self._tweet['core'], self._client)
 
-        if self.__tweet.get("author"):
-            return User(self.__tweet['author'])
-
-        return None
-
-    def _get_retweeted_tweet(self, is_retweet, original_tweet):
-        if is_retweet and original_tweet.get("retweeted_status_result"):
-            retweet = original_tweet['retweeted_status_result']['result']
-            return Tweet(retweet, self.http)
+        if self._tweet.get("author"):
+            return User(self._tweet['author'], self._client)
 
         return None
 
-    def _get_quoted_tweet(self, is_quoted):
-        if is_quoted:
-            try:
-                if self.__tweet.get("quoted_status_result"):
-                    raw_tweet = self.__tweet['quoted_status_result']['result']
-                    return Tweet(raw_tweet, self.http)
-
-                if self.__tweet.get("legacy"):
-                    raw_tweet = self.__tweet['legacy']['retweeted_status_result']['result']['quoted_status_result']['result']
-                    return Tweet(raw_tweet, self.http)
-
-                return None
-            except:
-                return None
+    def _get_retweeted_tweet(self):
+        if self.is_retweet and self.original_tweet.get("retweeted_status_result"):
+            retweet = self.original_tweet['retweeted_status_result']['result']
+            return Tweet(retweet, self._client)
 
         return None
+
+    def _get_quoted_tweet(self):
+        if not self.is_quoted:
+            return None
+
+        try:
+            if self._tweet.get("quoted_status_result"):
+                raw_tweet = self._tweet['quoted_status_result']['result']
+                return Tweet(raw_tweet, self._client)
+
+            if self.original_tweet.get('retweeted_status_result'):
+                raw_tweet = self.original_tweet['retweeted_status_result']['result']['quoted_status_result']['result']
+                return Tweet(raw_tweet, self._client)
+
+            return None
+        except:
+            return None
+
 
     def _get_vibe(self):
-        if self.__tweet.get("vibe"):
-            vibeImage = self.__tweet['vibe']['imgDescription']
-            vibeText = self.__tweet['vibe']['text']
+        if self._tweet.get("vibe"):
+            vibeImage = self._tweet['vibe']['imgDescription']
+            vibeText = self._tweet['vibe']['text']
             return f"{vibeImage} {vibeText}"
 
         return ""
 
     def _get_views(self):
-        if self.__tweet.get("views"):
-            return self.__tweet['views'].get('count', 'Unavailable')
+        if self._tweet.get("views"):
+            return self._tweet['views'].get('count', 'Unavailable')
 
         return 0
 
-    def _get_reply_to(self, is_reply):
-        if is_reply:
-            tweet_id = self.original_tweet['in_reply_to_status_id_str']
-            if not self.__full_response:
-                response = self.http.get_tweet_detail(tweet_id)
-            else:
-                response = self.__full_response
+    def get_reply_to(self):
+        if not self.is_reply:
+            return None
 
-            try:
-                if response['data'].get('threaded_conversation_with_injections_v2'):
-                    entries = response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']
-                else:
-                    entries = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions'][0]['entries']
-                
-                for entry in entries:
-                    if str(entry['entryId']).split("-")[0] == "tweet" and str(entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
-                        raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                        return Tweet(raw_tweet, self.http)
-            except:
-                pass
+        tweet_id = self.original_tweet['in_reply_to_status_id_str']
+        if not self._full_http_response:
+            response = self._client.http.get_tweet_detail(tweet_id)
+        else:
+            response = self._full_http_response
+
+        try:
+            if response['data'].get('threaded_conversation_with_injections_v2'):
+                entries = response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']
+            else:
+                entries = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions'][0]['entries']
+
+            for entry in entries:
+                if str(entry['entryId']).split("-")[0] == "tweet" and str(entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
+                    raw_tweet = entry['content']['itemContent']['tweet_results']['result']
+                    return Tweet(raw_tweet, self._client.http)
+        except:
+            pass
 
         return None
 
-    @staticmethod
-    def _is_sensitive(original_tweet):
-        return original_tweet.get("possibly_sensitive", False)
+    def _is_sensitive(self):
+        return self.original_tweet.get("possibly_sensitive", False)
 
-    @staticmethod
-    def _get_reply_counts(original_tweet):
-        return original_tweet.get("reply_count", 0)
+    def _get_reply_counts(self):
+        return self.original_tweet.get("reply_count", 0)
 
-    @staticmethod
-    def _get_quote_counts(original_tweet):
-        return original_tweet.get("quote_count", 0)
+    def _get_quote_counts(self):
+        return self.original_tweet.get("quote_count", 0)
 
-    @staticmethod
-    def _is_retweet(original_tweet):
-        if 'retweeted' in original_tweet:
-            return original_tweet['retweeted']
+    def _is_retweet(self):
+        if self.original_tweet.get('retweeted'):
+            return self.original_tweet['retweeted']
 
-        if str(original_tweet.get('full_text', "")).startswith("RT"):
+        if str(self.original_tweet.get('full_text', "")).startswith("RT"):
             return True
 
         return False
 
-    @staticmethod
-    def _is_reply(original_tweet):
-        tweet_keys = list(original_tweet.keys())
+    def _is_reply(self):
+        tweet_keys = list(self.original_tweet.keys())
         required_keys = ["in_reply_to_status_id_str", "in_reply_to_user_id_str", "in_reply_to_screen_name"]
         return all(x in tweet_keys for x in required_keys)
 
-    @staticmethod
-    def _is_quoted(original_tweet):
-        if original_tweet.get("is_quote_status"):
+    def _is_quoted(self):
+        if self.original_tweet.get("is_quote_status"):
             return True
 
         return False
 
-    @staticmethod
-    def _get_language(original_tweet):
-        return original_tweet.get('lang', "")
+    def _get_language(self):
+        return self.original_tweet.get('lang', "")
 
-    @staticmethod
-    def _get_likes(original_tweet):
-        return original_tweet.get("favorite_count", 0)
+    def _get_likes(self):
+        return self.original_tweet.get("favorite_count", 0)
 
-    @staticmethod
-    def _get_place(original_tweet):
-        if original_tweet.get('place'):
-            return Place(original_tweet['place'])
+    def _get_place(self):
+        if self.original_tweet.get('place'):
+            return Place(self.original_tweet['place'])
 
         return None
 
-    @staticmethod
-    def _get_retweet_counts(original_tweet):
-        return original_tweet.get('retweet_count', 0)
+    def _get_retweet_counts(self):
+        return self.original_tweet.get('retweet_count', 0)
 
-    @staticmethod
-    def _get_source(original_tweet):
-        if original_tweet.get('source'):
-            return str(original_tweet['source']).split(">")[1].split("<")[0]
+    def _get_source(self):
+        if self._tweet.get('source'):
+            return str(self._tweet['source']).split(">")[1].split("<")[0]
 
         return ""
 
-    @staticmethod
-    def _get_tweet_text(original_tweet, is_retweet):
-        if is_retweet and original_tweet.get("retweeted_status_result"):
+    def _get_tweet_text(self):
+        if self.is_retweet and self.original_tweet.get("retweeted_status_result"):
 
-            if not original_tweet['retweeted_status_result']['result'].get("legacy"):
-                return original_tweet['retweeted_status_result']['result']['tweet']['legacy']['full_text']
+            if not self.original_tweet['retweeted_status_result']['result'].get("legacy"):
+                return self.original_tweet['retweeted_status_result']['result']['tweet']['legacy']['full_text']
 
-            return original_tweet['retweeted_status_result']['result']['legacy']['full_text']
+            return self.original_tweet['retweeted_status_result']['result']['legacy']['full_text']
 
-        if original_tweet.get('full_text'):
-            return original_tweet['full_text']
+        if self.original_tweet.get('full_text'):
+            return self.original_tweet['full_text']
 
         return ""
 
-    def _get_tweet_media(self, original_tweet):
-        if not original_tweet.get("extended_entities"):
+    def _get_tweet_media(self):
+        if not self.original_tweet.get("extended_entities"):
             return []
 
-        if not original_tweet['extended_entities'].get("media"):
+        if not self.original_tweet['extended_entities'].get("media"):
             return []
 
-        return [Media(media, self.http) for media in original_tweet['extended_entities']['media']]
+        return [Media(media, self._client) for media in self.original_tweet['extended_entities']['media']]
 
-    @staticmethod
-    def _get_tweet_mentions(original_tweet):
-        if not original_tweet.get("entities"):
+    def _get_tweet_mentions(self):
+        if not self.original_tweet.get("entities"):
             return []
 
-        if not original_tweet['entities'].get("user_mentions"):
+        if not self.original_tweet['entities'].get("user_mentions"):
             return []
 
-        return [ShortUser(user) for user in original_tweet['entities']['user_mentions']]
+        return [ShortUser(user) for user in self.original_tweet['entities']['user_mentions']]
 
-    @staticmethod
-    def _get_bookmark_count(original_tweet):
-        return original_tweet.get("bookmark_count", None)
+    def _get_bookmark_count(self):
+        return self.original_tweet.get("bookmark_count", None)
 
-    @staticmethod
-    def _get_tweet_urls(original_tweet):
-        if not original_tweet.get("entities"):
+    def _get_tweet_urls(self):
+        if not self.original_tweet.get("entities"):
             return []
 
-        if not original_tweet['entities'].get("urls"):
+        if not self.original_tweet['entities'].get("urls"):
             return []
 
-        return [url for url in original_tweet['entities']['urls']]
+        return [url for url in self.original_tweet['entities']['urls']]
 
-    @staticmethod
-    def _get_tweet_hashtags(original_tweet):
-        if not original_tweet.get("entities"):
+    def _get_tweet_hashtags(self):
+        if not self.original_tweet.get("entities"):
             return []
 
-        if not original_tweet['entities'].get("hashtags"):
+        if not self.original_tweet['entities'].get("hashtags"):
             return []
 
-        return [hashtag for hashtag in original_tweet['entities']['hashtags']]
+        return [hashtag for hashtag in self.original_tweet['entities']['hashtags']]
 
-    @staticmethod
-    def _get_tweet_symbols(original_tweet):
-        if not original_tweet.get("entities"):
+    def _get_tweet_symbols(self):
+        if not self.original_tweet.get("entities"):
             return []
 
-        if not original_tweet['entities'].get("symbols"):
+        if not self.original_tweet['entities'].get("symbols"):
             return []
 
-        return [symbol for symbol in original_tweet['entities']['symbols']]
+        return [symbol for symbol in self.original_tweet['entities']['symbols']]
 
     def __eq__(self, other):
         if isinstance(other, Tweet):
@@ -469,38 +498,121 @@ class Tweet(dict):
 
         return str(self.id) == str(other)
 
+class SelfThread(dict):
+    def __init__(self, conversation_tweet, client, full_response):
+        super().__init__()
+        self._client = client
+        self._raw = conversation_tweet
+        self.tweets = []
+        self.all_tweets_id = self._get_all_tweet_ids()
+        self._format_tweet()
+
+        for key, value in vars(self).items():
+            if not str(key).startswith("_"):
+                self[key] = value
+
+    def _format_tweet(self):
+        for item in self._raw['content']['items']:
+            try:
+                parsed = Tweet(item, self._client, None)
+                self.tweets.append(parsed)
+            except:
+                pass
+
+    def __iter__(self):
+        if self.tweets:
+            for tweet in self.tweets:  # noqa
+                yield tweet
+
+    def expand(self):
+        tweet = self._client.tweet_detail(self.tweets[0].id)
+        self.tweets = tweet.threads
+
+    def _get_all_tweet_ids(self):
+        return self._raw['content']['metadata']['conversationMetadata']['allTweetIds']
+
+    def __repr__(self):
+        return "SelfThread(tweets={}, all_tweets={})".format(
+            len(self.tweets), len(self.all_tweets_id)
+        )
+
+
+class ConversationThread(dict):
+    def __init__(self, parent_tweet, thread_tweets, client):
+        super().__init__()
+        self._client = client
+        self.tweets = []
+        self.parent = parent_tweet
+        self.cursor = None
+        self._threads = thread_tweets
+        self._format_threads()
+
+        for key, value in vars(self).items():
+            if not str(key).startswith("_"):
+                self[key] = value
+
+    def __repr__(self):
+        return "ConversationThread(parent={}, tweets={})".format(
+            self.parent, len(self.tweets)
+        )
+
+    def _format_threads(self):
+        for thread in self._threads:
+            entry_type = str(thread['entryId']).split("-")[-2].lower()
+            if entry_type == "tweet":
+                self.tweets.append(Tweet(thread, self._client, None))
+            elif entry_type == "showmore":
+                self.cursor = thread['item']['itemContent']['value']
+
+    def expand(self):
+        if not self.cursor:
+            return self.tweets
+
+        response = self._client.http.get_tweet_detail(self.parent.id, self.cursor)
+        moduleItems = find_objects(response, "moduleItems", None)
+
+        if not moduleItems or len(moduleItems) == 0:
+            return self.tweets
+
+        for item in moduleItems:
+            tweet = find_objects(item, "__typename", ["Tweet", "TweetWithVisibilityResults"], recursive=False)
+            if tweet:
+                self.tweets.append(Tweet(tweet, self._client, None))
+
+        return self.tweets
+
+
+
 
 class Media(dict):
-    def __init__(self, media_dict, http):
+    def __init__(self, media_dict, client):
         super().__init__()
-        self.__dictionary = media_dict
-        self.__http = http
-        self.display_url = self.__dictionary.get("display_url")
-        self.expanded_url = self.__dictionary.get("expanded_url")
-        self.id = self.__dictionary.get("id_str")
-        self.indices = self.__dictionary.get("indices")
+        self._raw = media_dict
+        self._client = client
+        self.display_url = self._raw.get("display_url")
+        self.expanded_url = self._raw.get("expanded_url")
+        self.id = self._raw.get("id_str")
+        self.indices = self._raw.get("indices")
         self.media_url_https = self.direct_url = self._get_direct_url()
-        self.type = self.__dictionary.get("type")
-        self.url = self.__dictionary.get("url")
-        self.features = self.__dictionary.get("features")
-        self.media_key = self.__dictionary.get("media_key")
-        self.mediaStats = self.__dictionary.get("mediaStats")
-        self.sizes = [MediaSize(k, v) for k, v in self.__dictionary.get("sizes").items() if self.__dictionary.get('sizes')]
-        self.original_info = self.__dictionary.get("original_info")
+        self.type = self._raw.get("type")
+        self.url = self._raw.get("url")
+        self.features = self._raw.get("features")
+        self.media_key = self._raw.get("media_key")
+        self.mediaStats = self._raw.get("mediaStats")
+        self.sizes = [MediaSize(k, v) for k, v in self._raw.get("sizes", {}).items() if self._raw.get('sizes')]
+        self.original_info = self._raw.get("original_info")
         self.file_format = self._get_file_format()
         self.streams = []
 
         if self.type == "video" or self.type == "animated_gif":
-            self.__parse_video_streams()
+            self._parse_video_streams()
 
         for k, v in vars(self).items():
             if not k.startswith("_"):
                 self[k] = v
 
     def _get_direct_url(self):
-        url = self.__dictionary.get("media_url_https")
-        # if url.startswith("https://ton.twitter.com"):
-        #     url = f"{url}:small"
+        url = self._raw.get("media_url_https")
 
         return url
 
@@ -508,21 +620,22 @@ class Media(dict):
         filename = os.path.basename(self.media_url_https).split("?")[0]
         return filename.split(".")[-1] if self.type == "photo" else "mp4"
 
-    def __parse_video_streams(self):
-        videoDict = self.__dictionary.get("video_info")
+    def _parse_video_streams(self):
+        videoDict = self._raw.get("video_info")
+
         if not videoDict:
             return
 
         for i in videoDict.get("variants"):
             if not i.get("content_type").split("/")[-1] == "x-mpegURL":
-                self.streams.append(Stream(i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio"), self.__http))
+                self.streams.append(Stream(i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio"), self._client))
 
     def __repr__(self):
         return f"Media(id={self.id}, type={self.type})"
 
     def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         if self.type == "photo":
-            return self.__http.download_media(self.direct_url, filename, progress_callback)
+            return self._client.http.download_media(self.direct_url, filename, progress_callback)
         elif self.type == "video":
             _res = [eval(stream.res) for stream in self.streams if stream.res]
             max_res = max(_res)
@@ -530,22 +643,22 @@ class Media(dict):
                 if eval(stream.res) == max_res:
                     file_format = stream.content_type.split("/")[-1]
                     if not file_format == "x-mpegURL":
-                        return self.__http.download_media(stream.url, filename, progress_callback)
+                        return self._client.http.download_media(stream.url, filename, progress_callback)
         elif self.type == "animated_gif":
             file_format = self.streams[0].content_type.split("/")[-1]
             if not file_format == "x-mpegURL":
-                return self.__http.download_media(self.streams[0].url, filename, progress_callback)
+                return self._client.http.download_media(self.streams[0].url, filename, progress_callback)
         return None
 
 
 class Stream(dict):
-    def __init__(self, videoDict, length, ratio, http):
+    def __init__(self, videoDict, length, ratio, client):
         super().__init__()
-        self.__dictionary = videoDict
-        self.__http = http
-        self.bitrate = self.__dictionary.get("bitrate")
-        self.content_type = self.__dictionary.get("content_type")
-        self.url = self.direct_url = self.__dictionary.get("url")
+        self._raw = videoDict
+        self._client = client
+        self.bitrate = self._raw.get("bitrate")
+        self.content_type = self._raw.get("content_type")
+        self.url = self.direct_url = self._raw.get("url")
         self.length = length
         self.aspect_ratio = ratio
         self.res = self._get_resolution()
@@ -566,7 +679,7 @@ class Stream(dict):
         return f"Stream(content_type={self.content_type}, length={self.length}, bitrate={self.bitrate}, res={self.res})"
 
     def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
-        return self.__http.download_media(self.url, filename, progress_callback)
+        return self._client.http.download_media(self.url, filename, progress_callback)
 
 
 class MediaSize(dict):
@@ -574,9 +687,9 @@ class MediaSize(dict):
         super().__init__()
         self._json = data
         self.name = self['name'] = name
-        self.width = self['width'] = self._json['w']
-        self.height = self['height'] = self._json['h']
-        self.resize = self['resize'] = self._json['resize']
+        self.width = self['width'] = self._json.get('w')
+        self.height = self['height'] = self._json.get('h')
+        self.resize = self['resize'] = self._json.get('resize')
 
     def __repr__(self):
         return "MediaSize(name={}, width={}, height={}, resize={})".format(
@@ -601,11 +714,24 @@ class ShortUser(dict):
 
 
 class Trends:
-    def __init__(self, trends_dict):
-        self.__dictionary = trends_dict
-        self.name = self.__dictionary.get("name")
-        self.url = self.__dictionary.get("url")
-        self.tweet_count = self.__dictionary.get("tweet_count")
+    def __init__(self, trend_item):
+        self._raw = trend_item
+        self._trend = find_objects(self._raw, "trend", None)
+        self.name = self._get_name()
+        self.url = self._get_url()
+        self.tweet_count = self._get_count()
+
+    def _get_name(self):
+        return self._trend.get('name')
+
+    def _get_url(self):
+        url = self._trend['url'].get('url')
+        url = url.replace("twitter://", "https://twitter.com/").replace("query","q")
+        return url
+
+    def _get_count(self):
+        return  self._trend.get('trendMetadata', {}).get('metaDescription')
+
 
     def __repr__(self):
         return f"Trends(name={self.name})"
@@ -622,7 +748,7 @@ class Card(dict):
         self.end_time = None
         self.last_updated_time = None
         self.duration = None
-        self.user_ref = [User(user) for user in self._dict['legacy']["user_refs"]] if self._dict['legacy'].get("user_refs") else []
+        self.user_ref = [User(user, None) for user in self._dict['legacy']["user_refs"]] if self._dict['legacy'].get("user_refs") else []
         self.__parse_choices()
 
         for k, v in vars(self).items():
@@ -730,9 +856,12 @@ class Coordinates(dict):
 
 
 class User(dict):
-    def __init__(self, user_data):
+    def __init__(self, user_data, client, *args):
         super().__init__()
-        self._json = user_data
+        self._raw = user_data
+        self._client = client
+        self._user = find_objects(self._raw, "__typename", "User", recursive=False)
+        self.original_user = self._user['legacy'] if self._user.get('legacy') else self._user
         self.id = self.rest_id = self.get_id()
         self.created_at = self.date = self.get_created_at()
         self.entities = self._get_key("entities")
@@ -772,6 +901,12 @@ class User(dict):
             self.id, self.username, self.name, self.verified
         )
 
+    def follow(self):
+        return self._client.follow_user(self.id)
+
+    def unfollow(self):
+        return self._client.unfollow_user(self.id)
+
     def _get_verified(self):
         verified = self._get_key("verified", False)
         if verified is False:
@@ -783,7 +918,7 @@ class User(dict):
         return False if verified in (None, False) else True
 
     def get_id(self):
-        raw_id = self._json.get("id")
+        raw_id = self._user.get("id")
 
         if not str(raw_id).isdigit():
             raw_id = decodeBase64(raw_id).split(":")[-1]
@@ -792,25 +927,78 @@ class User(dict):
 
     def get_created_at(self):
         date = None
-        if self._json.get("legacy"):
-            date = self._json['legacy']['created_at']
 
-        if not date and self._json.get("created_at"):
-            date = self._json["created_at"]
+        if self.original_user.get('created_at'):
+            date = self.original_user['created_at']
 
         return parser.parse(date) if date else None
 
     def _get_key(self, key, default=None):
-        user = self._json
         keyValue = default
-        if user.get("legacy"):
-            keyValue = user['legacy'].get(key)
 
-        if not keyValue and user.get(key):
-            keyValue = user[key]
+        if self._user.get(key):
+            keyValue = self._user[key]
+
+        if self.original_user.get(key):
+            keyValue = self.original_user[key]
 
         if str(keyValue).isdigit():
             keyValue = int(keyValue)
 
         return keyValue
 
+class PeriScopeUser(dict):
+    def __init__(self, user_data):
+        super().__init__()
+        self._raw = user_data
+        self.id = self._raw.get('periscope_user_id')
+        self.twitter_screen_name = self.username =  self._raw.get('twitter_screen_name')
+        self.display_name = self.name = self._raw.get('display_name')
+        self.is_verified = self._raw.get('is_verified')
+        self.twitter_id = self._raw['user_results'].get('rest_id')
+
+class AudioSpace(dict):
+    def __init__(self, audio_space, client):
+        super().__init__()
+        self._raw = audio_space
+        self._client = client
+        self._space = find_objects(self._raw, "audioSpace", None, recursive=False)
+        self._meta_data = find_objects(self._space, "metadata", None, recursive=False)
+        self._participants = find_objects(self._raw, "participants", None, recursive=False)
+        self.id = self._meta_data.get('rest_id')
+        self.state = self._meta_data.get('state')
+        self.title = self._meta_data.get('title')
+        self.media_key = self._meta_data.get('media_key')
+        self.created_at = self.ts_to_datetime(self._meta_data.get('created_at'))
+        self.started_at = self.ts_to_datetime(self._meta_data.get('started_at'))
+        self.ended_at = self.ts_to_datetime(self._meta_data.get('ended_at'))
+        self.updated_at = self.ts_to_datetime(self._meta_data.get('updated_at'))
+        self.creator = User(self._meta_data.get('creator_results'), self._client)
+        self.total_live_listeners = self._meta_data.get('total_live_listeners')
+        self.total_replay_watched = self._meta_data.get('total_replay_watched')
+        self.disallow_join = self._meta_data.get('disallow_join')
+        self.is_employee_only = self._meta_data.get('is_employee_only')
+        self.is_locked = self._meta_data.get('is_locked')
+        self.is_muted = self._meta_data.get('is_muted')
+        self.tweet = Tweet(self._meta_data.get('tweet_results'), self._client)
+        self.admins = self._get_participants('admins')
+        self.speakers = self._get_participants('speakers')
+
+    def _get_participants(self, participant):
+        return [PeriScopeUser(user) for user in self._participants[participant]]
+
+    def get_stream_link(self):
+        return self._client.http.get_audio_stream(self.media_key)
+
+
+    @staticmethod
+    def ts_to_datetime(ts):
+        try:
+            return datetime.datetime.fromtimestamp(int(ts))
+        except ValueError:
+            return datetime.datetime.fromtimestamp(int(ts) / 1000)
+
+    def __repr__(self):
+        return "AudioSpace(id={}, title={}, state={}, tweet={})".format(
+            self.id, self.title, self.state, self.tweet
+        )

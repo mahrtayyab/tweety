@@ -24,12 +24,12 @@ Filter Latest Tweets
         from tweet in tweets:
             print(tweet)
 
-Filter Only Photos Tweets
+Filter Only Media Tweets
 ---------------------------
 
-.. py:class:: SearchFilters.Photos()
+.. py:class:: SearchFilters.Media()
 
-    :reference: `tweety.filters.SearchFilters.Photos`
+    :reference: `tweety.filters.SearchFilters.Media`
 
     .. code-block:: python
 
@@ -37,25 +37,7 @@ Filter Only Photos Tweets
 
         # Assuming `app` is Twitter Client Object
 
-        app.search("#pakistan", filter_=SearchFilters.Photos())
-        from tweet in tweets:
-            print(tweet.media)
-
-
-Filter Only Videos Tweets
----------------------------
-
-.. py:class:: SearchFilters.Videos()
-
-    :reference: `tweety.filters.SearchFilters.Videos`
-
-    .. code-block:: python
-
-        from tweety.filters import SearchFilters
-
-        # Assuming `app` is Twitter Client Object
-
-        app.search("#pakistan", filter_=SearchFilters.Videos())
+        app.search("#pakistan", filter_=SearchFilters.Media())
         from tweet in tweets:
             print(tweet.media)
 

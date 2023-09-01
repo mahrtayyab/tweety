@@ -1,4 +1,4 @@
-__version__ = "0.9.5"
+__version__ = "0.9.9"
 __author__ = "mahrtayyab"
 
 from .bot import BotMethods

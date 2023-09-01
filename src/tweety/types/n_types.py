@@ -50,7 +50,8 @@ class GenericError:
         144: InvalidTweetIdentifier,
         88: RateLimitReached,
         399: InvalidCredentials,
-        220: InvalidCredentials
+        220: InvalidCredentials,
+        214: InvalidBroadcast
     }
 
     def __init__(self, response, error_code, message=None):
@@ -126,10 +127,10 @@ class Cookies:
 class UploadedMedia:
     FILE_CHUNK_SIZE = 2 * 1024 * 1024  # 2 mb
 
-    def __init__(self, file_path, http, alt_text=None, sensitive_media_warning=None, media_category="tweet_image"):
+    def __init__(self, file_path, client, alt_text=None, sensitive_media_warning=None, media_category="tweet_image"):
         self.media_id = None
         self._file = file_path
-        self._http = http
+        self._client = client
         self._alt_text = alt_text
         self._media_category = media_category
         self._sensitive_media_warning = sensitive_media_warning if sensitive_media_warning else []
@@ -148,7 +149,7 @@ class UploadedMedia:
         return bytes(f'------WebKitFormBoundary{get_random_string(16)}', "utf-8")
 
     def _initiate_upload(self):
-        response = self._http.upload_media_init(self.size, self.mime_type, self._media_category)
+        response = self._client.http.upload_media_init(self.size, self.mime_type, self._media_category)
         return response['media_id_string']
 
     def _append_upload(self, media_id):
@@ -159,13 +160,13 @@ class UploadedMedia:
             for segment_index in range(segments):
                 boundary = self._create_boundary()
                 headers, multipart = encode_multipart_data({}, {"media": ('blob', f.read(self.FILE_CHUNK_SIZE), "application/octet-stream")}, boundary)
-                self._http.upload_media_append(media_id, multipart, headers, segment_index)
+                self._client.http.upload_media_append(media_id, multipart, headers, segment_index)
 
     def set_metadata(self):
-        self._http.set_media_set_metadata(self.media_id, self._alt_text, self._sensitive_media_warning)
+        self._client.http.set_media_set_metadata(self.media_id, self._alt_text, self._sensitive_media_warning)
 
     def _finish_upload(self, media_id):
-        self._http.upload_media_finalize(media_id, self.md5_hash)
+        self._client.http.upload_media_finalize(media_id, self.md5_hash)
 
     def upload(self):
         self.media_id = self._initiate_upload()

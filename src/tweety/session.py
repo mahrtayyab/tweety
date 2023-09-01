@@ -14,7 +14,7 @@ class Session:
     @staticmethod
     def _get_session_file_path(session_path, session_name):
         directory = os.path.dirname(session_path) or os.getcwd()
-        return os.path.abspath(os.path.join(directory, f"{session_name}.json"))
+        return os.path.abspath(os.path.join(directory, f"{session_name}.tw_session"))
 
     def _load_session(self):
         if os.path.exists(self.session_file_path):

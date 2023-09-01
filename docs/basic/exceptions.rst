@@ -323,3 +323,35 @@ UnknownError
             :type: httpx.Response
 
             Raw Response returned by the Twitter
+
+ActionRequired
+---------------------
+
+.. py:class:: ActionRequired
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when an additional step is required for Logging-in**
+    :reference: `tweety.exceptions_.ActionRequired`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+
+            Main Exception Message / Description of the Action to be performed
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter

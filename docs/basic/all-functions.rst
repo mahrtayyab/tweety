@@ -19,7 +19,7 @@ Get User Info
 
     .. py:data:: Arguments
 
-        .. py:data:: username (optional) (Required if not authenticated)
+        .. py:data:: username (optional)
             :type: str
             :value: None
 
@@ -141,8 +141,8 @@ Get Tweets
        from tweety.bot import Twitter
 
        app = Twitter("session")
-       for userTweetsObj, tweet in app.iter_tweets('elonmusk'):
-           print(tweet)
+       for userTweetsObj, tweets in app.iter_tweets('elonmusk'):
+           print(tweets)
 
 
 Searching a Keyword
@@ -246,8 +246,8 @@ Searching a Keyword
        from tweety.bot import Twitter
 
        app = Twitter("session")
-       for search_obj, tweet in app.iter_search('elonmusk'):
-           print(tweet)
+       for search_obj, tweets in app.iter_search('elonmusk'):
+           print(tweets)
 
 
 Get Trends
@@ -299,6 +299,278 @@ Get a Tweet Detail
        app = Twitter("session")
        tweet = app.tweet_detail("https://twitter.com/Microsoft/status/1442542812197801985")
 
+Getting Home Timeline
+---------------------
+
+- .. py:method:: Twitter().get_home_timeline(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Tweets from Home Page of Authenticated User
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `SelfTimeline`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweets = app.get_home_timeline()
+       for tweet in tweets:
+           print(tweet)
+
+
+- .. py:method:: Twitter().iter_home_timeline(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Tweets from Home Page of Authenticated User as a generator
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`SelfTimeline`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       for mention_obj, tweets in app.iter_home_timeline():
+           print(tweets)
+
+
+Getting Tweet Likes
+---------------------
+
+- .. py:method:: Twitter().get_tweet_likes(tweet_id: Union[str, Tweet] ,pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Users who have Likes of Tweet
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | Tweet
+            :value: 1
+
+            ID of the Tweet
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `TweetLikes`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweet = app.tweet_detail("1232515235253352")
+       likes = app.get_tweet_likes(tweet)
+       for like in likes:
+           print(like)
+
+
+- .. py:method:: Twitter().iter_tweet_likes(tweet_id: Union[str, Tweet] ,pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Users who have Likes of Tweet as a generator
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | Tweet
+            :value: 1
+
+            ID of the Tweet
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`TweetLikes`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweet = app.tweet_detail("1232515235253352")
+       for likes_obj, users in app.get_tweet_likes(tweet):
+           print(users)
+
+Getting Tweet Retweets
+---------------------
+
+- .. py:method:: Twitter().get_tweet_retweets(tweet_id: Union[str, Tweet] ,pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Users who have Retweeted of Tweet
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | Tweet
+            :value: 1
+
+            ID of the Tweet
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `TweetRetweets`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweet = app.tweet_detail("1232515235253352")
+       users = app.get_tweet_retweets(tweet)
+       for user in users:
+           print(user)
+
+
+- .. py:method:: Twitter().iter_tweet_retweets(tweet_id: Union[str, Tweet] ,pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Getting the Users who have Retweeted of Tweet as a generator
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | Tweet
+            :value: 1
+
+            ID of the Tweet
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`TweetRetweets`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweet = app.tweet_detail("1232515235253352")
+       for retweet_obj, users in app.get_tweet_retweets(tweet):
+           print(users)
+
 
 Getting Mentioned Tweets
 ---------------------
@@ -306,8 +578,6 @@ Getting Mentioned Tweets
 - .. py:method:: Twitter().get_mentions(pages: int = 1, wait_time: int = 2, cursor: str = None)
 
     Getting the Tweets in which the authenticated user is mentioned
-
-    .. attention:: This method requires user to be authenticated
 
     .. py:data:: Arguments
 
@@ -380,8 +650,8 @@ Getting Mentioned Tweets
        from tweety.bot import Twitter
 
        app = Twitter("session")
-       for mention_obj, tweet in app.iter_mentions():
-           print(tweet)
+       for mention_obj, tweets in app.iter_mentions():
+           print(tweets)
 
 Getting Bookmarks
 ---------------------
@@ -551,18 +821,18 @@ Creating a Tweet
 
             Content of the message to be sent
 
-        .. py:data:: files
+        .. py:data:: files(optional)
             :type: list[Union[str, UploadedMedia, tuple[str, str]]]
 
             List of Filepath of the files to be sent
 
-        .. py:data:: filter_
-            :type: Union[str, TweetConversationFilters]
+        .. py:data:: filter_ (optional)
+            :type: str |  TweetConversationFilters
 
            Filter to be applied for Tweet Audience. More about :ref:`filter`
 
-        .. py:data:: reply_to
-            :type: str
+        .. py:data:: reply_to(optional)
+            :type: str | Tweet
 
             ID of tweet to reply to
 
@@ -579,4 +849,109 @@ Creating a Tweet
        app = Twitter("session")
        message = app.create_tweet("user", reply_to="1690430294208483322")
 
+Liking the Tweet
+---------------------
+
+- .. py:method:: Twitter().like_tweet(tweet_id: Union[str, int , Tweet])
+
+    Post a Like on a Tweet
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | int | Tweet
+
+            Id of the Tweet
+
+
+    .. py:data:: Return
+
+        :return: bool
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.like_tweet("123456789")
+
+Retweeting the Tweet
+---------------------
+
+- .. py:method:: Twitter().retweet_tweet(tweet_id: Union[str, int , Tweet])
+
+    Post a Retweet on a Tweet
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | int | Tweet
+
+            Id of the Tweet
+
+
+    .. py:data:: Return
+
+        :return: bool
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.retweet_tweet("123456789")
+
+Follow a User
+---------------------
+
+- .. py:method:: Twitter().follow_user(user_id: Union[str, int , User])
+
+    Follow a User
+
+    .. py:data:: Arguments
+
+        .. py:data:: user_id
+            :type: str | int | User
+
+            Id of the User
+
+    .. py:data:: Return
+
+        :return: `User`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.follow_user("123456789")
+
+UnFollow a User
+---------------------
+
+- .. py:method:: Twitter().unfollow_user(user_id: Union[str, int , User])
+
+    Un-Follow a User
+
+    .. py:data:: Arguments
+
+        .. py:data:: user_id
+            :type: str | int | User
+
+            Id of the User
+
+    .. py:data:: Return
+
+        :return: `User`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.unfollow_user("123456789")
 

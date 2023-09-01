@@ -1,10 +1,11 @@
-from typing import Union, Generator
-
+import functools
+from typing import Union
 from .types.inbox import Message
-from .utils import create_conversation_id
-from .types import User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks
+from .utils import create_conversation_id, AuthRequired, find_objects
+from .types import User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes, TweetRetweets
 
 
+@AuthRequired
 class UserMethods:
 
     @property
@@ -14,6 +15,141 @@ class UserMethods:
         :return:
         """
         return self.user
+
+    def get_home_timeline(
+            self,
+            pages: int = 1,
+            wait_time: int = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.usertweet.SelfTimeline
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        timeline = SelfTimeline(self.user.id, self, pages, wait_time, cursor)
+        list(timeline.generator())
+
+        return timeline
+
+    def iter_home_timeline(
+            self,
+            pages: int = 1,
+            wait_time: int = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.usertweet.SelfTimeline, list[.types.twDataTypes.Tweet])
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        timeline = SelfTimeline(self.user.id, self, pages, wait_time, cursor)
+
+        return timeline.generator()
+
+    def get_tweet_likes(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: int = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.likes.TweetLikes
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        likes = TweetLikes(tweet_id, self, pages, wait_time, cursor)
+        list(likes.generator())
+        return likes
+
+    def iter_tweet_likes(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: int = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        likes = TweetLikes(tweet_id, self, pages, wait_time, cursor)
+
+        return likes.generator()
+
+    def get_tweet_retweets(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: int = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.likes.TweetLikes
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        retweets = TweetRetweets(tweet_id, self, pages, wait_time, cursor)
+        list(retweets.generator())
+        return retweets
+
+    def iter_tweet_retweets(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: int = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        retweets = TweetRetweets(tweet_id, self, pages, wait_time, cursor)
+
+        return retweets.generator()
 
     def get_mentions(
             self,
@@ -32,8 +168,8 @@ class UserMethods:
         if wait_time is None:
             wait_time = 0
 
-        mentions = Mention(self.user.id, self.request, pages, wait_time, cursor)
-        results = list(mentions.generator())
+        mentions = Mention(self.user.id, self, pages, wait_time, cursor)
+        list(mentions.generator())
 
         return mentions
 
@@ -54,7 +190,7 @@ class UserMethods:
         if wait_time is None:
             wait_time = 0
 
-        mentions = Mention(self.user.id, self.request, pages, wait_time, cursor)
+        mentions = Mention(self.user.id, self, pages, wait_time, cursor)
 
         return mentions.generator()
 
@@ -75,8 +211,8 @@ class UserMethods:
         if wait_time is None:
             wait_time = 0
 
-        bookmarks = Bookmarks(self.user.id, self.request, pages, wait_time, cursor)
-        results = list(bookmarks.generator())
+        bookmarks = Bookmarks(self.user.id, self, pages, wait_time, cursor)
+        list(bookmarks.generator())
 
         return bookmarks
 
@@ -97,7 +233,7 @@ class UserMethods:
         if wait_time is None:
             wait_time = 0
 
-        bookmarks = Bookmarks(self.user.id, self.request, pages, wait_time, cursor)
+        bookmarks = Bookmarks(self.user.id, self, pages, wait_time, cursor)
 
         return bookmarks.generator()
 
@@ -116,7 +252,7 @@ class UserMethods:
         if user_id:
             user_id = self._get_user_id(user_id)
 
-        inbox = Inbox(user_id, self.request, cursor)
+        inbox = Inbox(user_id, self, cursor)
 
         return inbox
 
@@ -146,14 +282,14 @@ class UserMethods:
         if file:
             file = self._upload_media(file, "dm_image")[0].media_id
 
-        return SendMessage(self.request, conversation_id, text, file).send()
+        return SendMessage(self, conversation_id, text, file).send()
 
     def create_tweet(
             self,
             text: str,
             files: list[Union[str, UploadedMedia, tuple[str, str]]] = None,
             filter_: str = None,
-            reply_to: Union[str, Tweet] = None
+            reply_to: Union[str, int, Tweet] = None
     ) -> Tweet:
 
         """
@@ -162,7 +298,7 @@ class UserMethods:
         :param text: (`str`) Text content of Tweet
         :param files: (`list[Union[str, UploadedMedia, tuple[str, str]]]`) Files to be sent with Tweet (max 4)
         :param filter_: (`str`) Filter to applied for Tweet audience
-        :param reply_to: (`str` | `Tweet`) ID of tweet to reply to
+        :param reply_to: (`str` | `int` | `Tweet`) ID of tweet to reply to
         :return: Tweet
         """
 
@@ -175,7 +311,61 @@ class UserMethods:
             reply_to = reply_to.id
 
         response = self.request.create_tweet(text, files, filter_, reply_to)
-        return Tweet(response['data']['create_tweet']['tweet_results']['result'], self.request, response)
+        return Tweet(response, self, response)
+
+    def like_tweet(self, tweet_id: Union[str, int , Tweet]):
+        """
+
+        :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
+        :return: Bool
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        response = self.request.like_tweet(tweet_id)
+        return True if find_objects(response, "favorite_tweet", "Done") else False
+
+    def retweet_tweet(self, tweet_id: Union[str, int , Tweet]):
+        """
+
+        :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
+        :return: Bool
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        response = self.request.retweet_tweet(tweet_id)
+        return True if find_objects(response, "rest_id", None) else False
+
+    def follow_user(self, user_id):
+        """
+
+        :param user_id: User Id of the user you want to follow
+        :return:
+        """
+
+        if isinstance(user_id, User):
+            user_id = user_id.id
+
+        response = self.request.follow_user(user_id)
+        response['__typename'] = "User"
+        return User(response, self)
+
+    def unfollow_user(self, user_id):
+        """
+
+        :param user_id: User Id of the user you want to follow
+        :return:
+        """
+
+        if isinstance(user_id, User):
+            user_id = user_id.id
+
+        response = self.request.unfollow_user(user_id)
+        response['__typename'] = "User"
+        return User(response, self)
 
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):
@@ -197,6 +387,6 @@ class UserMethods:
                 else:
                     uploaded.append(file_path)
             else:
-                uploaded.append(UploadedMedia(file_path, self.request, alt_text, None, _type).upload())
+                uploaded.append(UploadedMedia(file_path, self, alt_text, None, _type).upload())
 
         return uploaded

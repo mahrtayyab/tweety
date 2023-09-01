@@ -42,7 +42,7 @@ class Request:
                 message="Unknown Error Occurs on Twitter"
             )
 
-        if response_json.get("errors") and not response_json.get("data"):
+        if response_json.get("errors"):
             error = response_json['errors'][0]
             return GenericError(
                 response, error.get("code"), error.get("message")
@@ -79,10 +79,6 @@ class Request:
 
     def get_user(self, username=None):
         if not username:
-
-            if not self.username:
-                raise ValueError("'username' is required")
-
             username = self.username
 
         response = self.__get_response__(**self.__builder.user_by_screen_name(username))
@@ -177,6 +173,53 @@ class Request:
 
     def upload_media_finalize(self, media_id, md5_hash):
         request_data = self.__builder.upload_media_finalize(media_id, md5_hash)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_home_timeline(self, cursor=None):
+        request_data = self.__builder.home_timeline(cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_tweet_likes(self, tweet_id, cursor=None):
+        request_data = self.__builder.get_tweet_likes(tweet_id, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_tweet_retweets(self, tweet_id, cursor=None):
+        request_data = self.__builder.get_tweet_retweets(tweet_id, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_audio_space(self, audio_space_id):
+        request_data = self.__builder.get_audio_space(audio_space_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_audio_stream(self, media_key):
+        request_data = self.__builder.get_audio_stream(media_key)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def like_tweet(self, tweet_id):
+        request_data = self.__builder.like_tweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def retweet_tweet(self, tweet_id):
+        request_data = self.__builder.retweet_tweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def follow_user(self, user_id):
+        request_data = self.__builder.follow_user(user_id)
+        request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
+        response = self.__get_response__(**request_data)
+        return response
+
+    def unfollow_user(self, user_id):
+        request_data = self.__builder.unfollow_user(user_id)
+        request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
         response = self.__get_response__(**request_data)
         return response
 

@@ -3,12 +3,12 @@ from .base import BaseGeneratorClass
 
 
 class Mention(BaseGeneratorClass):
-    def __init__(self, user_id, http, pages=1, wait_time=2, cursor=None):
+    def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
         self.cursor = cursor
         self.is_next_page = True
-        self.http = http
+        self.client = client
         self.user_id = user_id
         self.pages = pages
         self.wait_time = wait_time
@@ -16,18 +16,21 @@ class Mention(BaseGeneratorClass):
     def get_next_page(self):
         _tweets = []
         if self.is_next_page:
-            response = self.http.get_mentions(self.user_id, cursor=self.cursor)
+            response = self.client.http.get_mentions(self.user_id, cursor=self.cursor)
 
-            if not response['globalObjects']:
+            if not response.get('globalObjects'):
                 self.is_next_page = False
                 return self, _tweets
 
             users = response['globalObjects']['users']
             tweets = response['globalObjects']['tweets']
+
             for tweet_id, tweet in tweets.items():
                 user = users.get(str(tweet['user_id']))
-                tweet['author'], tweet['rest_id'] = user, tweet_id
-                parsed = Tweet(tweet, self.http, response)
+                user['__typename'] = "User"
+                tweet['author'], tweet['rest_id'], tweet['__typename'] = user, tweet_id, "Tweet"
+
+                parsed = Tweet(tweet, self.client, response)
                 _tweets.append(parsed)
 
             self.is_next_page = self._get_cursor(response)

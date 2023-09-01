@@ -1,25 +1,17 @@
 import functools
 import re
 from typing import Union, Generator
-
+from .utils import find_objects
 from .types import Proxy, UserTweets, Search, User, Tweet, Trends
 from .exceptions_ import *
 from .session import Session
 from .http import Request
-
-
-def AuthRequired(f):
-    @functools.wraps(f)
-    def wrapper(self, *args, **kwargs):
-        if self.user is None:
-            raise AuthenticationRequired(200, "GenericForbidden", None)
-
-        return f(self, *args, **kwargs)
-
-    return wrapper
+from .types.twDataTypes import AudioSpace
 
 
 class BotMethods:
+    LOGIN_URL = "https://api.twitter.com/1.1/onboarding/task.json?flow_name=login&api_version=1&known_device_token="
+
     def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None):
         """
         Constructor of the Twitter Public class
@@ -28,11 +20,19 @@ class BotMethods:
         :param proxy: (`dict` or `Proxy`) Provide the proxy you want to use while making a request
         """
 
+        self._login_url = self.LOGIN_URL
+        self._username = None
+        self._password = None
+        self._extra = None
+        self._login_flow = None
+        self._login_flow_state = None
+        self._last_json = {}
+
         self._event_builders = []
         self.session = Session(session_name) if isinstance(session_name, str) else session_name
         self.logged_in = False
         self._proxy = proxy.get_dict() if isinstance(proxy, Proxy) else proxy
-        self.request = Request(max_retries=10, proxy=self._proxy)
+        self.request = self.http = Request(max_retries=10, proxy=self._proxy)
         self.user = None
 
     def get_user_info(self, username: str = None) -> User:
@@ -46,7 +46,7 @@ class BotMethods:
 
         user_raw = self.request.get_user(username)
 
-        return User(user_raw['data']['user']['result'])
+        return User(user_raw, self)
 
     @property
     def user_id(self) -> int:
@@ -93,9 +93,9 @@ class BotMethods:
 
         user_id = self._get_user_id(username)
 
-        userTweets = UserTweets(user_id, self.request, pages, replies, wait_time, cursor)
+        userTweets = UserTweets(user_id, self, pages, replies, wait_time, cursor)
 
-        results = list(userTweets.generator())
+        list(userTweets.generator())
 
         return userTweets
 
@@ -124,7 +124,7 @@ class BotMethods:
 
         user_id = self._get_user_id(username)
 
-        userTweets = UserTweets(user_id, self.request, pages, replies, wait_time, cursor)
+        userTweets = UserTweets(user_id, self, pages, replies, wait_time, cursor)
 
         return userTweets.generator()
 
@@ -136,19 +136,16 @@ class BotMethods:
         """
         trends = []
         response = self.request.get_trends()
-        for i in response['timeline']['instructions'][1]['addEntries']['entries'][1]['content']['timelineModule']['items']:
-            data = {
-                "name": i['item']['content']['trend']['name'],
-                "url": str(i['item']['content']['trend']['url']['url']).replace("twitter://",
-                                                                                "https://twitter.com/").replace("query",
-                                                                                                                "q"),
-            }
-            try:
-                if i['item']['content']['trend']['trendMetadata']['metaDescription']:
-                    data['tweet_count'] = i['item']['content']['trend']['trendMetadata']['metaDescription']
-            except:
-                pass
-            trends.append(Trends(data))
+
+        entries = find_objects(response, "addEntries", None)
+        if not entries or len(entries) == 0:
+            return trends
+
+        for entry in entries['entries']:
+            if str(entry['entryId']) == "trends":
+                for item in entry['content']['timelineModule']['items']:
+                    trends.append(Trends(item))
+
         return trends
 
     def search(
@@ -172,14 +169,14 @@ class BotMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
 
-        :return: .types.search.Search | if iter: (.types.search.Search, list[.types.twDataTypes.Tweet])
+        :return: .types.search.Search
         """
         if wait_time is None:
             wait_time = 0
 
-        search = Search(keyword, self.request, pages, filter_, wait_time, cursor)
+        search = Search(keyword, self, pages, filter_, wait_time, cursor)
 
-        results = list(search.generator())
+        list(search.generator())
 
         return search
 
@@ -208,9 +205,24 @@ class BotMethods:
         if wait_time is None:
             wait_time = 0
 
-        search = Search(keyword, self.request, pages, filter_, wait_time, cursor)
+        search = Search(keyword, self, pages, filter_, wait_time, cursor)
 
         return search.generator()
+
+    def get_audio_space(self, space_id: str):
+        """
+
+        :param space_id: Id of the Audio Space , or the Tweet Object that Space Audio is part of.
+        :return: .types.twDataTypes.AudioSpace
+        """
+
+        if isinstance(space_id, Tweet):
+            space_id = space_id.audio_space_id
+
+        space = self.http.get_audio_space(space_id)
+
+        return AudioSpace(space, self)
+
 
     def tweet_detail(self, identifier: str) -> Tweet:
         """
@@ -223,20 +235,23 @@ class BotMethods:
 
         tweetId = re.findall("\d+", identifier)[-1]
 
-        r = self.request.get_tweet_detail(tweetId)
+        response = self.request.get_tweet_detail(tweetId)
+        _tweet_before = []
+        entries  = find_objects(response, "type", "TimelineAddEntries")
 
-        try:
-            for entry in r['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
-                if str(entry['entryId']).split("-")[0] == "tweet":
+        if not entries or len(entries) == 0:
+            raise InvalidTweetIdentifier(response=response)
 
-                    raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                    if raw_tweet.get('tweet'):
-                        raw_tweet = raw_tweet['tweet']
-                    
-                    if raw_tweet.get('rest_id') == str(tweetId):
-                        raw_tweet = entry['content']['itemContent']['tweet_results']['result']['tweet']
 
-                    if raw_tweet['rest_id'] == str(tweetId):
-                        return Tweet(raw_tweet, self.request, r)
-        except KeyError:
-            raise InvalidTweetIdentifier(144, "StatusNotFound", r)
+        for entry in entries['entries']:
+            if str(entry['entryId']).split("-")[0] == "tweet":
+                tweet = Tweet(entry, self, response)
+
+                if str(tweet.id) == str(tweetId):
+                    tweet.threads.extend(_tweet_before)
+                    return tweet
+                else:
+                    _tweet_before.append(tweet)
+
+        raise InvalidTweetIdentifier(response=response)
+

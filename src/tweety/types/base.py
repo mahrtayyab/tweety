@@ -1,11 +1,11 @@
 import time
-from ..utils import find_object
+from ..utils import find_objects
 
 
 class BaseGeneratorClass(dict):
 
     def _get_cursor(self, response):
-        cursor = find_object(response, lambda x: x.get("cursorType") == "Bottom")
+        cursor = find_objects(response, "cursorType", "Bottom")
 
         if not cursor:
             return False
@@ -17,6 +17,15 @@ class BaseGeneratorClass(dict):
 
         self.cursor = newCursor
         return True
+
+    @staticmethod
+    def _get_entries(response):
+        entry = find_objects(response, "type", "TimelineAddEntries")
+
+        if not entry:
+            return []
+
+        return entry['entries']
 
     def generator(self):
         for page in range(1, int(self.pages) + 1):

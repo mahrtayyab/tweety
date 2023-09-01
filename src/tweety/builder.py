@@ -15,8 +15,10 @@ def return_with_headers(func):
         request_data = func(self, *arg, **kw)
         if len(request_data) == 2:
             return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1])
-        else:
+        elif len(request_data) == 3:
             return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1], json=request_data[2])
+        else:
+            return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1], json=request_data[2], data=request_data[3])
 
     return wrapper
 
@@ -28,7 +30,9 @@ class UrlBuilder:
     URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
     URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
     URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
-    URL_SEARCH = "https://twitter.com/i/api/graphql/nK1dw4oV3k4w5TdtcAdSww/SearchTimeline"
+    URL_SEARCH = "https://twitter.com/i/api/graphql/NA567V_8AFwu0cZEkAAKcw/SearchTimeline"
+    URL_AUDIO_SPACE_BY_ID = "https://twitter.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
+    URL_AUDIO_SPACE_STREAM = "https://twitter.com/i/api/1.1/live_video_stream/status/{}"
     URL_TWEET_DETAILS = "https://twitter.com/i/api/graphql/3XDB26fBve-MmjHaWTUZxA/TweetDetail"
     URL_AUSER_INBOX = "https://twitter.com/i/api/1.1/dm/user_updates.json"  # noqa
     URL_AUSER_TRUSTED_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_timeline/trusted.json"  # noqa
@@ -37,9 +41,17 @@ class UrlBuilder:
     URL_AUSER_SEND_MESSAGE = "https://twitter.com/i/api/1.1/dm/new2.json"  # noqa
     URL_AUSER_CONVERSATION = "https://twitter.com/i/api/1.1/dm/conversation/{}.json"  # noqa
     URL_AUSER_CREATE_TWEET = "https://twitter.com/i/api/graphql/tTsjMKyhajZvK4q76mpIBg/CreateTweet"  # noqa
+    URL_AUSER_CREATE_TWEET_SCHEDULE = "https://twitter.com/i/api/graphql/LCVzRQGxOaGnOnYH01NQXg/CreateScheduledTweet"  # noqa
     URL_AUSER_CREATE_MEDIA = "https://upload.twitter.com/i/media/upload.json"  # noqa
     URL_AUSER_CREATE_MEDIA_METADATA = "https://twitter.com/i/api/1.1/media/metadata/create.json"  # noqa
     URL_AUSER_BOOKMARK = "https://twitter.com/i/api/graphql/bN6kl72VsPDRIGxDIhVu7A/Bookmarks"  # noqa
+    URL_AUSER_HOME_TIMELINE = "https://twitter.com/i/api/graphql/W4Tpu1uueTGK53paUgxF0Q/HomeTimeline"  # noqa
+    URL_AUSER_TWEET_FAVOURITERS = "https://twitter.com/i/api/graphql/yoghorQ6KbhB1qpXefXuLQ/Favoriters"  # noqa
+    URL_AUSER_TWEET_RETWEETERS = "https://twitter.com/i/api/graphql/_nBuZh82i3A0Ohkjw4FqCg/Retweeters"  # noqa
+    URL_AUSER_LIKE_TWEET = "https://twitter.com/i/api/graphql/lI07N6Otwv1PhnEgXILM7A/FavoriteTweet"  # noqa
+    URL_AUSER_POST_TWEET_RETWEET = "https://twitter.com/i/api/graphql/ojPdsZsimiJrUGLR1sjUtA/CreateRetweet"  # noqa
+    URL_AUSER_CREATE_FRIEND = "https://twitter.com/i/api/1.1/friendships/create.json"  # noqa
+    URL_AUSER_DESTROY_FRIEND = "https://twitter.com/i/api/1.1/friendships/destroy.json"  # noqa
 
     def __init__(self):
         self.cookies = None
@@ -244,14 +256,8 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        if filter_ and filter_ == "latest":
-            variables['product'] = "Latest"
-        elif filter_ and filter_ == "users":
-            variables['product'] = "People"
-        elif filter_ and filter_ == "photos":
-            variables['product'] = "Photos"
-        elif filter_ and filter_ == "videos":
-            variables['product'] = "Videos"
+        if filter_:
+            variables['product'] = filter_
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
                   'fieldToggles': str(json.dumps(fieldToggles))}
@@ -605,6 +611,24 @@ class UrlBuilder:
         return "POST", self.URL_AUSER_CREATE_TWEET, json_data
 
     @return_with_headers
+    def schedule_create_tweet(self,text, files, time):
+        variables = {
+            'post_tweet_request': {
+                'auto_populate_reply_metadata': False,
+                'status': text,
+                'exclude_reply_user_ids': [],
+                'media_ids': files
+            },
+            'execute_at': time,
+        }
+        json_data = dict(
+            variables=variables,
+            queryId=utils.create_query_id()
+        )
+
+        return "POST", self.URL_AUSER_CREATE_TWEET_SCHEDULE, json_data
+
+    @return_with_headers
     def set_media_metadata(self, media_id, alt_text, sensitive_tags):
         if not sensitive_tags:
             sensitive_tags = []
@@ -650,6 +674,201 @@ class UrlBuilder:
         return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
 
     @return_with_headers
+    def home_timeline(self, cursor=None):
+        variables = {
+            'count': 20,
+            'includePromotedContent': True,
+            'latestControlAvailable': True,
+            'requestContext': 'launch',
+            'withCommunity': True,
+            'seenTweetIds': [],
+        }
+        features = {
+            'rweb_lists_timeline_redesign_enabled': True,
+            'responsive_web_graphql_exclude_directive_enabled': True,
+            'verified_phone_label_enabled': False,
+            'creator_subscriptions_tweet_preview_api_enabled': True,
+            'responsive_web_graphql_timeline_navigation_enabled': True,
+            'responsive_web_graphql_skip_user_profile_image_extensions_enabled': False,
+            'tweetypie_unmention_optimization_enabled': True,
+            'responsive_web_edit_tweet_api_enabled': True,
+            'graphql_is_translatable_rweb_tweet_is_translatable_enabled': True,
+            'view_counts_everywhere_api_enabled': True,
+            'longform_notetweets_consumption_enabled': True,
+            'responsive_web_twitter_article_tweet_consumption_enabled': False,
+            'tweet_awards_web_tipping_enabled': False,
+            'freedom_of_speech_not_reach_fetch_enabled': True,
+            'standardized_nudges_misinfo': True,
+            'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled': True,
+            'longform_notetweets_rich_text_read_enabled': True,
+            'longform_notetweets_inline_media_enabled': True,
+            'responsive_web_media_download_video_enabled': False,
+            'responsive_web_enhance_cards_enabled': False,
+        }
+        queryId = utils.create_query_id()
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
+                  'queryId': str(queryId)}
+
+        return "GET", self._build(self.URL_AUSER_HOME_TIMELINE, urlencode(params))
+
+    @return_with_headers
+    def get_tweet_likes(self, tweet_id, cursor=None):
+        variables = {"tweetId": tweet_id, "count": 20,
+                     "includePromotedContent": True}
+        features = {"rweb_lists_timeline_redesign_enabled": True,
+                    "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": False,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_media_download_video_enabled": False, "responsive_web_enhance_cards_enabled": False}
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        return "GET", self._build(self.URL_AUSER_TWEET_FAVOURITERS, urlencode(params))
+
+    @return_with_headers
+    def get_tweet_retweets(self, tweet_id, cursor=None):
+        variables = {"tweetId": tweet_id, "count": 20,
+                     "includePromotedContent": True}
+        features = {"rweb_lists_timeline_redesign_enabled": True,
+                    "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": False,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_media_download_video_enabled": False, "responsive_web_enhance_cards_enabled": False}
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        return "GET", self._build(self.URL_AUSER_TWEET_RETWEETERS, urlencode(params))
+
+    @return_with_headers
+    def get_audio_space(self, audio_space_id):
+        variables = {"id": audio_space_id, "isMetatagsQuery": False, "withReplays": True, "withListeners": True}
+        features = {"spaces_2022_h2_spaces_communities": True, "spaces_2022_h2_clipping": True,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": False,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_media_download_video_enabled": False,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_enhance_cards_enabled": False}
+
+        params = {
+            'variables': json.dumps(variables),
+            'features': json.dumps(features),
+        }
+        return "GET", self._build(self.URL_AUDIO_SPACE_BY_ID, urlencode(params))
+
+    @return_with_headers
+    def get_audio_stream(self, media_key):
+        params = {
+            'client': 'web',
+            'use_syndication_guest_id': 'false',
+            'cookie_set_host': 'twitter.com',
+        }
+
+        return "GET", self._build(self.URL_AUDIO_SPACE_STREAM.format(media_key), urlencode(params))
+
+    @return_with_headers
+    def like_tweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': tweet_id
+            },
+            'queryId': utils.create_query_id()
+        }
+
+        return "POST", self.URL_AUSER_LIKE_TWEET, json_data
+
+    @return_with_headers
+    def retweet_tweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': tweet_id,
+                'dark_request': False,
+            },
+            'queryId': utils.create_query_id()
+        }
+
+        return "POST", self.URL_AUSER_POST_TWEET_RETWEET, json_data
+
+    @return_with_headers
+    def follow_user(self, user_id):
+        data = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_has_nft_avatar': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'user_id': user_id,
+        }
+
+        return "POST", self.URL_AUSER_CREATE_FRIEND, None, data
+
+    @return_with_headers
+    def unfollow_user(self, user_id):
+        data = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_has_nft_avatar': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'user_id': user_id,
+        }
+
+        return "POST", self.URL_AUSER_DESTROY_FRIEND, None, data
+
+
+    @return_with_headers
     def aUser_settings(self):
         params = {
             'include_mention_filter': True,
@@ -669,13 +888,13 @@ class UrlBuilder:
 class FlowData:
     IGNORE_MEMBERS = ['get']
 
-    def __init__(self, username, password, extra):
-        self._username = username
-        self._password = password
-        self._extra = extra
+    def __init__(self):
         self.initial_state = "startFlow"
 
     def get(self, called_member, **kwargs):
+        if called_member is None:
+            return self.startFlow(**kwargs)
+
         for member in dir(self):
             if member not in self.IGNORE_MEMBERS and callable(getattr(self, member)):
                 if member == called_member:
@@ -686,7 +905,7 @@ class FlowData:
         return _json['flow_token']
 
     @staticmethod
-    def startFlow(json_, username, password):
+    def startFlow(**kwargs):
         return {
             'input_flow_data': {
                 'flow_context': {
@@ -741,9 +960,9 @@ class FlowData:
             },
         }
 
-    def LoginJsInstrumentationSubtask(self, json_, username, password):
+    def LoginJsInstrumentationSubtask(self, **login_data):
         return {
-            "flow_token": self.get_flow_token(json_),
+            "flow_token": self.get_flow_token(login_data['json_']),
             "subtask_inputs": [
                 {
                     "subtask_id": "LoginJsInstrumentationSubtask",
@@ -755,9 +974,9 @@ class FlowData:
             ]
         }
 
-    def LoginEnterUserIdentifierSSO(self, json_, username, password):
+    def LoginEnterUserIdentifierSSO(self, **login_data):
         return {
-            "flow_token": self.get_flow_token(json_),
+            "flow_token": self.get_flow_token(login_data['json_']),
             'subtask_inputs': [
                 {
                     'subtask_id': 'LoginEnterUserIdentifierSSO',
@@ -767,7 +986,7 @@ class FlowData:
                                 'key': 'user_identifier',
                                 'response_data': {
                                     'text_data': {
-                                        'result': username,
+                                        'result': login_data['username'],
                                     },
                                 },
                             },
@@ -778,23 +997,23 @@ class FlowData:
             ]
         }
 
-    def LoginEnterPassword(self, json_, username, password):
+    def LoginEnterPassword(self, **login_data):
         return {
-            "flow_token": self.get_flow_token(json_),
+            "flow_token": self.get_flow_token(login_data['json_']),
             "subtask_inputs": [
                 {
                     "subtask_id": "LoginEnterPassword",
                     "enter_password": {
-                        "password": password,
+                        "password": login_data['password'],
                         "link": "next_link"
                     }
                 }
             ]
         }
 
-    def AccountDuplicationCheck(self, json_, username, password):
+    def AccountDuplicationCheck(self, **login_data):
         return {
-            "flow_token": self.get_flow_token(json_),
+            "flow_token": self.get_flow_token(login_data['json_']),
             "subtask_inputs": [
                 {
                     "subtask_id": "AccountDuplicationCheck",
@@ -805,51 +1024,42 @@ class FlowData:
             ]
         }
 
-    def LoginEnterAlternateIdentifierSubtask(self, json_, username, password):
-        reason = json_['subtasks'][0]['enter_text']['secondary_text']['text']
-        print(reason)
-        getAlternate = input("> ")
+    def LoginEnterAlternateIdentifierSubtask(self, **login_data):
         return {
-            "flow_token": self.get_flow_token(json_),
+            "flow_token": self.get_flow_token(login_data['json_']),
             "subtask_inputs": [
                 {
                     "subtask_id": "LoginEnterAlternateIdentifierSubtask",
                     "enter_text": {
-                        "text": getAlternate,
+                        "text": login_data['extra'],
                         "link": "next_link"
                     }
                 }
             ]
         }
 
-    def LoginAcid(self, json_, username, password):
-        reason = json_['subtasks'][0]['enter_text']['header']['secondary_text']['text']
-        print(reason)
-        getAlternate = input("> ")
+    def LoginAcid(self, **login_data):
         return {
-            "flow_token": self.get_flow_token(json_),
+            "flow_token": self.get_flow_token(login_data['json_']),
             "subtask_inputs": [
                 {
                     "subtask_id": "LoginAcid",
                     "enter_text": {
-                        "text": getAlternate,
+                        "text": login_data['extra'],
                         "link": "next_link"
                     }
                 }
             ]
         }
 
-    def LoginTwoFactorAuthChallenge(self, json_, username, password):
-        reason = json_['subtasks'][0]['enter_text']['header']['secondary_text']['text']
-        print(reason)
-        getAlternate = input("> ")
+    def LoginTwoFactorAuthChallenge(self, **login_data):
         return {
-            "flow_token": self.get_flow_token(json_),
+            "flow_token": self.get_flow_token(login_data['json_']),
             "subtask_inputs": [
                 {
                     "subtask_id": "LoginTwoFactorAuthChallenge",
                     "enter_text": {
-                        "text": getAlternate,
+                        "text": login_data['extra'],
                         "link": "next_link"
                     }
                 }
@@ -857,9 +1067,9 @@ class FlowData:
         }
 
     @staticmethod
-    def DenyLoginSubtask(json_, username, password):
-        text = json_['subtasks'][0]['cta']['primary_text']['text']
-        secondary_text = json_['subtasks'][0]['cta']['secondary_text']['text'].replace('\n', '')
+    def DenyLoginSubtask(**login_data):
+        text = login_data['json_']['subtasks'][0]['cta']['primary_text']['text']
+        secondary_text = login_data['json_']['subtasks'][0]['cta']['secondary_text']['text'].replace('\n', '')
         raise DeniedLogin(
             error_code=37,
             error_name="GenericAccessDenied",

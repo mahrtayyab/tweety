@@ -5,7 +5,7 @@ import random
 import string
 import sys
 import uuid
-from typing import Callable, Any
+from .exceptions_ import AuthenticationRequired
 
 MIME_TYPES = {
     "png": "image/png",
@@ -24,6 +24,22 @@ WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'l
                     'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
 
 SENSITIVE_MEDIA_TAGS = ['adult_content', 'graphic_violence', 'other']
+
+
+def AuthRequired(cls):
+    def method_wrapper_decorator(func):
+        def wrapper(self, *args, **kwargs):
+            if self.user is None:
+                raise AuthenticationRequired(200, "GenericForbidden", None)
+
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    for name, method in vars(cls).items():
+        if name != "__init__" and callable(method):
+            setattr(cls, name, method_wrapper_decorator(method))
+    return cls
 
 
 def decodeBase64(encoded_string):
@@ -103,26 +119,34 @@ def check_sensitive_media_tags(tags):
     return [tag for tag in tags if tag in SENSITIVE_MEDIA_TAGS]
 
 
-def find_object(obj: dict, fn: Callable[[dict], bool]) -> Any:
-    if not isinstance(obj, dict):
-        return None
+def find_objects(obj, key, value, recursive=True, none_value=None):
+    results = []
+    def find_matching_objects(_obj, _key, _value):
+        if isinstance(_obj, dict):
+            if _key in _obj:
+                found = False
+                if _value is None:
+                    found = True
+                    results.append(_obj[_key])
+                elif (isinstance(_value, list) and _obj[_key] in _value) or _obj[_key] == _value:
+                    found = True
+                    results.append(_obj)
 
-    if fn(obj):
-        return obj
+                if not recursive and found:
+                    return results[0]
 
-    for _, v in obj.items():
-        if isinstance(v, dict):
-            res = find_object(v, fn)
+            for sub_obj in _obj.values():
+                find_matching_objects(sub_obj, _key, _value)
+        elif isinstance(_obj, list):
+            for item in _obj:
+                find_matching_objects(item, _key, _value)
 
-            if res:
-                return res
+    find_matching_objects(obj, key, value)
 
-        elif isinstance(v, list):
-            for x in v:
-                res = find_object(x, fn)
+    if len(results) == 1:
+        return results[0]
 
-                if res:
-                    return res
+    if len(results) == 0:
+        return none_value
 
-    return None
-
+    return results

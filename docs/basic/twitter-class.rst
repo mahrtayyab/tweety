@@ -10,7 +10,7 @@ The Twitter aggregates several mixin classes to provide all the common functiona
 .. py:class:: Twitter(session_name: Union[str, Session], proxy: Union[dict, Proxy] = None)
 
 
-    Bases : `UpdateMethods` , `BotMethods`, `AuthMethods`
+    Bases : `UpdateMethods` , `BotMethods`, `AuthMethods`, `UserMethods`
 
     .. py:data:: Arguments
 
@@ -24,8 +24,6 @@ The Twitter aggregates several mixin classes to provide all the common functiona
             :value: None
 
             Proxy you want to use
-
-            .. warning:: Proxy is not yet fully integrated
 
     .. py:data:: Methods:
 

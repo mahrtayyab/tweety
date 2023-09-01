@@ -126,6 +126,7 @@ def setup(app):
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+# html_theme = 'furo'
 # html_theme = 'insegel'
 # html_theme = 'sphinx_material'
 

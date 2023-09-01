@@ -5,19 +5,15 @@ class SearchFilters:
     """
     @staticmethod
     def Users():
-        return "users"
+        return "People"
 
     @staticmethod
     def Latest():
-        return "latest"
+        return "Latest"
 
     @staticmethod
-    def Photos():
-        return "photos"
-
-    @staticmethod
-    def Videos():
-        return "videos"
+    def Media():
+        return "Media"
 
 
 class TweetConversationFilters:
