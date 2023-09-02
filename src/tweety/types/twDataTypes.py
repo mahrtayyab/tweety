@@ -227,10 +227,8 @@ class Tweet(dict):
         return _threads
 
     def get_comments(self, pages=1, wait_time=2, cursor=None):
-        if not wait_time:
-            wait_time = 0
 
-        results = [i for i in self.iter_comments(pages, wait_time, cursor)]
+        list(self.iter_comments(pages, wait_time, cursor))
         return self.comments
 
     def iter_comments(self, pages=1, wait_time=2, cursor=None):
@@ -256,6 +254,8 @@ class Tweet(dict):
         if not response:
             response = self._client.http.get_tweet_detail(self.id, _cursor)
 
+        self._full_http_response = None
+
         instruction = find_objects(response, "type", "TimelineAddEntries")
         for entry in instruction['entries']:
             if str(entry['entryId'].split("-")[0]) == "conversationthread":
@@ -272,9 +272,8 @@ class Tweet(dict):
                     pass
 
 
-            elif "cursor-bottom" in str(entry['entryId']):
+            elif "cursor-bottom" in str(entry['entryId']) or "cursor-showmorethreads" in str(entry['entryId']):
                 _cursor = entry['content']['itemContent']['value']
-
         return self, _comments, _cursor
 
     def _get_audio_space(self):

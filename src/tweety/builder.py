@@ -289,7 +289,7 @@ class UrlBuilder:
         fieldToggles = {"withArticleRichContentState": False}
 
         if cursor:
-            variables['cursor'] = cursor
+            variables['cursor'], variables['referrer'] = cursor, "tweet"
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
                   'fieldToggles': str(json.dumps(fieldToggles))}
