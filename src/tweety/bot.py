@@ -227,16 +227,12 @@ class BotMethods:
 
         try:
             for entry in r['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']:
-                if str(entry['entryId']).split("-")[0] == "tweet":
-
+                tokens = str(entry['entryId']).split("-")
+                if tokens[0] == "tweet" and tokens[1] == str(tweetId):
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                    if raw_tweet.get('tweet'):
+                    if raw_tweet.get('tweet'): # TweetWithVisibilityResults
                         raw_tweet = raw_tweet['tweet']
-                    
-                    if raw_tweet.get('rest_id') == str(tweetId):
-                        raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-
-                    if raw_tweet['rest_id'] == str(tweetId):
-                        return Tweet(raw_tweet, self.request, r)
+                    return Tweet(raw_tweet, self.request, r)
+            raise KeyError() # desired tweet not in our response
         except KeyError:
             raise InvalidTweetIdentifier(144, "StatusNotFound", r)
