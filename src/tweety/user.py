@@ -311,6 +311,7 @@ class UserMethods:
             reply_to = reply_to.id
 
         response = self.request.create_tweet(text, files, filter_, reply_to)
+        response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
         return Tweet(response, self, response)
 
     def like_tweet(self, tweet_id: Union[str, int , Tweet]):

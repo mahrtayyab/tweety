@@ -1,4 +1,4 @@
-import functools
+import logging
 import re
 from typing import Union, Generator
 from .utils import find_objects

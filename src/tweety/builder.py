@@ -674,6 +674,14 @@ class UrlBuilder:
         return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
 
     @return_with_headers
+    def upload_media_status(self, media_id):
+        params = {
+            'command': 'STATUS',
+            'media_id': media_id,
+        }
+        return 'GET', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
+
+    @return_with_headers
     def home_timeline(self, cursor=None):
         variables = {
             'count': 20,

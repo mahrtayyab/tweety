@@ -3,7 +3,7 @@ import datetime
 import json
 import os.path
 import re
-import sys
+import html
 import time
 import traceback
 import warnings
@@ -432,14 +432,18 @@ class Tweet(dict):
 
     def _get_tweet_text(self):
         if self.is_retweet and self.original_tweet.get("retweeted_status_result"):
+            return self.retweeted_tweet.text
 
-            if not self.original_tweet['retweeted_status_result']['result'].get("legacy"):
-                return self.original_tweet['retweeted_status_result']['result']['tweet']['legacy']['full_text']
+        if self._tweet.get('note_tweet'):
+            text = find_objects(self._tweet['note_tweet'], "text", None, recursive=False)
 
-            return self.original_tweet['retweeted_status_result']['result']['legacy']['full_text']
+            if not text:
+                text = self._tweet['note_tweet']['note_tweet_results']['result']['text']
+
+            return html.unescape(text)
 
         if self.original_tweet.get('full_text'):
-            return self.original_tweet['full_text']
+            return html.unescape(self.original_tweet['full_text'])
 
         return ""
 
@@ -591,6 +595,7 @@ class Media(dict):
         self.display_url = self._raw.get("display_url")
         self.expanded_url = self._raw.get("expanded_url")
         self.id = self._raw.get("id_str")
+        self.alt_text = self._raw.get("ext_alt_text")
         self.indices = self._raw.get("indices")
         self.media_url_https = self.direct_url = self._get_direct_url()
         self.type = self._raw.get("type")

@@ -1,4 +1,5 @@
 import os
+import time
 from http.cookiejar import MozillaCookieJar
 
 from httpx._content import encode_multipart_data
@@ -132,11 +133,16 @@ class UploadedMedia:
         self._file = file_path
         self._client = client
         self._alt_text = alt_text
-        self._media_category = media_category
         self._sensitive_media_warning = sensitive_media_warning if sensitive_media_warning else []
         self.size = self._get_size()
         self.mime_type = self.get_mime_type()
+        self._media_category = self._get_media_category(media_category)
         self.md5_hash = calculate_md5(self._file)
+
+    def _get_media_category(self, category):
+        media_for = category.split("_")[0]
+        media_type = self.mime_type.split("/")[0]
+        return f"{media_for}_{media_type}"
 
     def _get_size(self):
         return os.path.getsize(self._file)
@@ -166,7 +172,20 @@ class UploadedMedia:
         self._client.http.set_media_set_metadata(self.media_id, self._alt_text, self._sensitive_media_warning)
 
     def _finish_upload(self, media_id):
-        self._client.http.upload_media_finalize(media_id, self.md5_hash)
+        response = self._client.http.upload_media_finalize(media_id, self.md5_hash)
+
+        if not response.get('processing_info'):
+            return
+
+        while True:
+            processing_info = response['processing_info']
+
+            if processing_info.get('state') in ('pending', 'in_progress') and 'error' not in processing_info:
+                time.sleep(processing_info['check_after_secs'])
+                response = self._client.http.upload_media_status(self.media_id)
+            else:
+                return
+
 
     def upload(self):
         self.media_id = self._initiate_upload()

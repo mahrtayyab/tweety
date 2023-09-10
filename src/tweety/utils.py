@@ -13,11 +13,12 @@ MIME_TYPES = {
     "jfif": "image/jpeg",
     "jpeg": "image/jpeg",
     "gif": "image/gif",
-    "webp": "image/webp"
+    "webp": "image/webp",
+    "mp4": "video/mp4",
+    "mov": "video/quicktime",
+    "m4v": "video/x-m4v"
 }
-# "mp4": "video/mp4",
-# "mov": "video/quicktime",
-# "m4v": "video/x-m4v"
+
 
 
 WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'language', 'likes',

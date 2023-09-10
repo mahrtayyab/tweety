@@ -176,6 +176,11 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def upload_media_status(self, media_id):
+        request_data = self.__builder.upload_media_status(media_id)
+        response = self.__get_response__(**request_data)
+        return response
+
     def get_home_timeline(self, cursor=None):
         request_data = self.__builder.home_timeline(cursor)
         response = self.__get_response__(**request_data)
