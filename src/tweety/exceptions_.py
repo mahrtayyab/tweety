@@ -10,7 +10,7 @@ class UserNotFound(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="The User Account wasn't Found"):
+    def __init__(self, error_code=50, error_name="GenericUserNotFound", response=None, message="The User Account wasn't Found"):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -87,7 +87,7 @@ class UserProtected(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="The User is Protected , please make sure you are authenticated and authorized"):
+    def __init__(self, error_code=403, error_name="UserUnavailable", response=None, message="The User is Protected OR Unavailable, please make sure you are authenticated and authorized"):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name

@@ -1,6 +1,6 @@
 
 from .twDataTypes import (
-    User, Excel, Tweet, Media, Stream, deprecated, Trends
+    User, Excel, Tweet, Media, Stream, deprecated, Trends, RichText, RichTag, SelfThread, Poll, Choice
 )
 from .n_types import UploadedMedia, Proxy
 from .search import Search

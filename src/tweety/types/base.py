@@ -1,5 +1,5 @@
 import time
-from ..utils import find_objects
+from ..utils import find_objects, parse_wait_time
 
 
 class BaseGeneratorClass(dict):
@@ -37,7 +37,7 @@ class BaseGeneratorClass(dict):
                 break
 
             if page != self.pages:
-                time.sleep(self.wait_time)
+                time.sleep(parse_wait_time(self.wait_time))
 
         return self
 

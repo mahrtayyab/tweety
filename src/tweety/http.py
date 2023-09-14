@@ -147,8 +147,27 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def create_tweet(self, text, files, filter_, reply_to):
-        request_data = self.__builder.create_tweet(text, files, filter_, reply_to)
+    def create_pool(self, pool):
+        request_data = self.__builder.create_tweet(pool)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def poll_vote(self, poll_id, poll_name, tweet_id, choice):
+        request_data = self.__builder.poll_vote(poll_id, poll_name, tweet_id, choice)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def delete_tweet(self, tweet_id):
+        request_data = self.__builder.delete_tweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def create_tweet(self, text, files, filter_, reply_to, pool):
+        if pool:
+            response = self.create_pool(pool)
+            pool = response.get('card_uri')
+
+        request_data = self.__builder.create_tweet(text, files, filter_, reply_to, pool)
         response = self.__get_response__(**request_data)
         return response
 

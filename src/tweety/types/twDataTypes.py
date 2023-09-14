@@ -11,6 +11,7 @@ from typing import Callable
 from dateutil import parser
 import openpyxl
 import dateutil
+from ..exceptions_ import UserNotFound, UserProtected
 from ..utils import *
 
 
@@ -26,11 +27,11 @@ def deprecated(func):
     def new_func(*args, **kwargs):
         warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning)
         return func(*args, **kwargs)
+
     new_func.__name__ = func.__name__
     new_func.__doc__ = func.__doc__
     new_func.__dict__.update(func.__dict__)
     return new_func
-
 
 
 class Excel:
@@ -127,6 +128,14 @@ class Tweet(dict):
             if not str(key).startswith("_"):
                 self[key] = value
 
+    def __eq__(self, other):
+        if isinstance(other, Tweet):
+            return str(self.id) == str(other.id) and str(self.author.id) == str(other.author.id)
+        elif isinstance(other, (int, str)):
+            return str(self.id) == str(other)
+
+        return False
+
     def __repr__(self):
         return f"Tweet(id={self.id}, author={self.author}, created_on={self.created_on})"  # noqa
 
@@ -137,12 +146,14 @@ class Tweet(dict):
 
     def _format_tweet(self):
         self._tweet = find_objects(self._raw, "__typename", ["Tweet", "TweetWithVisibilityResults"], recursive=False)
+        self._card = self._tweet.get('card')
         self.original_tweet = self._get_original_tweet()
         self.id = self._get_id()
         self.created_on = self.date = self._get_date()
         self.author = self._get_author()
         self.is_retweet = self._is_retweet()
         self.retweeted_tweet = self._get_retweeted_tweet()
+        self.rich_text = self._get_rich_text()
         self.text = self.tweet_body = self._get_tweet_text()
         self.is_quoted = self._is_quoted()
         self.quoted_tweet = self._get_quoted_tweet()
@@ -162,6 +173,7 @@ class Tweet(dict):
         self.audio_space_id = self._get_audio_space()
         self.voice_info = None  # TODO
         self.media = self._get_tweet_media()
+        self.pool = self._get_pool()
         self.user_mentions = self._get_tweet_mentions()
         self.urls = self._get_tweet_urls()
         self.hashtags = self._get_tweet_hashtags()
@@ -182,13 +194,11 @@ class Tweet(dict):
     def retweet(self):
         return self._client.retweet_tweet(self.id)
 
-
     def _get_original_tweet(self):
         tweet = self._tweet
 
         if tweet.get('tweet'):
             tweet = tweet['tweet']
-
 
         return tweet['legacy'] if tweet.get('legacy') else tweet
 
@@ -271,24 +281,25 @@ class Tweet(dict):
                 except:
                     pass
 
-
             elif "cursor-bottom" in str(entry['entryId']) or "cursor-showmorethreads" in str(entry['entryId']):
                 _cursor = entry['content']['itemContent']['value']
         return self, _comments, _cursor
 
+    def _get_pool(self):
+        if not self._card or "poll" not in self._card['legacy'].get('name'):
+            return None
+
+        return Poll(self._card)
+
     def _get_audio_space(self):
-        if not self._tweet.get('card'):
+        if not self._card or "audiospace" not in self._card['legacy'].get('name'):
             return None
 
-        if "audiospace" not in self._tweet['card']['legacy'].get('name'):
-            return None
-
-        for value in self._tweet['card']['legacy'].get('binding_values', []):
+        for value in self._card['legacy'].get('binding_values', []):
             if value['key'] == "id":
                 return value['value']['string_value']
 
         return None
-
 
     def _get_community_note(self):
         if self._tweet.get("birdwatch_pivot"):
@@ -340,7 +351,6 @@ class Tweet(dict):
         except:
             return None
 
-
     def _get_vibe(self):
         if self._tweet.get("vibe"):
             vibeImage = self._tweet['vibe']['imgDescription']
@@ -369,10 +379,12 @@ class Tweet(dict):
             if response['data'].get('threaded_conversation_with_injections_v2'):
                 entries = response['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']
             else:
-                entries = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions'][0]['entries']
+                entries = response['data']['search_by_raw_query']['search_timeline']['timeline']['instructions'][0][
+                    'entries']
 
             for entry in entries:
-                if str(entry['entryId']).split("-")[0] == "tweet" and str(entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
+                if str(entry['entryId']).split("-")[0] == "tweet" and str(
+                        entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
                     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
                     return Tweet(raw_tweet, self._client.http)
         except:
@@ -430,17 +442,20 @@ class Tweet(dict):
 
         return ""
 
+    def _get_rich_text(self):
+        note_tweet = self._tweet.get('note_tweet')
+
+        if not note_tweet:
+            return None
+
+        return RichText(note_tweet, self)
+
     def _get_tweet_text(self):
         if self.is_retweet and self.original_tweet.get("retweeted_status_result"):
             return self.retweeted_tweet.text
 
-        if self._tweet.get('note_tweet'):
-            text = find_objects(self._tweet['note_tweet'], "text", None, recursive=False)
-
-            if not text:
-                text = self._tweet['note_tweet']['note_tweet_results']['result']['text']
-
-            return html.unescape(text)
+        if self.rich_text:
+            return self.rich_text.text
 
         if self.original_tweet.get('full_text'):
             return html.unescape(self.original_tweet['full_text'])
@@ -448,22 +463,16 @@ class Tweet(dict):
         return ""
 
     def _get_tweet_media(self):
-        if not self.original_tweet.get("extended_entities"):
-            return []
-
-        if not self.original_tweet['extended_entities'].get("media"):
-            return []
-
-        return [Media(media, self._client) for media in self.original_tweet['extended_entities']['media']]
+        return [Media(media, self._client) for media in self.original_tweet.get("extended_entities", {}).get("media", [])]
 
     def _get_tweet_mentions(self):
-        if not self.original_tweet.get("entities"):
-            return []
+        users = [ShortUser(user) for user in self.original_tweet.get("entities", {}).get("user_mentions", [])]
 
-        if not self.original_tweet['entities'].get("user_mentions"):
-            return []
-
-        return [ShortUser(user) for user in self.original_tweet['entities']['user_mentions']]
+        if self.rich_text:
+            for user in self.rich_text.user_mentions:
+                if user not in users:
+                    users.append(user)
+        return users
 
     def _get_bookmark_count(self):
         return self.original_tweet.get("bookmark_count", None)
@@ -495,11 +504,110 @@ class Tweet(dict):
 
         return [symbol for symbol in self.original_tweet['entities']['symbols']]
 
-    def __eq__(self, other):
-        if isinstance(other, Tweet):
-            return str(self.id) == str(other.id) and str(self.author.id) == str(other.author.id)
 
-        return str(self.id) == str(other)
+class RichText(dict):
+    HTML_TAGS = {
+        "Bold": "b",
+        "Italic": "em"
+    }
+
+    def __init__(self, data, tweet):
+        super().__init__()
+        self._raw = data
+        self._tweet = tweet
+        self._note = self._raw['note_tweet_results']['result']
+        self._entities = self._note['entity_set']
+        self.tags = self._get_tags()
+        self.id = self._get_id()
+        self.text = self._get_text()
+        self.hashtags = self._get_hashtags()
+        self.urls = self._get_urls()
+        self.symbols = self._get_symbols()
+        self.user_mentions = self._get_mentions()
+        self.media = self._get_media()
+
+        for key, value in vars(self).items():
+            if not str(key).startswith("_"):
+                self[key] = value
+
+    def __repr__(self):
+        return "RichText(id={})".format(self.id)
+
+    def __eq__(self, other):
+        if isinstance(other, RichText):
+            return self.id == other.id
+        elif isinstance(other, str):
+            return str(self.id) == str(other)
+
+        return False
+
+    def _get_id(self):
+        return self._note.get('id')
+
+    def _get_text(self):
+        return self._note.get('text', '')
+
+    def _get_hashtags(self):
+        return self._entities.get('hashtags', [])
+
+    def _get_urls(self):
+        return self._entities.get('urls', [])
+
+    def _get_symbols(self):
+        return self._entities.get('symbols', [])
+
+    def _get_tags(self):
+        return [RichTag(i) for i in self._note.get('richtext', {}).get('richtext_tags', [])]
+
+    def _get_media(self):
+        return [i for i in self._note.get('media', {}).get('inline_media', [])]
+
+    def _get_mentions(self):
+        return [ShortUser(i) for i in self._entities.get('user_mentions', [])]
+
+    def get_html(self):
+        tags = self.tags
+        tags.extend(self.user_mentions)
+        tags.extend(self.media)
+        ordered_tags = sorted(tags, key=lambda x: x.from_index if hasattr(x, "from_index") else x['index'], reverse=True)
+        thisHtml = self.text
+
+        for tag in ordered_tags:
+            text = self.text[tag.from_index:tag.to_index] if hasattr(tag, "from_index") else self.text[tag['index']]
+            if isinstance(tag, RichTag) and hasattr(tag, "types"):
+                for _type in tag.types:
+                    tag_name = self.HTML_TAGS.get(_type)
+                    new_text = "<{tag_name}>{text}</{tag_name}>".format(tag_name=tag_name, text=text)
+                    thisHtml = replace_between_indexes(thisHtml, tag.from_index, tag.to_index, new_text)
+            elif isinstance(tag, ShortUser):
+                new_text = "<a href='{}'>@{}</a>".format(tag.url, tag.username)
+                thisHtml = replace_between_indexes(thisHtml, tag.from_index, tag.to_index, new_text)
+            elif tag.get('media_id'):
+                for media in self._tweet.media:
+                    if media == tag['media_id']:
+                        new_text = "<img src='{}'><br>".format(media.direct_url)
+                        thisHtml = replace_between_indexes(thisHtml, tag['index'], tag['index'], new_text)
+                        break
+
+        return f"<pre>{thisHtml}</pre>"
+
+
+class RichTag(dict):
+    def __init__(self, data):
+        super().__init__()
+        self._raw = data
+        self.from_index = self._raw.get('from_index')
+        self.to_index = self._raw.get('to_index')
+        self.types = self._raw.get('richtext_types', [])
+
+        for key, value in vars(self).items():
+            if not str(key).startswith("_"):
+                self[key] = value
+
+    def __repr__(self):
+        return "RichTag(from_index={}, to_index={}, types={})".format(
+            self.from_index, self.to_index, self.types
+        )
 
 class SelfThread(dict):
     def __init__(self, conversation_tweet, client, full_response):
@@ -585,8 +693,6 @@ class ConversationThread(dict):
         return self.tweets
 
 
-
-
 class Media(dict):
     def __init__(self, media_dict, client):
         super().__init__()
@@ -615,6 +721,14 @@ class Media(dict):
             if not k.startswith("_"):
                 self[k] = v
 
+    def __eq__(self, other):
+        if isinstance(other, Media):
+            return self.id == other.id
+        elif isinstance(other, (int, str)):
+            return str(self.id) == str(other)
+
+        return False
+
     def _get_direct_url(self):
         url = self._raw.get("media_url_https")
 
@@ -632,7 +746,8 @@ class Media(dict):
 
         for i in videoDict.get("variants"):
             if not i.get("content_type").split("/")[-1] == "x-mpegURL":
-                self.streams.append(Stream(i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio"), self._client))
+                self.streams.append(
+                    Stream(i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio"), self._client))
 
     def __repr__(self):
         return f"Media(id={self.id}, type={self.type})"
@@ -704,14 +819,26 @@ class MediaSize(dict):
 class ShortUser(dict):
     def __init__(self, user_dict):
         super().__init__()
-        self.__dictionary = user_dict
-        self.id = self.__dictionary.get("id_str")
-        self.name = self.__dictionary.get("name")
-        self.screen_name = self.username = self.__dictionary.get("screen_name")
+        self.__raw = user_dict
+        self._indices = self.__raw.get("indices")
+        self.id = self.__raw.get("id_str")
+        self.name = self.__raw.get("name")
+        self.screen_name = self.username = self.__raw.get("screen_name")
+        self.url = "https://twitter.com/{}".format(self.username)
+        self.from_index = self._indices[0] if self._indices else None
+        self.to_index = self._indices[1] if self._indices else None
 
         for k, v in vars(self).items():
             if not k.startswith("_"):
                 self[k] = v
+
+    def __eq__(self, other):
+        if isinstance(other, ShortUser):
+            return self.id == other.id
+        elif isinstance(other, (int, str)):
+            return str(self.id) == str(other)
+
+        return False
 
     def __repr__(self):
         return f"ShortUser(id={self.id}, name={self.name})"
@@ -730,12 +857,11 @@ class Trends:
 
     def _get_url(self):
         url = self._trend['url'].get('url')
-        url = url.replace("twitter://", "https://twitter.com/").replace("query","q")
+        url = url.replace("twitter://", "https://twitter.com/").replace("query", "q")
         return url
 
     def _get_count(self):
-        return  self._trend.get('trendMetadata', {}).get('metaDescription')
-
+        return self._trend.get('trendMetadata', {}).get('metaDescription')
 
     def __repr__(self):
         return f"Trends(name={self.name})"
@@ -752,7 +878,8 @@ class Card(dict):
         self.end_time = None
         self.last_updated_time = None
         self.duration = None
-        self.user_ref = [User(user, None) for user in self._dict['legacy']["user_refs"]] if self._dict['legacy'].get("user_refs") else []
+        self.user_ref = [User(user, None) for user in self._dict['legacy']["user_refs"]] if self._dict['legacy'].get(
+            "user_refs") else []
         self.__parse_choices()
 
         for k, v in vars(self).items():
@@ -793,23 +920,107 @@ class Card(dict):
     def __repr__(self):
         return f"Card(id={self.rest_id}, choices={len(self.choices) if self.choices else []}, end_time={self.end_time}, duration={len(self.duration) if self.duration else 0} minutes)"
 
+class Poll(dict):
+    CHOICE_LABEL_REGEX = r"choice\d+_label"
+    CHOICE_COUNT_REGEX = r"choice\d+_count"
+    CHOICE_COUNT_FORMAT = "choice{}_count"
 
-class Choice(dict):
-    def __init__(self, _dict):
+    def __init__(self, card):
         super().__init__()
-        self._dict = _dict
-        self.name = self._dict.get("card_name")
-        self.value = self._dict.get("card_value")
-        self.type = self._dict.get("card_value_type")
-        self.counts = self._dict.get("card_counts")
-        self.counts_type = self._dict.get("card_counts_type")
+        self._raw = card
+        self._pool = self._raw['legacy']
+        self._parsed = self._parse_keys()
+        self.id = self._get_id()
+        self.name = self._get_name()
+        self.choices = self._get_choices()
+        self.end_time = self._get_end_time()
+        self.last_updated_time = self._get_last_updated_time()
+        self.is_final = self._get_is_final()
+        self.duration = self._get_duration()
+        self.selected_choice = self._get_selected_choice()
+        self.user_ref = self._get_user_ref()
 
         for k, v in vars(self).items():
             if not k.startswith("_"):
                 self[k] = v
 
     def __repr__(self):
-        return f"Choice(name={self.name}, value={self.value}, counts={self.counts})"
+        return "Pool(id={}, end_time={}, duration={} minutes, is_final={}, choices={})".format(
+            self.id, self.end_time, self.duration, self.is_final, self.choices
+        )
+
+    def _parse_keys(self):
+        parsed = {}
+        if isinstance(self._pool['binding_values'], list):
+            for value in self._pool['binding_values']:
+                key, value_ = value['key'], value['value']
+                parsed[key] = value_
+        elif isinstance(self._pool['binding_values'], dict):
+            parsed = self._pool['binding_values']
+        return parsed
+
+    def _get_name(self):
+        return self._pool.get('name')
+
+    def _get_id(self):
+        return self._raw.get('rest_id') or self._pool.get('url', '').replace("\\", "")
+
+    def _get_choices(self):
+        results = []
+
+        for key, value in self._parsed.items():
+            if re.match(self.CHOICE_LABEL_REGEX, key):
+                number = re.findall("\d+", key)[0]
+                string_value = value['string_value']
+                choice_count = self._parsed.get(self.CHOICE_COUNT_FORMAT.format(number), {}).get('string_value', "0")
+
+                results.append(Choice(number, self.id, self.name, string_value, choice_count))
+        return results
+
+    def _get_selected_choice(self):
+        choice = self._parsed.get('selected_choice', None)
+
+        if not choice:
+            return None
+
+        for _choice in self.choices:
+            if _choice.key == choice['string_value']:
+                return _choice
+
+        return None
+
+
+    def _get_user_ref(self):
+        return [User(user, None) for user in self._pool.get('user_refs_results', [])]
+
+    def _get_end_time(self):
+        return parse_time(self._parsed.get('end_datetime_utc', {}).get('string_value'))
+
+    def _get_last_updated_time(self):
+        return parse_time(self._parsed.get('last_updated_datetime_utc', {}).get('string_value'))
+
+    def _get_duration(self):
+        return self._parsed.get('duration_minutes', {}).get('string_value', "0")
+
+    def _get_is_final(self):
+        return self._parsed.get('counts_are_final', {}).get('boolean_value', False)
+
+
+class Choice(dict):
+    def __init__(self, key, pool_id, pool_name, choice_value, choice_count):
+        super().__init__()
+        self.key = key
+        self.name = pool_name
+        self.id = pool_id
+        self.value = choice_value
+        self.counts = choice_count
+
+        for k, v in vars(self).items():
+            if not k.startswith("_"):
+                self[k] = v
+
+    def __repr__(self):
+        return f"Choice(key={self.key}, value={self.value}, counts={self.counts})"
 
 
 class Place(dict):
@@ -865,6 +1076,13 @@ class User(dict):
         self._raw = user_data
         self._client = client
         self._user = find_objects(self._raw, "__typename", "User", recursive=False)
+
+        if not self._user:
+            if find_objects(self._raw, "__typename", "UserUnavailable", recursive=False):
+                raise UserProtected(response=user_data)
+            else :
+                raise UserNotFound(response=user_data)
+
         self.original_user = self._user['legacy'] if self._user.get('legacy') else self._user
         self.id = self.rest_id = self.get_id()
         self.created_at = self.date = self.get_created_at()
@@ -900,6 +1118,14 @@ class User(dict):
             if not k.startswith("_"):
                 self[k] = v
 
+    def __eq__(self, other):
+        if isinstance(other, User):
+            return self.id == other.id
+        elif isinstance(other, (int, str)):
+            return str(self.id) == str(other)
+
+        return False
+
     def __repr__(self):
         return "User(id={}, username={}, name={}, verified={})".format(
             self.id, self.username, self.name, self.verified
@@ -930,12 +1156,7 @@ class User(dict):
         return int(raw_id)
 
     def get_created_at(self):
-        date = None
-
-        if self.original_user.get('created_at'):
-            date = self.original_user['created_at']
-
-        return parser.parse(date) if date else None
+        return parse_time(self.original_user.get('created_at'))
 
     def _get_key(self, key, default=None):
         keyValue = default
@@ -951,15 +1172,17 @@ class User(dict):
 
         return keyValue
 
+
 class PeriScopeUser(dict):
     def __init__(self, user_data):
         super().__init__()
         self._raw = user_data
         self.id = self._raw.get('periscope_user_id')
-        self.twitter_screen_name = self.username =  self._raw.get('twitter_screen_name')
+        self.twitter_screen_name = self.username = self._raw.get('twitter_screen_name')
         self.display_name = self.name = self._raw.get('display_name')
         self.is_verified = self._raw.get('is_verified')
         self.twitter_id = self._raw['user_results'].get('rest_id')
+
 
 class AudioSpace(dict):
     def __init__(self, audio_space, client):
@@ -994,7 +1217,6 @@ class AudioSpace(dict):
     def get_stream_link(self):
         return self._client.http.get_audio_stream(self.media_key)
 
-
     @staticmethod
     def ts_to_datetime(ts):
         try:
@@ -1006,3 +1228,6 @@ class AudioSpace(dict):
         return "AudioSpace(id={}, title={}, state={}, tweet={})".format(
             self.id, self.title, self.state, self.tweet
         )
+
+
+

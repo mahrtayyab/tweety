@@ -223,7 +223,6 @@ class BotMethods:
 
         return AudioSpace(space, self)
 
-
     def tweet_detail(self, identifier: str) -> Tweet:
         """
         Get Detail of a single tweet
@@ -237,11 +236,10 @@ class BotMethods:
 
         response = self.request.get_tweet_detail(tweetId)
         _tweet_before = []
-        entries  = find_objects(response, "type", "TimelineAddEntries")
+        entries = find_objects(response, "type", "TimelineAddEntries")
 
         if not entries or len(entries) == 0:
             raise InvalidTweetIdentifier(response=response)
-
 
         for entry in entries['entries']:
             if str(entry['entryId']).split("-")[0] == "tweet":

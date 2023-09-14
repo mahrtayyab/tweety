@@ -5,6 +5,7 @@ import random
 import string
 import sys
 import uuid
+from dateutil import parser as date_parser
 from .exceptions_ import AuthenticationRequired
 
 MIME_TYPES = {
@@ -18,8 +19,6 @@ MIME_TYPES = {
     "mov": "video/quicktime",
     "m4v": "video/x-m4v"
 }
-
-
 
 WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'language', 'likes',
                     'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
@@ -43,6 +42,11 @@ def AuthRequired(cls):
     return cls
 
 
+def replace_between_indexes(original_string, from_index, to_index, replacement_text):
+    new_string = original_string[:from_index] + replacement_text + original_string[to_index:]
+    return new_string
+
+
 def decodeBase64(encoded_string):
     return str(base64.b64decode(bytes(encoded_string, "utf-8")))[2:-1]
 
@@ -52,6 +56,14 @@ def bar_progress(current, total, width=80):
     sys.stdout.write("\r" + progress_message)
     sys.stdout.flush()
 
+def parse_wait_time(wait_time):
+    if not wait_time:
+        return 0
+
+    if isinstance(wait_time, (tuple, list)):
+        return random.choice(*wait_time)
+
+    return int(wait_time)
 
 def custom_json(self):
     try:
@@ -122,6 +134,7 @@ def check_sensitive_media_tags(tags):
 
 def find_objects(obj, key, value, recursive=True, none_value=None):
     results = []
+
     def find_matching_objects(_obj, _key, _value):
         if isinstance(_obj, dict):
             if _key in _obj:
@@ -151,3 +164,22 @@ def find_objects(obj, key, value, recursive=True, none_value=None):
         return none_value
 
     return results
+
+def create_pool(duration: int, *choices):
+    data = {
+        "twitter:long:duration_minutes": duration,
+        "twitter:api:api:endpoint": "1",
+        "twitter:card": f"poll{len(choices)}choice_text_only"
+    }
+
+    for index, choice in enumerate(choices, start=1):
+        key = f"twitter:string:choice{index}_label"
+        data[key] = choice
+
+    return data
+
+def parse_time(time):
+    if not time:
+        return None
+
+    return date_parser.parse(time)

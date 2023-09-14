@@ -41,6 +41,9 @@ class UrlBuilder:
     URL_AUSER_SEND_MESSAGE = "https://twitter.com/i/api/1.1/dm/new2.json"  # noqa
     URL_AUSER_CONVERSATION = "https://twitter.com/i/api/1.1/dm/conversation/{}.json"  # noqa
     URL_AUSER_CREATE_TWEET = "https://twitter.com/i/api/graphql/tTsjMKyhajZvK4q76mpIBg/CreateTweet"  # noqa
+    URL_AUSER_DELETE_TWEET = "https://twitter.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet"  # noqa
+    URL_AUSER_CREATE_POOL = "https://caps.twitter.com/v2/cards/create.json"  # noqa
+    URL_AUSER_VOTE_POOL = "https://caps.twitter.com/v2/capi/passthrough/1"  # noqa
     URL_AUSER_CREATE_TWEET_SCHEDULE = "https://twitter.com/i/api/graphql/LCVzRQGxOaGnOnYH01NQXg/CreateScheduledTweet"  # noqa
     URL_AUSER_CREATE_MEDIA = "https://upload.twitter.com/i/media/upload.json"  # noqa
     URL_AUSER_CREATE_MEDIA_METADATA = "https://twitter.com/i/api/1.1/media/metadata/create.json"  # noqa
@@ -554,7 +557,25 @@ class UrlBuilder:
         return "POST", self._build(self.URL_AUSER_SEND_MESSAGE, urlencode(params)), json_data
 
     @return_with_headers
-    def create_tweet(self, text, files, filter_=None, reply_to=None):
+    def create_pool(self, pool):
+        params = {"card_data": pool}
+
+        return "POST", self._build(self.URL_AUSER_CREATE_POOL, urlencode(params))
+
+    @return_with_headers
+    def delete_tweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': tweet_id,
+                'dark_request': False,
+            },
+            'queryId': utils.create_query_id()
+        }
+
+        return "POST", self.URL_AUSER_DELETE_TWEET, json_data
+
+    @return_with_headers
+    def create_tweet(self, text, files, filter_=None, reply_to=None, pool=None):
         media_entities = utils.create_media_entities(files)
         variables = {
             'tweet_text': text,
@@ -565,12 +586,6 @@ class UrlBuilder:
             },
             'semantic_annotation_ids': []
         }
-
-        if reply_to:
-            variables['reply'] = {
-                'exclude_reply_user_ids': [],
-                'in_reply_to_tweet_id': reply_to
-            }
 
         features = {
             'tweetypie_unmention_optimization_enabled': True,
@@ -598,8 +613,17 @@ class UrlBuilder:
             'withAuxiliaryUserLabels': False
         }
 
+        if reply_to:
+            variables['reply'] = {
+                'exclude_reply_user_ids': [],
+                'in_reply_to_tweet_id': reply_to
+            }
+
         if filter_:
             variables['conversation_control'] = {"mode": filter_}
+
+        if pool:
+            variables['card_uri'] = pool
 
         json_data = dict(
             variables=variables,
@@ -609,6 +633,19 @@ class UrlBuilder:
         )
 
         return "POST", self.URL_AUSER_CREATE_TWEET, json_data
+
+    @return_with_headers
+    def poll_vote(self, poll_id, poll_name, tweet_id, choice):
+        params = {
+            'twitter:string:card_uri': poll_id,
+            'twitter:long:original_tweet_id': tweet_id,
+            'twitter:string:response_card_name': poll_name,
+            'twitter:string:cards_platform': 'Web-12',
+            'twitter:string:selected_choice': choice,
+        }
+
+        return "POST", self._build(self.URL_AUSER_VOTE_POOL, urlencode(params))
+
 
     @return_with_headers
     def schedule_create_tweet(self,text, files, time):

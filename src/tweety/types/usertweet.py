@@ -35,10 +35,10 @@ class UserTweets(BaseGeneratorClass):
             response = self.client.http.get_tweets(self.user_id, replies=self.get_replies, cursor=self.cursor)
 
             if not response['data']['user'].get("result"):
-                raise UserNotFound(error_code=50, error_name="GenericUserNotFound", response=response)
+                raise UserNotFound(response=response)
 
             if response['data']['user']['result']['__typename'] == "UserUnavailable":
-                raise UserProtected(403, "UserUnavailable", None)
+                raise UserProtected(403, "UserUnavailable", response)
 
             entries = self._get_entries(response)
 

@@ -2,7 +2,7 @@ import functools
 from typing import Union, Tuple, List
 from .types.inbox import Message
 from .utils import create_conversation_id, AuthRequired, find_objects
-from .types import User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes, TweetRetweets
+from .types import User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes, TweetRetweets, Poll, Choice
 
 
 @AuthRequired
@@ -289,12 +289,14 @@ class UserMethods:
             text: str,
             files: List[Union[str, UploadedMedia, Tuple[str, str]]] = None,
             filter_: str = None,
-            reply_to: Union[str, int, Tweet] = None
+            reply_to: Union[str, int, Tweet] = None,
+            pool: dict = None
     ) -> Tweet:
 
         """
         Create a Tweet
 
+        :param pool: Pool you want to include in the tweet
         :param text: (`str`) Text content of Tweet
         :param files: (`list[Union[str, UploadedMedia, tuple[str, str]]]`) Files to be sent with Tweet (max 4)
         :param filter_: (`str`) Filter to applied for Tweet audience
@@ -310,11 +312,11 @@ class UserMethods:
         if isinstance(reply_to, Tweet):
             reply_to = reply_to.id
 
-        response = self.request.create_tweet(text, files, filter_, reply_to)
+        response = self.request.create_tweet(text, files, filter_, reply_to, pool)
         response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
         return Tweet(response, self, response)
 
-    def like_tweet(self, tweet_id: Union[str, int , Tweet]):
+    def like_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
@@ -367,6 +369,47 @@ class UserMethods:
         response = self.request.unfollow_user(user_id)
         response['__typename'] = "User"
         return User(response, self)
+
+    def pool_vote(self, poll_id, tweet, choice, poll_name=None):
+        """
+
+        :param poll_id: (`str`, `Poll`) ID OR URI of the Poll , Or the `Poll` Object
+        :param tweet: (`str`, `int`, `Tweet`) Tweet ID in which the Poll was posted
+        :param choice: (`str`, `int`, `Choice`) Choice you want to vote to
+        :param poll_name: (`str`) Name of the Pool in case the `poll_id` isn't `Poll`
+        :return: Poll
+        """
+        print(poll_id)
+        if not isinstance(poll_id, Poll) and not poll_name:
+            raise ValueError("`pool_name` is required if `poll_id` isn't `Poll`")
+
+        if isinstance(poll_id, Poll):
+            poll_name = poll_id.name
+            poll_id = poll_id.id
+
+        if isinstance(tweet, Tweet):
+            tweet = tweet.id
+
+        if isinstance(choice, Choice):
+            print(choice)
+            choice = choice.key
+            print(choice)
+        response = self.request.poll_vote(poll_id, poll_name, tweet, choice)
+        response['card']['legacy'] = response['card']
+        return Poll(response['card'])
+
+    def delete_tweet(self, tweet_id):
+        """
+
+        :param tweet_id: (`str`, `int`, Tweet) Tweet to be deleted
+        :return: Bool
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        response = self.request.delete_tweet(tweet_id)
+        return True if response.get('data', {}).get('delete_tweet') else False
 
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):
