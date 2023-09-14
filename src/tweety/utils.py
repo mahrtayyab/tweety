@@ -61,7 +61,7 @@ def parse_wait_time(wait_time):
         return 0
 
     if isinstance(wait_time, (tuple, list)):
-        return random.choice(*wait_time)
+        return random.randint(*wait_time)
 
     return int(wait_time)
 
