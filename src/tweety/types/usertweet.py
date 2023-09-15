@@ -42,7 +42,6 @@ class UserTweets(BaseGeneratorClass):
 
             entries = self._get_entries(response)
 
-
             for entry in entries:
                 object_type = self._get_target_object(entry)
 

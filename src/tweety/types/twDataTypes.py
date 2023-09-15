@@ -146,6 +146,10 @@ class Tweet(dict):
 
     def _format_tweet(self):
         self._tweet = find_objects(self._raw, "__typename", ["Tweet", "TweetWithVisibilityResults"], recursive=False)
+
+        if self._tweet.get('tweet'):
+            self._tweet = self._tweet['tweet']
+
         self._card = self._tweet.get('card')
         self.original_tweet = self._get_original_tweet()
         self.id = self._get_id()
