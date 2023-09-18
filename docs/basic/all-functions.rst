@@ -955,3 +955,395 @@ UnFollow a User
        app = Twitter("session")
        app.unfollow_user("123456789")
 
+Get Community
+---------------------
+
+- .. py:method:: Twitter().get_community(community_id: Union[str, int])
+
+    Get a Community Details
+
+    .. py:data:: Arguments
+
+        .. py:data:: community_id
+            :type: str | int
+
+            Id of the Community
+
+    .. py:data:: Return
+
+        :return: `Community`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.get_community("123456789")
+
+Get Community Tweets
+---------------------
+
+- .. py:method:: Twitter().get_community_tweets(community_id: str , pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None)
+
+    Get the Tweets of the specified community
+
+    .. py:data:: Arguments
+
+        .. py:data:: community_id (Required)
+            :type: str | Community
+
+            ID of the community you want to get Tweets of.
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: filter_ (optional)
+            :type: str
+            :value: None
+
+            Filter you would like to apply on the tweets. More about :ref:`filter`
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `CommunityTweets`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweets = app.get_community_tweets(12345678)
+       for tweet in tweets:
+           print(tweet)
+
+
+- .. py:method:: Twitter().iter_community_tweets(community_id: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None)
+
+    Get the Tweets of the specified community as a generator
+
+    .. py:data:: Arguments
+
+        .. py:data:: community_id (Required)
+            :type: str | Community
+
+            ID of the community you want to get Tweets of.
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: filter_ (optional)
+            :type: str
+            :value: None
+
+            Filter you would like to apply on the search. More about :ref:`filter`
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`CommunityTweets`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       for community_tweets_obj, tweets in app.iter_community_tweets('123456789'):
+           print(tweets)
+
+Get Community Members
+---------------------
+
+- .. py:method:: Twitter().get_community_members(community_id: str , pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None)
+
+    Get the Members of the specified community
+
+    .. py:data:: Arguments
+
+        .. py:data:: community_id (Required)
+            :type: str | Community
+
+            ID of the community you want to get Tweets of.
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: filter_ (optional)
+            :type: str
+            :value: None
+
+            Filter you would like to apply on the tweets. More about :ref:`filter`
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `CommunityMembers`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       users = app.get_community_members(12345678)
+       for user in users:
+           print(user)
+
+
+- .. py:method:: Twitter().iter_community_members(community_id: str, pages: int = 1, filter_: str = None, wait_time: int = 2, cursor: str = None)
+
+    Get the Members of the specified community as a generator
+
+    .. py:data:: Arguments
+
+        .. py:data:: community_id (Required)
+            :type: str | Community
+
+            ID of the community you want to get Tweets of.
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: filter_ (optional)
+            :type: str
+            :value: None
+
+            Filter you would like to apply on the search. More about :ref:`filter`
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`CommunityMembers`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       for community_members_obj, users in app.iter_community_members('123456789'):
+           print(users)
+
+Delete Tweet
+--------------
+- .. py:method:: Twitter().delete_tweet(tweet_id: Union[str, int, Tweet])
+
+    Delete a Tweet posted by authenticated user
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | int | Tweet
+
+            Id of the Tweet
+
+    .. py:data:: Return
+
+        :return: Bool
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.delete_tweet("123456789")
+
+Enable User Notifications
+--------------------------
+- .. py:method:: Twitter().enable_user_notification(user_id: Union[str, int, User])
+
+     Enable user notification on new tweet from specific user
+
+    .. py:data:: Arguments
+
+        .. py:data:: user_id
+            :type: str | int | User
+
+            Id of the User
+
+    .. py:data:: Return
+
+        :return: Bool
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.enable_user_notification("123456789")
+
+Disable User Notifications
+--------------------------
+- .. py:method:: Twitter().disable_user_notification(user_id: Union[str, int, User])
+
+     Disable user notification on new tweet from specific user
+
+    .. py:data:: Arguments
+
+        .. py:data:: user_id
+            :type: str | int | User
+
+            Id of the User
+
+    .. py:data:: Return
+
+        :return: Bool
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       app.disable_user_notification("123456789")
+
+Get Notified Tweets
+---------------------
+
+- .. py:method:: Twitter().get_tweet_notifications(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Get the Tweets of the user whom the authenticated user has enabled the New Tweet Notification
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `TweetNotifications`
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       tweets = app.get_tweet_notifications()
+       for tweet in tweets:
+           print(tweet)
+
+
+- .. py:method:: Twitter().iter_tweet_notifications(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Get the Tweets of the user whom the authenticated user has enabled the New Tweet Notification as a generator
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: Generator: (`TweetNotifications`, list[`Tweet`])
+
+
+    .. code-block:: python
+
+       from tweety.bot import Twitter
+
+       app = Twitter("session")
+       for tweet_notification_obj, tweets in app.iter_tweet_notifications('123456789'):
+           print(tweets)

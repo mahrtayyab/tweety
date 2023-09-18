@@ -370,6 +370,187 @@ Bookmarks
 
                 :return: ``Bookmarks(user_id={user_id}, count={number_of_results})``
 
+CommunityTweets
+---------------------
+
+.. py:class:: CommunityTweets
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.community.CommunityTweets`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet]
+
+            List of  Tweets
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+        .. py:attribute:: filter
+            :type: str | None
+
+            Any Filter which is begin applied
+
+    .. py:data:: Methods:
+
+        .. py:method:: to_xlsx(filename=None)
+
+            Export the User Tweets to Excel
+
+            .. py:data:: Arguments:
+
+                .. py:data:: filename (optional)
+                    :type: str
+                    :value: None
+
+                    Filename of Excel Workbook
+
+            .. py:data:: Return
+                :type: None
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``CommunityTweets(id={id_of_community}, count={number_of_results})``
+
+CommunityMembers
+---------------------
+
+.. py:class:: CommunityMembers
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.community.CommunityMembers`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            List of User
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+        .. py:attribute:: filter
+            :type: str | None
+
+            Any Filter which is begin applied
+
+    .. py:data:: Methods:
+
+        .. py:method:: to_xlsx(filename=None)
+
+            Export the User Tweets to Excel
+
+            .. py:data:: Arguments:
+
+                .. py:data:: filename (optional)
+                    :type: str
+                    :value: None
+
+                    Filename of Excel Workbook
+
+            .. py:data:: Return
+                :type: None
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``CommunityMembers(id={id_of_community}, count={number_of_results})``
+
+TweetNotifications
+---------------------
+
+.. py:class:: TweetNotifications
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.notification.TweetNotifications`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet]
+
+            List of tweets
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``TweetNotifications(user_id={id_of_user}, count={number_of_results})``
+
 Inbox
 ---------------------
 
@@ -530,6 +711,16 @@ Tweet
 
             DateTime at which the Tweet was created
 
+        .. py:attribute:: text
+            :type: str
+
+            Text of the Tweet
+
+        .. py:attribute:: rich_text
+            :type: RichText
+
+            Text of the Tweet
+
         .. py:attribute:: author
             :type: User
 
@@ -619,6 +810,16 @@ Tweet
             :type: str
 
             Id of the Audio Space in the Tweet
+
+        .. py:attribute:: pool
+            :type: Pool | None
+
+            Pool in the Tweet
+
+        .. py:attribute:: community
+            :type: Community | None
+
+            Community this tweet is part of
 
         .. py:attribute:: media
             :type: list[Media]
@@ -1072,6 +1273,11 @@ Choice
 
     .. py:data:: Attributes:
 
+        .. py:attribute:: id
+            :type: str
+
+            Id of the pool
+
         .. py:attribute:: name
             :type: str
 
@@ -1082,10 +1288,10 @@ Choice
 
             Value of the choice
 
-        .. py:attribute:: type
+        .. py:attribute:: key
             :type: str
 
-            Type of the choice `value`
+            Key of the choice
 
         .. py:attribute:: counts
             :type: str
@@ -1340,6 +1546,21 @@ User
 
             List of id of tweets pinned by the user
 
+        .. py:attribute:: notifications_enabled
+            :type: bool
+
+            Is new tweet notification enabled for this user
+
+        .. py:attribute:: notifications
+            :type: bool
+
+            Is new tweet notification enabled for this user
+
+        .. py:attribute:: community_role
+            :type: str | None
+
+            Role in Community (if applicable)
+
 
 
     .. py:data:: Methods:
@@ -1357,6 +1578,20 @@ User
 
             .. py:data:: Return
                 :type: User
+
+        .. py:method:: enable_notifications()
+
+            Enable new Tweet notification for this user
+
+            .. py:data:: Return
+                :type: bool
+
+        .. py:method:: disable_notifications()
+
+            Disable new Tweet notification for this user
+
+            .. py:data:: Return
+                :type: bool
 
 
         .. py:method:: __repr__()
@@ -1623,3 +1858,266 @@ NewMessage
 
                 :value: ``Message(id=id_of_the_message, conversation_id=id_of_the_conversation, time=time_of_the_message)``
 
+Community
+---------------------
+
+.. py:class:: Community
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.Community`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the Community
+
+        .. py:attribute:: created_at
+            :type: datetime.datetime
+
+            DateTime at which the Community was created
+
+        .. py:attribute:: date
+            :type: datetime.datetime
+
+            DateTime at which the Tweet was created
+
+        .. py:attribute:: description
+            :type: str
+
+            Bio / Description on Community
+
+        .. py:attribute:: name
+            :type: str
+
+            Name of the Community
+
+        .. py:attribute:: role
+            :type: str
+
+            Role of authenticated user in the community
+
+        .. py:attribute:: member_count
+            :type: int
+
+            Number of Members in the Community
+
+        .. py:attribute:: moderator_count
+            :type: int
+
+            Number of Moderator in the Community
+
+        .. py:attribute:: admin
+            :type: list[User]
+
+            List of Admins of the community
+
+        .. py:attribute:: creator
+            :type: list[User]
+
+            List of Creators of the community
+
+        .. py:attribute:: rules
+            :type: list[str]
+
+            List of rules of the Community
+
+
+    .. py:data:: Methods:
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``Community(id={rest_id_of_user}, name={name_of_the_user}, role={role_of_user}, admin={admin_of_the_community})``
+
+RichText
+---------------------
+
+.. py:class:: RichText
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.RichText`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the Tweet
+
+        .. py:attribute:: text
+            :type: str
+
+            Text of the tweet
+
+        .. py:attribute:: hashtags
+            :type: list[str]
+
+            List of hashtags in the Tweet
+
+        .. py:attribute:: urls
+            :type: list[str]
+
+            List of URLs in the Tweet
+
+        .. py:attribute:: symbols
+            :type: list[str]
+
+             List of Symbols in the Tweet
+
+        .. py:attribute:: user_mentions
+            :type: list[ShortUser]
+
+            List of Users mentioned in the Tweet
+
+        .. py:attribute:: media
+            :type: list[Media]
+
+            List of Media in the Tweet
+
+        .. py:attribute:: tags
+            :type: list[RichTag]
+
+            List of rich text tags in the text
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_html()
+
+            Get HTML version of the text which includes all the tags and elements
+
+            .. py:data:: Return
+                :type: str
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``RichText(id={rest_id_of_tweet})``
+
+RichTag
+---------------------
+
+.. py:class:: RichTag
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.RichTag`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: from_index
+            :type: int
+
+            The start index of this specific tag in the text
+
+        .. py:attribute:: to_index
+            :type: int
+
+            The end index of this specific tag in the text
+
+        .. py:attribute:: hashtags
+            :type: list[str]
+
+            List of hashtags in the Tweet
+
+        .. py:attribute:: types
+            :type: list[str]
+
+            Type of tags included in the range
+
+    .. py:data:: Methods:
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``RichTag(from_index={from_index}, to_index={to_index}, types={types})``
+
+Pool
+---------------------
+
+.. py:class:: Pool
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.Pool`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: str
+
+            Id of the Pool
+
+        .. py:attribute:: name
+            :type: str
+
+            Name of the Pool
+
+        .. py:attribute:: choices
+            :type: list[Choice]
+
+            List of choices in teh Tweet
+
+        .. py:attribute:: end_time
+            :type: datetime.datetime
+
+            End Time of the Pool
+
+        .. py:attribute:: last_updated_time
+            :type: datetime.datetime
+
+            Last Updated Time of the Pool
+
+        .. py:attribute:: duration
+            :type: str
+
+            Duration of Pool in Minutes
+
+        .. py:attribute:: user_ref
+            :type: list[User]
+
+            Users Referred in the Pool
+
+        .. py:attribute:: selected_choice
+            :type: Choice | None
+
+            Choice already selected by the authenticated user
+
+        .. py:attribute:: is_final
+            :type: bool
+
+            Has pool ended or not
+
+    .. py:data:: Methods:
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``Card(id={rest_id_of_poll}, choices={list_of_choices}, end_time={end_time_of_pool}, duration={duration_of_pool} minutes)``

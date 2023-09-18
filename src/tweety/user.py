@@ -20,13 +20,13 @@ class UserMethods:
     def get_home_timeline(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.usertweet.SelfTimeline
         """
@@ -42,13 +42,13 @@ class UserMethods:
     def iter_home_timeline(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.usertweet.SelfTimeline, list[.types.twDataTypes.Tweet])
         """
@@ -64,14 +64,14 @@ class UserMethods:
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.likes.TweetLikes
         """
@@ -87,14 +87,14 @@ class UserMethods:
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
         """
@@ -110,14 +110,14 @@ class UserMethods:
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.likes.TweetLikes
         """
@@ -133,14 +133,14 @@ class UserMethods:
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
         """
@@ -155,13 +155,13 @@ class UserMethods:
     def get_mentions(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ) -> Mention:
         """
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.mention.Mention
         """
@@ -177,13 +177,13 @@ class UserMethods:
     def iter_mentions(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.mention.Mention, list[.types.twDataTypes.Tweet])
         """
@@ -198,13 +198,13 @@ class UserMethods:
     def get_bookmarks(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ) -> Bookmarks:
         """
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: Bookmarks
         """
@@ -220,13 +220,13 @@ class UserMethods:
     def iter_bookmarks(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.bookmarks.Bookmarks, list[.types.twDataTypes.Tweet])
         """
@@ -241,7 +241,7 @@ class UserMethods:
     def get_tweet_notifications(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
 
@@ -249,7 +249,7 @@ class UserMethods:
         Get the Notified Tweets of the subscribed users
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.notification.TweetNotifications
         """
@@ -264,14 +264,14 @@ class UserMethods:
     def iter_tweet_notifications(
             self,
             pages: int = 1,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
         Get the Notified Tweets of the subscribed users as Generator
 
         :param pages: (`int`) The number of pages to get
-        :param wait_time: (`int`) seconds to wait between multiple requests
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.notification.TweetNotifications, list[.types.twDataTypes.Tweet])
         """
@@ -425,7 +425,7 @@ class UserMethods:
         :param poll_name: (`str`) Name of the Pool in case the `poll_id` isn't `Poll`
         :return: Poll
         """
-        print(poll_id)
+
         if not isinstance(poll_id, Poll) and not poll_name:
             raise ValueError("`pool_name` is required if `poll_id` isn't `Poll`")
 
@@ -437,9 +437,8 @@ class UserMethods:
             tweet = tweet.id
 
         if isinstance(choice, Choice):
-            print(choice)
             choice = choice.key
-            print(choice)
+
         response = self.request.poll_vote(poll_id, poll_name, tweet, choice)
         response['card']['legacy'] = response['card']
         return Poll(response['card'])

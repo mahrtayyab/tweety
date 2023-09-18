@@ -3,7 +3,6 @@ from .base import BaseGeneratorClass
 from . import *
 
 class TweetNotifications(BaseGeneratorClass):
-
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []

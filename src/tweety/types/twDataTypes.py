@@ -1152,6 +1152,7 @@ class User(dict):
             return self._client.enable_user_notification(self.id)
 
         return True
+
     def disable_notifications(self):
         if self.notifications:
             return self._client.disable_user_notification(self.id)

@@ -1,6 +1,5 @@
-import logging
 import re
-from typing import Union, Generator
+from typing import Union
 from .utils import find_objects
 from .types import Proxy, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, CommunityMembers
 from .exceptions_ import *
@@ -74,7 +73,7 @@ class BotMethods:
             username: Union[str, int, User],
             pages: int = 1,
             replies: bool = False,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ) -> UserTweets:
         """
@@ -83,7 +82,7 @@ class BotMethods:
         :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
         :param: pages: (`int`) number of pages to be scraped
         :param: replies: (`boolean`) get the replied tweets of the user too
-        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
         :return: .types.usertweet.UserTweets
@@ -104,7 +103,7 @@ class BotMethods:
             username: Union[str, int, User],
             pages: int = 1,
             replies: bool = False,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
 
@@ -114,7 +113,7 @@ class BotMethods:
         :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
         :param: pages: (`int`) number of pages to be scraped
         :param: replies: (`boolean`) get the replied tweets of the user too
-        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
         :return: (.types.usertweet.UserTweets, list[.types.twDataTypes.Tweet])
@@ -153,7 +152,7 @@ class BotMethods:
             keyword: str,
             pages: int = 1,
             filter_: str = None,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ) -> Search:
 
@@ -165,7 +164,7 @@ class BotMethods:
         :param filter_: (
            `str`| `filters.SearchFilters.Users()`| `filters.SearchFilters.Latest()` | `filters.SearchFilters.Photos()` | `filters.SearchFilters.Videos()`
         )
-        :param wait_time : (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
 
@@ -185,7 +184,7 @@ class BotMethods:
             keyword: str,
             pages: int = 1,
             filter_: str = None,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
@@ -196,7 +195,7 @@ class BotMethods:
         :param filter_: (
            `str`| `filters.SearchFilters.Users()`| `filters.SearchFilters.Latest()` | `filters.SearchFilters.Photos()` | `filters.SearchFilters.Videos()`
         )
-        :param wait_time : (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
 
@@ -212,7 +211,7 @@ class BotMethods:
     def get_audio_space(self, space_id: Union[str, Tweet]):
         """
 
-        :param space_id: Id of the Audio Space , or the Tweet Object that Space Audio is part of.
+        :param space_id: ID of the Audio Space , or the Tweet Object that Space Audio is part of.
         :return: .types.twDataTypes.AudioSpace
         """
 
@@ -238,7 +237,7 @@ class BotMethods:
             community_id: Union[str, int, Community],
             pages: int = 1,
             filter_: str = None,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
 
@@ -248,7 +247,7 @@ class BotMethods:
         :param: community_id: (`str` | `int` | `Community`) ID of the community whom to get the tweets of
         :param: pages: (`int`) number of pages to be scraped
         :param: filter_: (`str`) Filter the Tweets
-        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
         :return: (.types.community.CommunityTweets, list[.types.twDataTypes.Tweet])
@@ -268,7 +267,7 @@ class BotMethods:
             community_id: Union[str, int, Community],
             pages: int = 1,
             filter_: str = None,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
 
@@ -278,7 +277,7 @@ class BotMethods:
         :param: community_id: (`str` | `int` | `Community`) ID of the community whom to get the tweets of
         :param: pages: (`int`) number of pages to be scraped
         :param: filter_: (`str`) Filter the Tweets
-        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
         :return: .types.community.CommunityTweets
@@ -300,7 +299,7 @@ class BotMethods:
             community_id: Union[str, int, Community],
             pages: int = 1,
             filter_: str = None,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
@@ -309,7 +308,7 @@ class BotMethods:
         :param: community_id: (`str` | `int` | `Community`) ID of the community whom to get the tweets of
         :param: pages: (`int`) number of pages to be scraped
         :param: filter_: (`str`) Filter the Members
-        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
         :return: .types.community.CommunityMembers
@@ -332,7 +331,7 @@ class BotMethods:
             community_id: Union[str, int, Community],
             pages: int = 1,
             filter_: str = None,
-            wait_time: int = 2,
+            wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
@@ -341,7 +340,7 @@ class BotMethods:
         :param: community_id: (`str` | `int` | `Community`) ID of the community whom to get the tweets of
         :param: pages: (`int`) number of pages to be scraped
         :param: filter_: (`str`) Filter the Members
-        :param: wait_time: (`int`) seconds to wait between multiple requests
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
         :return: (.types.community.CommunityMembers, [.types.twDataTypes.User])
@@ -356,7 +355,6 @@ class BotMethods:
         communityTweets = CommunityMembers(community_id, self, pages, filter_, wait_time, cursor)
 
         return communityTweets.generator()
-
 
     def tweet_detail(self, identifier: str) -> Tweet:
         """

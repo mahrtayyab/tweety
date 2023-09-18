@@ -148,3 +148,25 @@ Update 1.8.1:
 * Fixed the Import Errors
 * Fixed the annotation Errors
 * **Please do check the full documentation before upgrading**
+
+Update 1.9:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.9.5
+* Fixed tweet comments pagination
+* Added Video Upload Support
+* Fixed the `create_tweet` issue
+* Fixed the tweet`text` length issue
+* Added `alt_text` to `Media`
+* Added `create_pool`
+* Added `Pool`
+* Reworked `Choice`
+* `wait_time` now accepts iterable
+* Added `RichText` , `RichTag`
+* Added `rich_text` attribute to `Tweet`
+* Fixed `SelfThread` not able to parse the tweet
+* Added `load_auth_token` method to AuthMethods
+* Added `get_community`, `get_community_tweets`, `iter_community_tweet`, `get_community_members`, `iter_community_members` method to BotMethods
+* Added `get_tweet_notifications`, `iter_tweet_notifications`, `enable_user_notification`, `disable_user_notification`, method to UserMethods
+* Added `Community`, `CommunityTweets`, `CommunityMembers`, `TweetNotifications` Data Types
+* **Please do check the full documentation before upgrading**

@@ -81,10 +81,30 @@ you can also log-in to Twitter on Tweety using ``Cookies``.
 
     app = Twitter("session")
     app.load_cookies(cookies_value)
-    print(app.user)
+    print(app.me)
 
 
 - By running this code ,if the request was successful , the authentication cookies obtained from response will be saved in ``session.tw_session`` (filename is subject to the name of session) file.
+
+Singing In using Auth Token
+----------------------------
+you can also log-in to Twitter on Tweety using ``auth_token``.
+
+.. code-block:: python
+
+    from tweety import Twitter
+
+    auth_token = """auth_token_value"""
+
+    # Cookies can be a str or a dict
+
+    app = Twitter("session")
+    app.load_auth_token(auth_token)
+    print(app.me)
+
+
+- By running this code ,if the request was successful , the authentication cookies obtained from response will be saved in ``session.tw_session`` (filename is subject to the name of session) file.
+
 
 
 Singing In using previous session
@@ -106,6 +126,6 @@ Now using the same session name ,you can load the previous session from file
     app.connect()
     # as 'session.tw_session' is already a authenticated session file , the session can be loaded using  `connect` method
 
-    print(app.user)
+    print(app.me)
 
 
