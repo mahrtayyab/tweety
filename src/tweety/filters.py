@@ -28,3 +28,12 @@ class TweetConversationFilters:
     def PeopleYouFollow():
         return "Community"
 
+class CommunityTweets:
+    @staticmethod
+    def Top():
+        return "Top"
+
+class CommunityMembers:
+    @staticmethod
+    def Moderators():
+        return "Mods"

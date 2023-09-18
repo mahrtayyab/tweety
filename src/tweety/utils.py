@@ -1,4 +1,5 @@
 import base64
+import datetime
 import hashlib
 import os.path
 import random
@@ -181,5 +182,11 @@ def create_pool(duration: int, *choices):
 def parse_time(time):
     if not time:
         return None
+
+    if isinstance(time, int) or str(time).isdigit():
+        try:
+            return datetime.datetime.fromtimestamp(time)
+        except OSError:
+            return datetime.datetime.fromtimestamp(time / 1000)
 
     return date_parser.parse(time)

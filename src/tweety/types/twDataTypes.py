@@ -183,6 +183,7 @@ class Tweet(dict):
         self.hashtags = self._get_tweet_hashtags()
         self.symbols = self._get_tweet_symbols()
         self.community_note = self._get_community_note()
+        self.community = self._get_community()
         self.url = self._get_url()
         self.threads = self.get_threads()
         self.comments = []
@@ -290,16 +291,16 @@ class Tweet(dict):
         return self, _comments, _cursor
 
     def _get_pool(self):
-        if not self._card or "poll" not in self._card['legacy'].get('name'):
+        if not self._card or "poll" not in self._card.get('legacy', {}).get('name', ''):
             return None
 
         return Poll(self._card)
 
     def _get_audio_space(self):
-        if not self._card or "audiospace" not in self._card['legacy'].get('name'):
+        if not self._card or "audiospace" not in self._card.get('legacy', {}).get('name', ''):
             return None
 
-        for value in self._card['legacy'].get('binding_values', []):
+        for value in self._card.get('legacy', {}).get('binding_values', []):
             if value['key'] == "id":
                 return value['value']['string_value']
 
@@ -321,6 +322,9 @@ class Tweet(dict):
 
     def _get_id(self):
         return self._tweet.get('rest_id')
+
+    def _get_community(self):
+        return Community(self._tweet['community_results'], self._client) if self._tweet.get('community_results') else None
 
     def _get_author(self):
         if self._tweet.get("core"):
@@ -1084,7 +1088,7 @@ class User(dict):
         if not self._user:
             if find_objects(self._raw, "__typename", "UserUnavailable", recursive=False):
                 raise UserProtected(response=user_data)
-            else :
+            else:
                 raise UserNotFound(response=user_data)
 
         self.original_user = self._user['legacy'] if self._user.get('legacy') else self._user
@@ -1113,6 +1117,8 @@ class User(dict):
         self.verified = self._get_verified()
         self.can_dm = self._get_key("can_dm")
         self.following = self._get_key("following", False)
+        self.community_role = self._get_key("community_role", None)
+        self.notifications_enabled = self.notifications = self._get_key("notifications", False)
         # self.verified_type = self._get_key("verified_type")
         self.possibly_sensitive = self._get_key("possibly_sensitive")
         self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
@@ -1140,6 +1146,17 @@ class User(dict):
 
     def unfollow(self):
         return self._client.unfollow_user(self.id)
+
+    def enable_notifications(self):
+        if not self.notifications:
+            return self._client.enable_user_notification(self.id)
+
+        return True
+    def disable_notifications(self):
+        if self.notifications:
+            return self._client.disable_user_notification(self.id)
+
+        return True
 
     def _get_verified(self):
         verified = self._get_key("verified", False)
@@ -1234,4 +1251,54 @@ class AudioSpace(dict):
         )
 
 
+class Community(dict):
+    def __init__(self, data, client):
+        super().__init__()
+        self._raw = data
+        self._client = client
+        self._community = find_objects(self._raw, "__typename", "Community", recursive=False)
+        self.id = self._get_id()
+        self.date = self.created_at = self._get_date()
+        self.description = self._get_description()
+        self.name = self._get_name()
+        self.role = self._get_role()
+        self.member_count = self._get_member_count()
+        self.moderator_count = self._get_moderator_count()
+        self.admin = self._get_admin()
+        self.creator = self._get_creator()
+        self.rules = self._get_rules()
 
+    def __repr__(self):
+        return "Community(id={}, name={}, role={}, admin={})".format(
+            self.id, self.name, self.role, self.admin
+        )
+
+    def _get_id(self):
+        return self._community.get('id_str')
+
+    def _get_date(self):
+        return parse_time(self._community.get('created_at'))
+
+    def _get_description(self):
+        return self._community.get('description')
+
+    def _get_name(self):
+        return self._community.get('name')
+
+    def _get_member_count(self):
+        return self._community.get('member_count')
+
+    def _get_moderator_count(self):
+        return self._community.get('moderator_count')
+
+    def _get_admin(self):
+        return User(self._community['admin_results'], self._client)
+
+    def _get_creator(self):
+        return User(self._community['creator_results'], self._client)
+
+    def _get_rules(self):
+        return [rule['name'] for rule in self._community.get('rules', [])]
+
+    def _get_role(self):
+        return self._community.get('role')

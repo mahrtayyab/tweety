@@ -1,27 +1,23 @@
-import sys
-import traceback
-from .twDataTypes import SelfThread
-from ..exceptions_ import UserProtected, UserNotFound
-from ..utils import find_objects
-from . import Tweet, Excel, deprecated
+from . import SelfThread, Tweet, Excel, User
 from .base import BaseGeneratorClass
+from ..utils import find_objects
 
 
-class UserTweets(BaseGeneratorClass):
+class CommunityTweets(BaseGeneratorClass):
     OBJECTS_TYPES = {
         "tweet": Tweet,
         "homeConversation": SelfThread,
         "profile": SelfThread
     }
 
-    def __init__(self, user_id, client, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
+    def __init__(self, community_id, client, pages=1, filter_=None, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
-        self.get_replies = get_replies
         self.cursor = cursor
         self.is_next_page = True
+        self.filter = filter_
         self.client = client
-        self.user_id = user_id
+        self.community_id = community_id
         self.pages = pages
         self.wait_time = wait_time
 
@@ -32,14 +28,7 @@ class UserTweets(BaseGeneratorClass):
     def get_next_page(self):
         _tweets = []
         if self.is_next_page:
-
-            response = self.client.http.get_tweets(self.user_id, replies=self.get_replies, cursor=self.cursor)
-
-            if not response['data']['user'].get("result"):
-                raise UserNotFound(response=response)
-
-            if response['data']['user']['result']['__typename'] == "UserUnavailable":
-                raise UserProtected(403, "UserUnavailable", response)
+            response = self.client.http.get_community_tweets(self.community_id, self.filter, cursor=self.cursor)
 
             entries = self._get_entries(response)
 
@@ -81,68 +70,78 @@ class UserTweets(BaseGeneratorClass):
     def __len__(self):
         return len(self.tweets)
 
+    def __repr__(self):
+        return "CommunityTweets(id={}, count={})".format(
+            self.community_id, self.__len__()
+        )
 
-class SelfTimeline(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "tweet": Tweet,
-        "homeConversation": SelfThread,
-        "profile": SelfThread
-    }
 
-    def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
+class CommunityMembers(BaseGeneratorClass):
+
+    def __init__(self, community_id, client, pages=1, filter_=None, wait_time=2, cursor=None):
         super().__init__()
-        self.tweets = []
+        self.users = []
         self.cursor = cursor
         self.is_next_page = True
+        self.filter = filter_
         self.client = client
-        self.user_id = user_id
+        self.community_id = community_id
         self.pages = pages
         self.wait_time = wait_time
 
+    @staticmethod
+    def _get_users(response):
+        all_users = find_objects(response, "__typename", "User", none_value=[])
+        return all_users
 
-    def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
-        return self.OBJECTS_TYPES.get(entry_type)
+    def _get_cursor(self, response):
+        newCursor = find_objects(response, "next_cursor", value=None)
+
+        if not newCursor or newCursor == self.cursor:
+            return False
+
+        self.cursor = newCursor
+        return True
 
     def get_next_page(self):
-        _tweets = []
+        _users = []
         if self.is_next_page:
-            response = self.client.http.get_home_timeline(cursor=self.cursor)
+            response = self.client.http.get_community_members(self.community_id, self.filter, cursor=self.cursor)
 
-            entries = self._get_entries(response)
+            response_users = self._get_users(response)
 
-            for entry in entries:
-                object_type = self._get_target_object(entry)
-
+            for response_user in response_users:
                 try:
-                    if object_type is None:
-                        continue
 
-                    parsed = object_type(entry, self.client, None)
-                    _tweets.append(parsed)
+                    parsed = User(response_user, self.client, None)
+                    _users.append(parsed)
                 except:
                     pass
-
             self.is_next_page = self._get_cursor(response)
 
-            for tweet in _tweets:
-                self.tweets.append(tweet)
+            for user in _users:
+                self.users.append(user)
 
-            self['tweets'] = self.tweets
+            self['users'] = self.users
             self['is_next_page'] = self.is_next_page
             self['cursor'] = self.cursor
 
-        return _tweets
+        return _users
 
     def __getitem__(self, index):
         if isinstance(index, str):
             return getattr(self, index)
 
-        return self.tweets[index]
+        return self.users[index]
 
     def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
+        for __user in self.users:
+            yield __user
 
     def __len__(self):
-        return len(self.tweets)
+        return len(self.users)
+
+    def __repr__(self):
+        return "CommunityMembers(id={}, count={})".format(
+            self.community_id, self.__len__()
+        )

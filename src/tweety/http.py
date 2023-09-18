@@ -19,6 +19,10 @@ class Request:
         self.__builder = UrlBuilder()
         self.__guest_token = self._get_guest_token(max_retries)
 
+    @property
+    def session(self):
+        return self.__session
+
     def set_cookies(self, cookies):
         self.__session.headers['Cookie'] = cookies
         self.__builder.set_cookies(cookies)
@@ -235,6 +239,26 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def get_community(self, community_id):
+        request_data = self.__builder.get_community(community_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_community_tweets(self, community_id, filter_, cursor):
+        request_data = self.__builder.get_community_tweets(community_id, filter_, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_community_members(self, community_id, filter_, cursor):
+        request_data = self.__builder.get_community_members(community_id, filter_, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_tweet_notifications(self, cursor):
+        request_data = self.__builder.get_new_user_tweet_notification(cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
     def follow_user(self, user_id):
         request_data = self.__builder.follow_user(user_id)
         request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
@@ -244,6 +268,11 @@ class Request:
     def unfollow_user(self, user_id):
         request_data = self.__builder.unfollow_user(user_id)
         request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
+        response = self.__get_response__(**request_data)
+        return response
+
+    def toggle_user_notifications(self, user_id, action):
+        request_data = self.__builder.toggle_user_notifications(user_id, action)
         response = self.__get_response__(**request_data)
         return response
 

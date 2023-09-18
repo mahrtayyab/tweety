@@ -18,7 +18,8 @@ def return_with_headers(func):
         elif len(request_data) == 3:
             return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1], json=request_data[2])
         else:
-            return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1], json=request_data[2], data=request_data[3])
+            return dict(method=request_data[0], headers=self._get_headers(), url=request_data[1], json=request_data[2],
+                        data=request_data[3])
 
     return wrapper
 
@@ -55,6 +56,13 @@ class UrlBuilder:
     URL_AUSER_POST_TWEET_RETWEET = "https://twitter.com/i/api/graphql/ojPdsZsimiJrUGLR1sjUtA/CreateRetweet"  # noqa
     URL_AUSER_CREATE_FRIEND = "https://twitter.com/i/api/1.1/friendships/create.json"  # noqa
     URL_AUSER_DESTROY_FRIEND = "https://twitter.com/i/api/1.1/friendships/destroy.json"  # noqa
+    URL_AUSER_GET_COMMUNITY = "https://twitter.com/i/api/graphql/wYwM9x1NTCQKPx50Ih35Tg/CommunitiesFetchOneQuery"  # noqa
+    URL_AUSER_GET_COMMUNITY_TWEETS = "https://twitter.com/i/api/graphql/X3ziwTzWWeaFPsesEwWY-A/CommunityTweetsTimeline"  # noqa
+    URL_AUSER_GET_COMMUNITY_TWEETS_TOP = "https://twitter.com/i/api/graphql/UwEaY0_gBZFCQq-gEnArjg/CommunityTweetsRankedTimeline"  # noqa
+    URL_AUSER_GET_COMMUNITY_MEMBERS = "https://twitter.com/i/api/graphql/uDM1rSTpOPMuhBCf2mun9Q/membersSliceTimeline_Query"  # noqa
+    URL_AUSER_GET_COMMUNITY_MEMBERS_MODERATOR = "https://twitter.com/i/api/graphql/DB68-nKYyzPN8tXKr5xZng/moderatorsSliceTimeline_Query"  # noqa
+    URL_AUSER_GET_NOTIFICATION_USER_FOLLOWED = "https://twitter.com/i/api/2/notifications/device_follow.json"  # noqa
+    URL_AUSER_UPDATE_FRIENDSHIP = "https://twitter.com/i/api/1.1/friendships/update.json"  # noqa
 
     def __init__(self):
         self.cookies = None
@@ -646,9 +654,8 @@ class UrlBuilder:
 
         return "POST", self._build(self.URL_AUSER_VOTE_POOL, urlencode(params))
 
-
     @return_with_headers
-    def schedule_create_tweet(self,text, files, time):
+    def schedule_create_tweet(self, text, files, time):
         variables = {
             'post_tweet_request': {
                 'auto_populate_reply_metadata': False,
@@ -912,7 +919,125 @@ class UrlBuilder:
 
         return "POST", self.URL_AUSER_DESTROY_FRIEND, None, data
 
+    @return_with_headers
+    def get_community(self, community_id):
+        variables = {"communityId": community_id, "withDmMuting": False, "withSafetyModeUserFields": False}
+        features = {"responsive_web_graphql_exclude_directive_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "responsive_web_graphql_timeline_navigation_enabled": True, "verified_phone_label_enabled": False}
 
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        return "GET", self._build(self.URL_AUSER_GET_COMMUNITY, urlencode(params))
+
+    @return_with_headers
+    def get_community_tweets(self, community_id, filter_=None, cursor=None):
+        variables = {"count": 20, "communityId": community_id, "withCommunity": True}
+        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": False,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_media_download_video_enabled": False, "responsive_web_enhance_cards_enabled": False}
+
+        if cursor:
+            variables['cursor'] = cursor
+
+        if filter_ and filter_.lower() == "top":
+            url = self.URL_AUSER_GET_COMMUNITY_TWEETS_TOP
+        else:
+            url = self.URL_AUSER_GET_COMMUNITY_TWEETS
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        return "GET", self._build(url, urlencode(params))
+
+    @return_with_headers
+    def get_community_members(self, community_id, filter_=None, cursor=None):
+        variables = {"communityId": community_id, "cursor": cursor}
+        features = {"responsive_web_graphql_timeline_navigation_enabled": True}
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        if filter_ and filter_.lower() == "mods":
+            url = self.URL_AUSER_GET_COMMUNITY_MEMBERS_MODERATOR
+        else:
+            url = self.URL_AUSER_GET_COMMUNITY_MEMBERS
+
+        return "GET", self._build(url, urlencode(params))
+
+    @return_with_headers
+    def get_new_user_tweet_notification(self, cursor=None):
+        params = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_has_nft_avatar': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'cards_platform': 'Web-12',
+            'include_cards': '1',
+            'include_ext_alt_text': True,
+            'include_ext_limited_action_results': True,
+            'include_quote_count': True,
+            'include_reply_count': '1',
+            'tweet_mode': 'extended',
+            'include_ext_views': True,
+            'include_entities': True,
+            'include_user_entities': True,
+            'include_ext_media_color': True,
+            'include_ext_media_availability': True,
+            'include_ext_sensitive_media_warning': True,
+            'include_ext_trusted_friends_metadata': True,
+            'send_error_codes': True,
+            'simple_quoted_tweet': True,
+            'count': '20',
+            'ext': 'mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
+        }
+
+        if cursor:
+            params['cursor'] = cursor
+
+        return "GET", self._build(self.URL_AUSER_GET_NOTIFICATION_USER_FOLLOWED, urlencode(params))
+
+    @return_with_headers
+    def toggle_user_notifications(self, user_id, action):
+        params = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_has_nft_avatar': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'cursor': '-1',
+            'id': user_id,
+            'device': action,
+        }
+
+        return "POST", self._build(self.URL_AUSER_UPDATE_FRIENDSHIP, urlencode(params))
+        
     @return_with_headers
     def aUser_settings(self):
         params = {

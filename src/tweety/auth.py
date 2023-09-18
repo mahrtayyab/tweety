@@ -109,6 +109,18 @@ class AuthMethods:
         self.session.save_session(self.cookies)
         return self.connect()
 
+    def load_auth_token(self, auth_token):
+        URL = "https://twitter.com/i/api/1.1/account/update_profile.json"
+        temp_cookie = {"auth_token": auth_token}
+        res = self.request.session.post(URL, cookies=temp_cookie)
+        ct0 = res.cookies.get('ct0')
+
+        if not ct0:
+            raise DeniedLogin(response=res, message="Auth Token isn't Valid")
+
+        temp_cookie['ct0'] = ct0
+        return self.load_cookies(temp_cookie)
+
     def _login(self):
         _username, _password, _extra = self._username, self._password, self._extra
 

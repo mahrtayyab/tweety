@@ -1,12 +1,14 @@
-from . import Tweet
+from ..utils import find_objects
 from .base import BaseGeneratorClass
+from . import *
 
+class TweetNotifications(BaseGeneratorClass):
 
-class Mention(BaseGeneratorClass):
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
         self.cursor = cursor
+        self.cursor_top = cursor
         self.is_next_page = True
         self.client = client
         self.user_id = user_id
@@ -16,12 +18,8 @@ class Mention(BaseGeneratorClass):
     def get_next_page(self):
         _tweets = []
         if self.is_next_page:
-            response = self.client.http.get_mentions(self.user_id, cursor=self.cursor)
 
-            if not response.get('globalObjects'):
-                self.is_next_page = False
-                return self, _tweets
-
+            response = self.client.http.get_tweet_notifications(cursor=self.cursor)
             users = response.get('globalObjects', {}).get('users', {})
             tweets = response.get('globalObjects', {}).get('tweets', {})
 
@@ -37,6 +35,7 @@ class Mention(BaseGeneratorClass):
                     pass
 
             self.is_next_page = self._get_cursor(response)
+            self._get_cursor_top(response)
 
             for tweet in _tweets:
                 self.tweets.append(tweet)
@@ -45,7 +44,21 @@ class Mention(BaseGeneratorClass):
             self['is_next_page'] = self.is_next_page
             self['cursor'] = self.cursor
 
-        return self, _tweets
+        return _tweets
+
+    def _get_cursor_top(self, response):
+        cursor = find_objects(response, "cursorType", "Top")
+
+        if not cursor:
+            return False
+
+        newCursor = cursor.get('value', self.cursor)
+
+        if newCursor == self.cursor_top:
+            return False
+
+        self.cursor_top = newCursor
+        return True
 
     def __getitem__(self, index):
         if isinstance(index, str):
@@ -59,7 +72,3 @@ class Mention(BaseGeneratorClass):
 
     def __len__(self):
         return len(self.tweets)
-
-    def __repr__(self):
-        return f"Mentions(user_id={self.user_id}, count={self.__len__()})"
-
