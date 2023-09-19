@@ -1452,9 +1452,9 @@ User
             Can the authenticated user send dm to this user
 
         .. py:attribute:: entities
-            :type: dict
+            :type: dict | None
 
-            Additional entities of user , usually links
+            Additional entities of user, usually links
 
         .. py:attribute:: fast_followers_count
             :type: int
@@ -1482,7 +1482,7 @@ User
             Number of lists this user has
 
         .. py:attribute:: location
-            :type: str
+            :type: str | None
 
             Location of the User
 
@@ -1512,7 +1512,7 @@ User
             Direct URL to the User profile image
 
         .. py:attribute:: protected
-            :type: bool | None
+            :type: bool
 
             Is user private or not
 
@@ -1542,7 +1542,7 @@ User
             Is the user known for posting sensitive content
 
         .. py:attribute:: pinned_tweets
-            :type: list[str]
+            :type: list[str] | None
 
             List of id of tweets pinned by the user
 
