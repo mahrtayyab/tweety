@@ -1,7 +1,10 @@
+import datetime
+import inspect
 import json
 import os
+import time
 from typing import Callable
-
+from urllib.parse import urlparse
 import httpx as s
 from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
@@ -15,6 +18,7 @@ class Request:
     def __init__(self, max_retries=10, proxy=None):
         self.user = None
         self.username = None
+        self._limits = []
         self.__session = s.Client(proxies=proxy, timeout=60)
         self.__builder = UrlBuilder()
         self.__guest_token = self._get_guest_token(max_retries)
@@ -31,10 +35,27 @@ class Request:
     def set_user(self, user):
         self.user = user
 
-    def __get_response__(self, return_raw=False, ignoreNoneData=False, **request_data):
-        response = self.__session.request(**request_data)
-        response_json = response.json_() # noqa
+    def _wait_for_rate_limit(self, url):
+        raise NotImplemented
 
+    def _update_rate_limit(self, response, func):
+        url = response.url
+        headers = response.headers
+
+        if all(key in headers for key in ['x-rate-limit-reset', 'x-rate-limit-remaining']):
+            self._limits.append(dict(
+                path=url.path,
+                func=func,
+                limit_reset=int(headers['x-rate-limit-reset']),
+                limit_remaining=int(headers['x-rate-limit-remaining'])
+            ))
+
+    def __get_response__(self, return_raw=False, ignoreNoneData=False, **request_data):
+
+        response = self.__session.request(**request_data)
+        self._update_rate_limit(response, inspect.stack()[1][3])
+
+        response_json = response.json_() # noqa
         if ignoreNoneData and len(response.text) == 0:
             return None
 
@@ -273,6 +294,31 @@ class Request:
 
     def toggle_user_notifications(self, user_id, action):
         request_data = self.__builder.toggle_user_notifications(user_id, action)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_lists(self, cursor=None):
+        request_data = self.__builder.get_lists(cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_list(self, list_id):
+        request_data = self.__builder.get_list(list_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_list_members(self, list_id, cursor):
+        request_data = self.__builder.get_list_member(list_id, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_list_tweets(self, list_id, cursor):
+        request_data = self.__builder.get_list_tweets(list_id, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def add_list_member(self, list_id, user_id):
+        request_data = self.__builder.add_member_to_list(list_id, user_id)
         response = self.__get_response__(**request_data)
         return response
 

@@ -180,6 +180,7 @@ class Tweet(dict):
         self.pool = self._get_pool()
         self.user_mentions = self._get_tweet_mentions()
         self.urls = self._get_tweet_urls()
+        self.has_moderated_replies = self._get_has_moderated_replies()
         self.hashtags = self._get_tweet_hashtags()
         self.symbols = self._get_tweet_symbols()
         self.community_note = self._get_community_note()
@@ -206,6 +207,9 @@ class Tweet(dict):
             tweet = tweet['tweet']
 
         return tweet['legacy'] if tweet.get('legacy') else tweet
+
+    def _get_has_moderated_replies(self):
+        return self._tweet.get('hasModeratedReplies', False)
 
     def get_threads(self):
         _threads = []
@@ -1303,3 +1307,79 @@ class Community(dict):
 
     def _get_role(self):
         return self._community.get('role')
+
+class List(dict):
+    def __init__(self, list_data, client):
+        super().__init__()
+        self._raw = list_data
+        self._client = client
+        self._list = self._get_list()
+        self.id = self._get_id()
+        self.name = self._get_name()
+        self.created_at = self.date = self._get_date()
+        self.description = self._get_description()
+        self.is_member = self._get_is_member()
+        self.member_count = self._get_member_count()
+        self.subscriber_count = self._get_subscriber_count()
+        self.admin = self._get_admin()
+        self.mode = self._get_mode()
+
+        for k, v in vars(self).items():
+            if not k.startswith("_"):
+                self[k] = v
+
+    def __eq__(self, other):
+        if isinstance(other, List):
+            return self.id == other.id
+        elif isinstance(other, (int, str)):
+            return str(self.id) == str(other)
+
+        return False
+
+    def __repr__(self):
+        return "List(id={}, name={}, admin={}, subscribers={})".format(
+            self.id, self.name, self.admin, self.subscriber_count
+        )
+
+    def _get_list(self):
+        if self._raw.get('list'):
+            return self._raw['list']
+
+        return self._raw
+
+    def _get_id(self):
+        if self._list.get('id_str'):
+            return int(self._list['id_str'])
+
+        if self._list.get("id"):
+            _id = decodeBase64(self._list['id'])
+            return int(str(_id).replace("List:",""))
+
+        return None
+
+    def _get_name(self):
+        return self._list.get('name')
+
+    def _get_date(self):
+        return parse_time(self._list.get('created_at'))
+
+    def _get_description(self):
+        return self._list.get("description")
+
+    def _get_is_member(self):
+        return self._list.get('is_member', False)
+
+    def _get_member_count(self):
+        return self._list.get('member_count', 0)
+
+    def _get_subscriber_count(self):
+        return self._list.get('subscriber_count', 0)
+
+    def _get_mode(self):
+        return self._list.get('_get_mode')
+
+    def _get_admin(self):
+        if not self._list.get('user_results'):
+            return None
+
+        return User(self._list['user_results'], client=self._client)

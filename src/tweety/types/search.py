@@ -17,6 +17,7 @@ class Search(BaseGeneratorClass):
         self.results = []
         self.keyword = keyword
         self.cursor = cursor
+        self.cursor_top = cursor
         self.is_next_page = True
         self.client = client
         self.pages = pages
@@ -63,6 +64,7 @@ class Search(BaseGeneratorClass):
                 self['results'] = self.results
 
         self.is_next_page = self._get_cursor(response)
+        self._get_cursor_top(response)
         return thisObjects
 
     def to_xlsx(self, filename=None):

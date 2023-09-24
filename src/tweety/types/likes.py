@@ -8,6 +8,7 @@ class TweetLikes(BaseGeneratorClass):
         self._client = client
         self.users = []
         self.cursor = cursor
+        self.cursor_top = cursor
         self.is_next_page = True
         self.tweet_id = tweet_id
         self.pages = pages
@@ -43,6 +44,7 @@ class TweetLikes(BaseGeneratorClass):
                         pass
 
             self.is_next_page = self._get_cursor(response)
+            self._get_cursor_top(response)
 
             for user in _users:
                 self.users.append(user)

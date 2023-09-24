@@ -1,9 +1,11 @@
 import functools
 from typing import Union, Tuple, List
+
+from .exceptions_ import ListNotFound
 from .types.inbox import Message
 from .utils import create_conversation_id, AuthRequired, find_objects
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
-                    TweetRetweets, Poll, Choice, TweetNotifications)
+                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets)
 
 
 @AuthRequired
@@ -16,6 +18,10 @@ class UserMethods:
         :return:
         """
         return self.user
+
+    @property
+    def rate_limits(self):
+        return self.request._limits
 
     def get_home_timeline(
             self,
@@ -362,6 +368,152 @@ class UserMethods:
         response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
         return Tweet(response, self, response)
 
+    def iter_lists(
+            self,
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.lists.Lists, list[.types.twDataTypes.List])
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        lists = Lists(self.user.id, self, pages, wait_time, cursor)
+
+        return lists.generator()
+
+    def get_lists(
+            self,
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.lists.Lists
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        lists = Lists(self.user.id, self, pages, wait_time, cursor)
+        list(lists.generator())
+        return lists
+
+    def iter_list_member(
+            self,
+            list_id: Union[str, int, List],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param list_id: List ID of which to get members of
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.lists.ListMembers, list[.types.twDataTypes.User])
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        lists = ListMembers(list_id, self, pages, wait_time, cursor)
+
+        return lists.generator()
+
+    def get_list_member(
+            self,
+            list_id: Union[str, int, List],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param list_id: List ID of which to get members of
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.lists.ListMembers
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        lists = ListMembers(list_id, self, pages, wait_time, cursor)
+        list(lists.generator())
+        return lists
+
+    def iter_list_tweets(
+            self,
+            list_id: Union[str, int, List],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param list_id: List ID of which to get members of
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.lists.ListTweets, list[.types.twDataTypes.Tweet])
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        lists = ListTweets(list_id, self, pages, wait_time, cursor)
+
+        return lists.generator()
+
+    def get_list_tweets(
+            self,
+            list_id: Union[str, int, List],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param list_id: List ID of which to get members of
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.lists.ListTweets
+        """
+
+        if wait_time is None:
+            wait_time = 0
+
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        lists = ListTweets(list_id, self, pages, wait_time, cursor)
+        list(lists.generator())
+        return lists
+
     def like_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
@@ -484,6 +636,36 @@ class UserMethods:
 
         self.request.toggle_user_notifications(user_id, False)
         return True
+
+    def get_list(
+            self,
+            list_id: Union[str, int, TwList]
+    ):
+        if isinstance(list_id, TwList):
+            return list_id
+
+        response = self.request.get_list(list_id)
+        if not response.get('data', {}).get('list', {}).get('name'):
+            raise ListNotFound(404, "ListNotFound", None)
+
+        return TwList(response['data'], self)
+
+    def add_list_member(
+            self,
+            list_id: Union[str, int, TwList],
+            user_id: Union[str, int, User],
+    ):
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        if isinstance(user_id, User):
+            user_id = user_id.id
+
+        response = self.request.add_list_member(list_id, user_id)
+        if not response.get('data', {}).get('list', {}).get('name'):
+            raise ListNotFound(404, "ListNotFound", None)
+
+        return TwList(response['data'], self)
 
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):

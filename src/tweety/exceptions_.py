@@ -10,7 +10,7 @@ class UserNotFound(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, error_code=50, error_name="GenericUserNotFound", response=None, message="The User Account wasn't Found"):
+    def __init__(self, error_code=50, error_name="GenericUserNotFound", response=None, message="The User Account wasn't Found", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -26,7 +26,7 @@ class GuestTokenNotFound(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="The Guest Token couldn't be obtained"):
+    def __init__(self, error_code, error_name, response, message="The Guest Token couldn't be obtained", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -42,7 +42,7 @@ class InvalidTweetIdentifier(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code=144, error_name="StatusNotFound", response=None, message="The Tweet Identifier is Invalid"):
+    def __init__(self, error_code=144, error_name="StatusNotFound", response=None, message="The Tweet Identifier is Invalid", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -58,11 +58,12 @@ class RateLimitReached(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="You have exceeded the Twitter Rate Limit"):
+    def __init__(self, error_code, error_name, response, message="You have exceeded the Twitter Rate Limit", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
         self.response = response
+        self.retry_after = kw.get('retry_after')  # Number of seconds required for rate limit to be reset
         super().__init__(self.message)
 
 
@@ -74,7 +75,7 @@ class ProxyParseError(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, message="Error while parsing the Proxy, please make sure you are passing the right formatted proxy"):
+    def __init__(self, message="Error while parsing the Proxy, please make sure you are passing the right formatted proxy", **kw):
         self.message = message
         super().__init__(self.message)
 
@@ -87,7 +88,7 @@ class UserProtected(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, error_code=403, error_name="UserUnavailable", response=None, message="The User is Protected OR Unavailable, please make sure you are authenticated and authorized"):
+    def __init__(self, error_code=403, error_name="UserUnavailable", response=None, message="The User is Protected OR Unavailable, please make sure you are authenticated and authorized", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -103,7 +104,7 @@ class UnknownError(Exception):
             message -- explanation of the error
         """
 
-    def __init__(self, error_code, error_name, response, message):
+    def __init__(self, error_code, error_name, response, message, **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -120,7 +121,7 @@ class DeniedLogin(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code=37, error_name="GenericAccessDenied", response=None, message=None):
+    def __init__(self, error_code=37, error_name="GenericAccessDenied", response=None, message=None, **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -136,7 +137,7 @@ class ActionRequired(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message):
+    def __init__(self, error_code, error_name, response, message, **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -152,7 +153,7 @@ class InvalidCredentials(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="The Cookies are Invalid"):
+    def __init__(self, error_code, error_name, response, message="The Cookies are Invalid", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -167,7 +168,7 @@ class InvalidBroadcast(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="The Broadcast doesn't exists"):
+    def __init__(self, error_code, error_name, response, message="The Broadcast doesn't exists", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
@@ -183,7 +184,22 @@ class AuthenticationRequired(Exception):
             message -- explanation of the error
     """
 
-    def __init__(self, error_code, error_name, response, message="You need to be authenticated and connected to make this request"):
+    def __init__(self, error_code, error_name, response, message="You need to be authenticated and connected to make this request", **kw):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)
+
+class ListNotFound(Exception):
+    """
+        Exception Raised when queried list wasn't found
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="List not Found", **kw):
         self.message = message
         self.error_code = error_code
         self.error_name = error_name

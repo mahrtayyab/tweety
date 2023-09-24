@@ -1,3 +1,4 @@
+import datetime
 import os
 import time
 from http.cookiejar import MozillaCookieJar
@@ -31,7 +32,8 @@ class Proxy:
     def __parse__(self):
         proxy_url = self.__proxy_url__()
         if self.proxy_type == HTTP:
-            return dict.fromkeys(['http://', 'https://'], proxy_url)
+            http_url = "http://{}".format(proxy_url)
+            return dict.fromkeys(['http://', 'https://'], http_url)
         elif self.proxy_type == SOCKS4:
             socks_url = "socks4://{}".format(proxy_url)
             return dict.fromkeys(['http://', 'https://'], socks_url)
@@ -59,7 +61,16 @@ class GenericError:
         self.response = response
         self.error_code = error_code
         self.message = message
+        self.retry_after = self._get_retry_after()
         self._raise_exception()
+
+    def _get_retry_after(self):
+        if all(key in self.response.headers for key in ['x-rate-limit-reset', 'x-rate-limit-remaining']):
+            epochLimitTime = int(self.response.headers['x-rate-limit-reset'])
+            epochCurrentTime = int(datetime.datetime.now().timestamp())
+            return epochLimitTime - epochCurrentTime
+
+        return None
 
     def _raise_exception(self):
         if self.EXCEPTIONS.get(self.error_code):
@@ -67,7 +78,8 @@ class GenericError:
                 error_code=self.error_code,
                 error_name=TWITTER_ERRORS[self.error_code],
                 response=self.response,
-                message=self.message
+                message=self.message,
+                retry_after=self.retry_after
             )
 
         raise UnknownError(
@@ -185,7 +197,6 @@ class UploadedMedia:
                 response = self._client.http.upload_media_status(self.media_id)
             else:
                 return
-
 
     def upload(self):
         self.media_id = self._initiate_upload()

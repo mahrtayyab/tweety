@@ -45,20 +45,6 @@ class TweetNotifications(BaseGeneratorClass):
 
         return _tweets
 
-    def _get_cursor_top(self, response):
-        cursor = find_objects(response, "cursorType", "Top")
-
-        if not cursor:
-            return False
-
-        newCursor = cursor.get('value', self.cursor)
-
-        if newCursor == self.cursor_top:
-            return False
-
-        self.cursor_top = newCursor
-        return True
-
     def __getitem__(self, index):
         if isinstance(index, str):
             return getattr(self, index)

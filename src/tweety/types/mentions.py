@@ -7,6 +7,7 @@ class Mention(BaseGeneratorClass):
         super().__init__()
         self.tweets = []
         self.cursor = cursor
+        self.cursor_top = cursor
         self.is_next_page = True
         self.client = client
         self.user_id = user_id
@@ -37,6 +38,7 @@ class Mention(BaseGeneratorClass):
                     pass
 
             self.is_next_page = self._get_cursor(response)
+            self._get_cursor_top(response)
 
             for tweet in _tweets:
                 self.tweets.append(tweet)

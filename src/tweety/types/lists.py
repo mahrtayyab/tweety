@@ -1,24 +1,87 @@
-from . import SelfThread, Tweet, Excel, User
+import traceback
+
+from . import User, List, Tweet, SelfThread
 from .base import BaseGeneratorClass
 from ..utils import find_objects
 
 
-class CommunityTweets(BaseGeneratorClass):
+class Lists(BaseGeneratorClass):
+    def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
+        super().__init__()
+        self.lists = []
+        self.cursor = cursor
+        self.cursor_top = cursor
+        self.is_next_page = True
+        self.client = client
+        self.user_id = user_id
+        self.pages = pages
+        self.wait_time = wait_time
+
+    @staticmethod
+    def _get_user_owned_lists(entries):
+        for entry in entries:
+            entry_type = str(entry['entryId']).split("-")[0]
+            if entry_type == "owned":
+                return entry
+
+        return {}
+
+    def get_next_page(self):
+        _lists = []
+        if self.is_next_page:
+            response = self.client.http.get_lists(cursor=self.cursor)
+            entries = self._get_entries(response)
+            item = self._get_user_owned_lists(entries)
+            lists = find_objects(item, "__typename", "TimelineTwitterList")
+
+            for item in lists:
+                try:
+                    parsed = List(item, self.client)
+                    _lists.append(parsed)
+                except:
+                    traceback.print_exc()
+                    pass
+
+            self.is_next_page = self._get_cursor(response)
+
+            for _list in _lists:
+                self.lists.append(_list)
+
+            self['tweets'] = self.lists
+            self['is_next_page'] = self.is_next_page
+            self['cursor'] = self.cursor
+
+        return _lists
+
+    def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
+        return self.lists[index]
+
+    def __iter__(self):
+        for __list in self.lists:
+            yield __list
+
+    def __len__(self):
+        return len(self.lists)
+
+
+class ListTweets(BaseGeneratorClass):
     OBJECTS_TYPES = {
         "tweet": Tweet,
         "homeConversation": SelfThread,
         "profile": SelfThread
     }
 
-    def __init__(self, community_id, client, pages=1, filter_=None, wait_time=2, cursor=None):
+    def __init__(self, list_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
         self.cursor = cursor
         self.cursor_top = cursor
         self.is_next_page = True
-        self.filter = filter_
         self.client = client
-        self.community_id = community_id
+        self.list_id = list_id
         self.pages = pages
         self.wait_time = wait_time
 
@@ -29,7 +92,8 @@ class CommunityTweets(BaseGeneratorClass):
     def get_next_page(self):
         _tweets = []
         if self.is_next_page:
-            response = self.client.http.get_community_tweets(self.community_id, self.filter, cursor=self.cursor)
+
+            response = self.client.http.get_list_tweets(self.list_id, cursor=self.cursor)
 
             entries = self._get_entries(response)
 
@@ -45,6 +109,7 @@ class CommunityTweets(BaseGeneratorClass):
                 except:
                     pass
             self.is_next_page = self._get_cursor(response)
+            self._get_cursor_top(response)
 
             for tweet in _tweets:
                 self.tweets.append(tweet)
@@ -54,9 +119,6 @@ class CommunityTweets(BaseGeneratorClass):
             self['cursor'] = self.cursor
 
         return _tweets
-
-    def to_xlsx(self, filename=None):
-        return Excel(self, filename)
 
     def __getitem__(self, index):
         if isinstance(index, str):
@@ -72,21 +134,21 @@ class CommunityTweets(BaseGeneratorClass):
         return len(self.tweets)
 
     def __repr__(self):
-        return "CommunityTweets(id={}, count={})".format(
-            self.community_id, self.__len__()
+        return "ListTweets(id={}, count={})".format(
+            self.list_id, self.__len__()
         )
 
 
-class CommunityMembers(BaseGeneratorClass):
+class ListMembers(BaseGeneratorClass):
 
-    def __init__(self, community_id, client, pages=1, filter_=None, wait_time=2, cursor=None):
+    def __init__(self, list_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.users = []
         self.cursor = cursor
+        self.cursor_top = cursor
         self.is_next_page = True
-        self.filter = filter_
         self.client = client
-        self.community_id = community_id
+        self.list_id = list_id
         self.pages = pages
         self.wait_time = wait_time
 
@@ -107,7 +169,7 @@ class CommunityMembers(BaseGeneratorClass):
     def get_next_page(self):
         _users = []
         if self.is_next_page:
-            response = self.client.http.get_community_members(self.community_id, self.filter, cursor=self.cursor)
+            response = self.client.http.get_list_members(self.list_id, cursor=self.cursor)
 
             response_users = self._get_users(response)
 
@@ -144,6 +206,6 @@ class CommunityMembers(BaseGeneratorClass):
         return len(self.users)
 
     def __repr__(self):
-        return "CommunityMembers(id={}, count={})".format(
-            self.community_id, self.__len__()
+        return "ListMembers(id={}, count={})".format(
+            self.list_id, self.__len__()
         )
