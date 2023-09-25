@@ -322,6 +322,16 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def create_list(self, name, description, is_private):
+        request_data = self.__builder.create_list(name, description, is_private)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def delete_list(self, list_id):
+        request_data = self.__builder.delete_list(list_id)
+        response = self.__get_response__(**request_data)
+        return response
+
     def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
         headers = self.__builder._get_headers()

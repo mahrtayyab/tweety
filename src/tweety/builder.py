@@ -68,6 +68,8 @@ class UrlBuilder:
     URL_AUSER_GET_LIST_MEMBER = "https://twitter.com/i/api/graphql/WWxrex_8HmKW2dzlPnwtTg/ListMembers"  # noqa
     URL_AUSER_GET_LIST_TWEETS = "https://twitter.com/i/api/graphql/TXyJ3x6-VnEbkV09UzebUQ/ListLatestTweetsTimeline"  # noqa
     URL_AUSER_ADD_LIST_MEMBER = "https://twitter.com/i/api/graphql/sw71TVciw1b2nRwV6eDZNA/ListAddMember"  # noqa
+    URL_AUSER_CREATE_LIST = "https://twitter.com/i/api/graphql/nHFMQuE4PMED1R0JTN4d-Q/CreateList"  # noqa
+    URL_AUSER_DELETE_LIST = "https://twitter.com/i/api/graphql/UnN9Th1BDbeLjpgjGSpL3Q/DeleteList"  # noqa
 
     def __init__(self):
         self.cookies = None
@@ -1124,6 +1126,36 @@ class UrlBuilder:
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
         return "GET", self._build(self.URL_AUSER_GET_LIST_TWEETS, urlencode(params))
+
+    @return_with_headers
+    def create_list(self, name, description, is_private):
+        json_data = {
+            'variables': {
+                'isPrivate': is_private,
+                'name': name,
+                'description': description,
+            },
+            'features': {
+                'responsive_web_graphql_exclude_directive_enabled': True,
+                'verified_phone_label_enabled': False,
+                'responsive_web_graphql_skip_user_profile_image_extensions_enabled': False,
+                'responsive_web_graphql_timeline_navigation_enabled': True,
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_AUSER_CREATE_LIST, json_data
+
+    @return_with_headers
+    def delete_list(self, list_id):
+        json_data = {
+            'variables': {
+                'listId': str(list_id),
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_AUSER_DELETE_LIST, json_data
 
     @return_with_headers
     def add_member_to_list(self, list_id, user_id):

@@ -650,6 +650,41 @@ class UserMethods:
 
         return TwList(response['data'], self)
 
+    def create_list(
+            self,
+            name: str,
+            description: str = "",
+            is_private: bool = True
+    ):
+        """
+
+        :param name: Name of new list
+        :param description: Description of new list
+        :param is_private: Either the List is private or public
+        :return: .types.twDataTypes.List
+        """
+        if not name or name == "":
+            raise ValueError("'name' is required")
+
+        response = self.request.create_list(name, description, is_private)
+        return TwList(response['data'], self)
+
+    def delete_list(
+            self,
+            list_id: Union[str, int, TwList],
+    ):
+        """
+
+        :param list_id: LIST ID to be deleted
+        :return: bool
+        """
+
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        response = self.request.delete_list(list_id)
+        return True if response.get('data', {}).get('list_delete', '') == 'Done' else False
+
     def add_list_member(
             self,
             list_id: Union[str, int, TwList],
