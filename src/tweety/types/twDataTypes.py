@@ -1376,7 +1376,7 @@ class List(dict):
         return self._list.get('subscriber_count', 0)
 
     def _get_mode(self):
-        return self._list.get('_get_mode')
+        return self._list.get('mode')
 
     def _get_admin(self):
         if not self._list.get('user_results'):

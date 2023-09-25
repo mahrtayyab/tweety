@@ -32,7 +32,7 @@ class Lists(BaseGeneratorClass):
             response = self.client.http.get_lists(cursor=self.cursor)
             entries = self._get_entries(response)
             item = self._get_user_owned_lists(entries)
-            lists = find_objects(item, "__typename", "TimelineTwitterList")
+            lists = find_objects(item, "__typename", "TimelineTwitterList", none_value=[])
 
             for item in lists:
                 try:
