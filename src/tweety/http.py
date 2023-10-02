@@ -18,7 +18,7 @@ class Request:
     def __init__(self, max_retries=10, proxy=None):
         self.user = None
         self.username = None
-        self._limits = []
+        self._limits = {}
         self.__session = s.Client(proxies=proxy, timeout=60)
         self.__builder = UrlBuilder()
         self.__guest_token = self._get_guest_token(max_retries)
@@ -43,12 +43,12 @@ class Request:
         headers = response.headers
 
         if all(key in headers for key in ['x-rate-limit-reset', 'x-rate-limit-remaining']):
-            self._limits.append(dict(
+            self._limits[func] = dict(
                 path=url.path,
                 func=func,
                 limit_reset=int(headers['x-rate-limit-reset']),
                 limit_remaining=int(headers['x-rate-limit-remaining'])
-            ))
+            )
 
     def __get_response__(self, return_raw=False, ignoreNoneData=False, **request_data):
 
@@ -191,7 +191,6 @@ class Request:
         if pool:
             response = self.create_pool(pool)
             pool = response.get('card_uri')
-
         request_data = self.__builder.create_tweet(text, files, filter_, reply_to, pool)
         response = self.__get_response__(**request_data)
         return response
@@ -199,7 +198,6 @@ class Request:
     def set_media_set_metadata(self, media_id, alt_text, sensitive_tags):
         request_data = self.__builder.set_media_metadata(media_id, alt_text, sensitive_tags)
         response = self.__get_response__(ignoreNoneData=True, **request_data)
-        print(response)
         return response
 
     def upload_media_init(self, size, mime_type, media_category):
@@ -289,6 +287,16 @@ class Request:
     def unfollow_user(self, user_id):
         request_data = self.__builder.unfollow_user(user_id)
         request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_user_followers(self, user_id, cursor=None):
+        request_data = self.__builder.get_user_followers(user_id, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_user_followings(self, user_id, cursor=None):
+        request_data = self.__builder.get_user_followings(user_id, cursor)
         response = self.__get_response__(**request_data)
         return response
 

@@ -13,6 +13,7 @@ from .retweets import TweetRetweets
 from .community import CommunityTweets, CommunityMembers
 from .notification import TweetNotifications
 from .lists import Lists, ListMembers, ListTweets
+from .follow import UserFollowers, UserFollowings
 
 
 
