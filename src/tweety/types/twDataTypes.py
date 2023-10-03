@@ -267,7 +267,7 @@ class Tweet(dict):
                 break
 
     def _get_comments(self, cursor=None, response=None):
-        _comments = []
+        _comments = dict()
         _cursor = cursor
 
         if not response:
@@ -276,8 +276,10 @@ class Tweet(dict):
         self._full_http_response = None
 
         instruction = find_objects(response, "type", "TimelineAddEntries")
+
         for entry in instruction['entries']:
             if str(entry['entryId'].split("-")[0]) == "conversationthread":
+                sortIndex = int(entry['sortIndex'])
                 thread = [i for i in entry['content']['items']]
 
                 if len(thread) == 0:
@@ -285,13 +287,15 @@ class Tweet(dict):
 
                 try:
                     parsed = ConversationThread(self, thread, self._client)
-                    _comments.append(parsed)
+                    _comments[sortIndex] = parsed
                     self.comments.append(parsed)
                 except:
                     pass
 
             elif "cursor-bottom" in str(entry['entryId']) or "cursor-showmorethreads" in str(entry['entryId']):
                 _cursor = entry['content']['itemContent']['value']
+
+        _comments = sorted(_comments.items(), key=lambda item: item[0])
         return self, _comments, _cursor
 
     def _get_pool(self):
