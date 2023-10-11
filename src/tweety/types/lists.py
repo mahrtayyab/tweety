@@ -157,15 +157,6 @@ class ListMembers(BaseGeneratorClass):
         all_users = find_objects(response, "__typename", "User", none_value=[])
         return all_users
 
-    def _get_cursor(self, response):
-        newCursor = find_objects(response, "next_cursor", value=None)
-
-        if not newCursor or newCursor == self.cursor:
-            return False
-
-        self.cursor = newCursor
-        return True
-
     def get_next_page(self):
         _users = []
         if self.is_next_page:

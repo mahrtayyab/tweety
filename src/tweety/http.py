@@ -134,7 +134,7 @@ class Request:
 
         request_data = self.__builder.search(keyword, cursor, filter_)
         # del request_data['headers']['content-type']
-        request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
+        # request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
 
         response = self.__get_response__(**request_data)
         return response
