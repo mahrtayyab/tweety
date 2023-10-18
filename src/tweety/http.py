@@ -61,10 +61,10 @@ class Request:
 
         if not response_json:
             raise UnknownError(
-                error_code=500,
+                error_code=response.status_code,
                 error_name="Server Error",
                 response=response,
-                message="Unknown Error Occurs on Twitter"
+                message="Unknown Error Occurs on Twitter" if not response.text else response.text
             )
 
         if response_json.get("errors"):
@@ -134,7 +134,7 @@ class Request:
 
         request_data = self.__builder.search(keyword, cursor, filter_)
         # del request_data['headers']['content-type']
-        # request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
+        request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
 
         response = self.__get_response__(**request_data)
         return response
@@ -327,6 +327,11 @@ class Request:
 
     def add_list_member(self, list_id, user_id):
         request_data = self.__builder.add_member_to_list(list_id, user_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def remove_list_member(self, list_id, user_id):
+        request_data = self.__builder.remove_member_from_list(list_id, user_id)
         response = self.__get_response__(**request_data)
         return response
 

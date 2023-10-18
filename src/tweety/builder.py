@@ -68,6 +68,7 @@ class UrlBuilder:
     URL_AUSER_GET_LIST_MEMBER = "https://twitter.com/i/api/graphql/WWxrex_8HmKW2dzlPnwtTg/ListMembers"  # noqa
     URL_AUSER_GET_LIST_TWEETS = "https://twitter.com/i/api/graphql/TXyJ3x6-VnEbkV09UzebUQ/ListLatestTweetsTimeline"  # noqa
     URL_AUSER_ADD_LIST_MEMBER = "https://twitter.com/i/api/graphql/sw71TVciw1b2nRwV6eDZNA/ListAddMember"  # noqa
+    URL_AUSER_DELETE_LIST_MEMBER = "https://twitter.com/i/api/graphql/kHdBGndqf_JX3ef1T1931A/ListRemoveMember"  # noqa
     URL_AUSER_CREATE_LIST = "https://twitter.com/i/api/graphql/nHFMQuE4PMED1R0JTN4d-Q/CreateList"  # noqa
     URL_AUSER_DELETE_LIST = "https://twitter.com/i/api/graphql/UnN9Th1BDbeLjpgjGSpL3Q/DeleteList"  # noqa
     URL_AUSER_GET_USER_FOLLOWERS = "https://twitter.com/i/api/graphql/ihMPm0x-pC35X86L_nUp_Q/Followers"  # noqa
@@ -255,7 +256,7 @@ class UrlBuilder:
 
     @return_with_headers
     def search(self, keyword, cursor, filter_):
-        variables = {"rawQuery": str(keyword), "count": 20, "querySource": "typed_query", "product": "Top"}
+        variables = {"rawQuery": str(keyword), "count": 20, "querySource": "typed_query"}
         features = {"rweb_lists_timeline_redesign_enabled": True,
                     "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
@@ -1226,6 +1227,24 @@ class UrlBuilder:
         }
 
         return "POST", self.URL_AUSER_ADD_LIST_MEMBER, json_data
+
+    @return_with_headers
+    def remove_member_from_list(self, list_id, user_id):
+        json_data = {
+            'variables': {
+                'listId': str(list_id),
+                'userId': str(user_id),
+            },
+            'features': {
+                'responsive_web_graphql_exclude_directive_enabled': True,
+                'verified_phone_label_enabled': False,
+                'responsive_web_graphql_skip_user_profile_image_extensions_enabled': False,
+                'responsive_web_graphql_timeline_navigation_enabled': True,
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_AUSER_DELETE_LIST_MEMBER, json_data
 
     @return_with_headers
     def aUser_settings(self):

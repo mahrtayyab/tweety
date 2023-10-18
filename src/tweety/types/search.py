@@ -1,5 +1,7 @@
 import time
-from . import Tweet, Excel, User, deprecated
+import traceback
+
+from . import Tweet, Excel, User, deprecated, List
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread
 
@@ -9,7 +11,8 @@ class Search(BaseGeneratorClass):
         "tweet": Tweet,
         "homeConversation": SelfThread,
         "profile": SelfThread,
-        "user":User
+        "user": User,
+        "list": List
     }
 
     def __init__(self, keyword, client, pages=1, filter_=None, wait_time=2, cursor=None):
@@ -45,9 +48,22 @@ class Search(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
+    @staticmethod
+    def _get_list_entries(entries):
+        results = []
+        for entry in entries:
+            if str(entry['entryId']).split("-")[0] == "list":
+                for item in entry['content']['items']:
+                    results.append(item)
+        return results
+
     def _parse_response(self, response):
         thisObjects = []
         entries = self._get_entries(response)
+
+        if self.filter == "Lists":
+            entries = self._get_list_entries(entries)
+
         for entry in entries:
             object_type = self._get_target_object(entry)
 
@@ -59,6 +75,7 @@ class Search(BaseGeneratorClass):
                 thisObjects.append(parsed)
                 self.results.append(parsed)
             except:
+                traceback.print_exc()
                 pass
 
                 self['results'] = self.results

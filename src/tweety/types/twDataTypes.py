@@ -245,58 +245,11 @@ class Tweet(dict):
                     pass
         return _threads
 
-    def get_comments(self, pages=1, wait_time=2, cursor=None):
+    def get_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
+        return self._client.get_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
-        list(self.iter_comments(pages, wait_time, cursor))
-        return self.comments
-
-    def iter_comments(self, pages=1, wait_time=2, cursor=None):
-        if not wait_time:
-            wait_time = 0
-
-        self._comments_cursor = cursor if cursor else self._comments_cursor
-        pages = pages
-        for page in range(1, int(pages) + 1):
-            _, comments, self._comments_cursor = self._get_comments(self._comments_cursor, self._full_http_response)
-
-            yield self, comments
-
-            if cursor != self._comments_cursor and page != pages:
-                time.sleep(wait_time)
-            else:
-                break
-
-    def _get_comments(self, cursor=None, response=None):
-        _comments = dict()
-        _cursor = cursor
-
-        if not response:
-            response = self._client.http.get_tweet_detail(self.id, _cursor)
-
-        self._full_http_response = None
-
-        instruction = find_objects(response, "type", "TimelineAddEntries")
-
-        for entry in instruction['entries']:
-            if str(entry['entryId'].split("-")[0]) == "conversationthread":
-                sortIndex = int(entry['sortIndex'])
-                thread = [i for i in entry['content']['items']]
-
-                if len(thread) == 0:
-                    continue
-
-                try:
-                    parsed = ConversationThread(self, thread, self._client)
-                    _comments[sortIndex] = parsed
-                    self.comments.append(parsed)
-                except:
-                    pass
-
-            elif "cursor-bottom" in str(entry['entryId']) or "cursor-showmorethreads" in str(entry['entryId']):
-                _cursor = entry['content']['itemContent']['value']
-
-        _comments = sorted(_comments.items(), key=lambda item: item[0])
-        return self, _comments, _cursor
+    def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
+        return self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
     def _get_pool(self):
         if not self._card or "poll" not in self._card.get('legacy', {}).get('name', ''):
@@ -682,6 +635,11 @@ class ConversationThread(dict):
         return "ConversationThread(parent={}, tweets={})".format(
             self.parent, len(self.tweets)
         )
+
+    def __iter__(self):
+        if self.tweets:
+            for tweet in self.tweets:  # noqa
+                yield tweet
 
     def _format_threads(self):
         for thread in self._threads:
@@ -1167,6 +1125,8 @@ class User(dict):
 
         return True
 
+    def get_followers(self):
+
     def _get_verified(self):
         verified = self._get_key("verified", False)
         if verified is False:
@@ -1313,7 +1273,7 @@ class Community(dict):
         return self._community.get('role')
 
 class List(dict):
-    def __init__(self, list_data, client):
+    def __init__(self, list_data, client, *args):
         super().__init__()
         self._raw = list_data
         self._client = client
@@ -1346,6 +1306,9 @@ class List(dict):
         )
 
     def _get_list(self):
+        if self._raw.get('entryId'):
+            self._raw = find_objects(self._raw, "__typename", "TimelineTwitterList", {})
+
         if self._raw.get('list'):
             return self._raw['list']
 

@@ -39,7 +39,6 @@ class Lists(BaseGeneratorClass):
                     parsed = List(item, self.client)
                     _lists.append(parsed)
                 except:
-                    traceback.print_exc()
                     pass
 
             self.is_next_page = self._get_cursor(response)

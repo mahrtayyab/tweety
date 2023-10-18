@@ -15,6 +15,10 @@ class SearchFilters:
     def Media():
         return "Media"
 
+    @staticmethod
+    def Lists():
+        return "Lists"
+
 
 class TweetConversationFilters:
     """

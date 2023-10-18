@@ -702,6 +702,23 @@ class UserMethods:
 
         return TwList(response['data'], self)
 
+    def remove_list_member(
+            self,
+            list_id: Union[str, int, TwList],
+            user_id: Union[str, int, User],
+    ):
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        if isinstance(user_id, User):
+            user_id = user_id.id
+
+        response = self.request.remove_list_member(list_id, user_id)
+        if not response.get('data', {}).get('list', {}).get('name'):
+            raise ListNotFound(404, "ListNotFound", None)
+
+        return TwList(response['data'], self)
+
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):
             files = [files]

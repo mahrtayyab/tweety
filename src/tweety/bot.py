@@ -1,7 +1,7 @@
 import re
 from typing import Union
 from .utils import find_objects
-from .types import Proxy, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, CommunityMembers, UserFollowers, UserFollowings
+from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, CommunityMembers, UserFollowers, UserFollowings
 from .exceptions_ import *
 from .session import Session
 from .http import Request
@@ -477,7 +477,56 @@ class BotMethods:
         userFollowings = UserFollowings(user_id, self, pages, wait_time, cursor)
 
         return userFollowings.generator()
-    
+
+    def get_tweet_comments(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None,
+            get_hidden: bool = False
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Comments to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :param get_hidden: (`bool`) get the hidden comments (most likely offensive comments)
+        :return: .types.likes.TweetLikes
+        """
+
+        comments = TweetComments(tweet_id, self, get_hidden, pages, wait_time, cursor)
+        list(comments.generator())
+        return comments
+
+    def iter_tweet_comments(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None,
+            get_hidden: bool = False
+
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :param get_hidden: (`bool`) get the hidden comments (most likely offensive comments)
+
+        :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        comments = TweetComments(tweet_id, self, get_hidden, pages, wait_time, cursor)
+
+        return comments.generator()
+
     def tweet_detail(self, identifier: str) -> Tweet:
         """
         Get Detail of a single tweet
