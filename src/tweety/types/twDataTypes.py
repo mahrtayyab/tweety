@@ -1125,8 +1125,6 @@ class User(dict):
 
         return True
 
-    def get_followers(self):
-
     def _get_verified(self):
         verified = self._get_key("verified", False)
         if verified is False:
