@@ -4,6 +4,7 @@ from typing import Union
 from .exceptions_ import InvalidCredentials, DeniedLogin, ActionRequired
 from .builder import FlowData
 from .types.n_types import Cookies
+from .utils import find_objects
 
 
 class AuthMethods:
@@ -121,6 +122,22 @@ class AuthMethods:
         temp_cookie['ct0'] = ct0
         return self.load_cookies(temp_cookie)
 
+    @staticmethod
+    def _get_action_text(response):
+        primary_message = find_objects(response, 'primary_text', None, none_value={})
+        secondary_message = find_objects(response, 'secondary_text', None, none_value={})
+        if primary_message:
+            if isinstance(primary_message, list):
+                primary_message = primary_message[0]
+
+            primary_message = primary_message.get('text', '')
+
+        if secondary_message:
+            if isinstance(secondary_message, list):
+                secondary_message = secondary_message[0]
+            secondary_message = secondary_message.get('text', '')
+        return f"{primary_message}. {secondary_message}"
+
     def _login(self):
         _username, _password, _extra = self._username, self._password, self._extra
 
@@ -137,11 +154,11 @@ class AuthMethods:
             self._login_flow_state = subtask
 
             if subtask in ("LoginTwoFactorAuthChallenge", "LoginAcid", "LoginEnterAlternateIdentifierSubtask") and not _extra:
-                message = self._last_json['subtasks'][0]['enter_text']['header']['secondary_text']['text']
+                message = self._get_action_text(self._last_json)
                 raise ActionRequired(0, "ActionRequired", response, message)
 
             if subtask == "DenyLoginSubtask":
-                reason = self._last_json['subtasks'][0]['cta']['primary_text']['text']
+                reason = self._get_action_text(self._last_json)
                 raise DeniedLogin(response=response, message=reason)
 
             if subtask == "LoginSuccessSubtask":
