@@ -79,11 +79,11 @@ class BotMethods:
         """
          Get the tweets from a user
 
-        :param:: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
-        :param:: pages: (`int`) number of pages to be scraped
-        :param:: replies: (`boolean`) get the replied tweets of the user too
-        :param:: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
-        :param:: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: replies: (`boolean`) get the replied tweets of the user too
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
 
         :return: .types.usertweet.UserTweets
         """

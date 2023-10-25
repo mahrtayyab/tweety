@@ -256,7 +256,7 @@ class UrlBuilder:
 
     @return_with_headers
     def search(self, keyword, cursor, filter_):
-        variables = {"rawQuery": str(keyword), "count": 20, "querySource": "typed_query"}
+        variables = {"rawQuery": str(keyword), "count": 20, "querySource": "typed_query", "product": "Top"}
         features = {"rweb_lists_timeline_redesign_enabled": True,
                     "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
