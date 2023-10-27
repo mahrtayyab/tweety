@@ -1,14 +1,11 @@
-import datetime
 import inspect
-import json
 import os
-import time
+import re
 from typing import Callable
-from urllib.parse import urlparse
 import httpx as s
 from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
-from .utils import custom_json, create_request_id
+from .utils import custom_json, GUEST_TOKEN_REGEX
 from .builder import UrlBuilder
 
 s.Response.json_ = custom_json
@@ -22,6 +19,7 @@ class Request:
         self.__session = s.Client(proxies=proxy, timeout=60)
         self.__builder = UrlBuilder()
         self.__guest_token = self._get_guest_token(max_retries)
+        self.__builder.guest_token = self.__guest_token
 
     @property
     def session(self):
@@ -50,13 +48,16 @@ class Request:
                 limit_remaining=int(headers['x-rate-limit-remaining'])
             )
 
-    def __get_response__(self, return_raw=False, ignoreNoneData=False, **request_data):
+    def __get_response__(self, return_raw=False, ignore_none_data=False, is_document=False, **request_data):
 
         response = self.__session.request(**request_data)
         self._update_rate_limit(response, inspect.stack()[1][3])
 
+        if is_document:
+            return response
+
         response_json = response.json_() # noqa
-        if ignoreNoneData and len(response.text) == 0:
+        if ignore_none_data and len(response.text) == 0:
             return None
 
         if not response_json:
@@ -80,10 +81,14 @@ class Request:
 
     def _get_guest_token(self, max_retries=10):
         for retry in range(max_retries):
-            response = self.__get_response__(**self.__builder.get_guest_token())
-
-            token = self.__builder.guest_token = response['guest_token'] # noqa
-            return token
+            request_data = self.__builder.get_guest_token()
+            del request_data['headers']['Authorization']
+            del request_data['headers']['Content-Type']
+            del request_data['headers']['X-Csrf-Token']
+            response = self.__get_response__(is_document=True, **request_data)
+            guest_token = re.findall(GUEST_TOKEN_REGEX, response.text)
+            if guest_token:
+                return guest_token[0]
 
         raise GuestTokenNotFound(None, None, None, f"Guest Token couldn't be found after {max_retries} retires.")
 
@@ -116,6 +121,7 @@ class Request:
     def login(self, _url, _payload):
         request_data = self.__builder.build_flow(_url)
         request_data['json'] = _payload
+        request_data['headers']['Content-Type'] = "application/json"
         response = self.__get_response__(True, **request_data)
         return response
 

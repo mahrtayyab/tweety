@@ -9,7 +9,7 @@ from .types.twDataTypes import AudioSpace
 
 
 class BotMethods:
-    LOGIN_URL = "https://api.twitter.com/1.1/onboarding/task.json?flow_name=login&api_version=1&known_device_token="
+    LOGIN_URL = "https://api.twitter.com/1.1/onboarding/task.json?flow_name=login"
 
     def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None):
         """

@@ -3,12 +3,14 @@ import datetime
 import hashlib
 import os.path
 import random
+import re
 import string
 import sys
 import uuid
 from dateutil import parser as date_parser
 from .exceptions_ import AuthenticationRequired
 
+GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
 MIME_TYPES = {
     "png": "image/png",
     "jpg": "image/jpeg",

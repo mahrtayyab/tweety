@@ -25,7 +25,8 @@ def return_with_headers(func):
 
 
 class UrlBuilder:
-    URL_GUEST_TOKEN = "https://api.twitter.com/1.1/guest/activate.json"
+    # URL_GUEST_TOKEN = "https://api.twitter.com/1.1/guest/activate.json"
+    URL_GUEST_TOKEN = "https://twitter.com/"
     URL_API_INIT = "https://twitter.com/i/api/1.1/branch/init.json"
     URL_USER_BY_SCREEN_NAME = "https://twitter.com/i/api/graphql/oUZZZ8Oddwxs8Cd3iW3UEA/UserByScreenName"
     URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
@@ -135,7 +136,7 @@ class UrlBuilder:
 
     @return_with_headers
     def get_guest_token(self):
-        return "POST", self.URL_GUEST_TOKEN
+        return "GET", self.URL_GUEST_TOKEN
 
     @return_with_headers
     def init_api(self):
@@ -1289,7 +1290,7 @@ class FlowData:
                 'flow_context': {
                     'debug_overrides': {},
                     'start_location': {
-                        'location': 'manual_link',
+                        'location': 'unknown',
                     },
                 },
             },
