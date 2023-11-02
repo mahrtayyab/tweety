@@ -81,14 +81,10 @@ class Request:
 
     def _get_guest_token(self, max_retries=10):
         for retry in range(max_retries):
-            request_data = self.__builder.get_guest_token()
-            del request_data['headers']['Authorization']
-            del request_data['headers']['Content-Type']
-            del request_data['headers']['X-Csrf-Token']
-            response = self.__get_response__(is_document=True, **request_data)
-            guest_token = re.findall(GUEST_TOKEN_REGEX, response.text)
-            if guest_token:
-                return guest_token[0]
+            response = self.__get_response__(**self.__builder.get_guest_token())
+            token = self.__builder.guest_token = response.get('guest_token') # noqa
+            if token:
+                return token
 
         raise GuestTokenNotFound(None, None, None, f"Guest Token couldn't be found after {max_retries} retires.")
 
@@ -360,7 +356,7 @@ class Request:
             headers['Referer'] = "https://twitter.com/"
             self.__session.header = headers
 
-        with self.__session.stream('GET', media_url, follow_redirects=True, headers=headers) as response:
+        with self.__session.stream('GET', media_url, follow_redirects=True, headers=headers, timeout=600) as response:
             response.raise_for_status()
             total_size = int(response.headers['Content-Length'])
             downloaded = 0
