@@ -199,7 +199,7 @@ class Request:
 
     def set_media_set_metadata(self, media_id, alt_text, sensitive_tags):
         request_data = self.__builder.set_media_metadata(media_id, alt_text, sensitive_tags)
-        response = self.__get_response__(ignoreNoneData=True, **request_data)
+        response = self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
     def upload_media_init(self, size, mime_type, media_category):
@@ -212,7 +212,7 @@ class Request:
         request_data['headers'].update(headers)
         request_data['data'] = payload
 
-        response = self.__get_response__(ignoreNoneData=True, **request_data)
+        response = self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
     def upload_media_finalize(self, media_id, md5_hash):

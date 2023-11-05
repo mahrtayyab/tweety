@@ -432,6 +432,9 @@ class Tweet(dict):
         return ""
 
     def _get_tweet_media(self):
+        if self.is_retweet and self.retweeted_tweet:
+            return self.retweeted_tweet.media
+
         return [Media(media, self._client) for media in self.original_tweet.get("extended_entities", {}).get("media", [])]
 
     def _get_tweet_mentions(self):
