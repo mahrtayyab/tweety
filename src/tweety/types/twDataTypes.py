@@ -705,7 +705,6 @@ class Media(dict):
 
     def _get_direct_url(self):
         url = self._raw.get("media_url_https")
-
         return url
 
     def _get_file_format(self):
@@ -723,12 +722,9 @@ class Media(dict):
                 self.streams.append(
                     Stream(i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio"), self._client))
 
-    def __repr__(self):
-        return f"Media(id={self.id}, type={self.type})"
-
-    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+    def best_stream(self):
         if self.type == "photo":
-            return self._client.http.download_media(self.direct_url, filename, progress_callback)
+            return self.direct_url
         elif self.type == "video":
             _res = [eval(stream.res) for stream in self.streams if stream.res]
             max_res = max(_res)
@@ -736,12 +732,24 @@ class Media(dict):
                 if eval(stream.res) == max_res:
                     file_format = stream.content_type.split("/")[-1]
                     if not file_format == "x-mpegURL":
-                        return self._client.http.download_media(stream.url, filename, progress_callback)
+                        return stream.url
         elif self.type == "animated_gif":
-            file_format = self.streams[0].content_type.split("/")[-1]
-            if not file_format == "x-mpegURL":
-                return self._client.http.download_media(self.streams[0].url, filename, progress_callback)
+            for stream in self.streams:
+                file_format = stream.content_type.split("/")[-1]
+                if not file_format == "x-mpegURL":
+                    return stream.url
         return None
+
+    def __repr__(self):
+        return f"Media(id={self.id}, type={self.type})"
+
+    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+        url = self.best_stream()
+
+        if not url:
+            raise ValueError("No Media Download URL found")
+
+        return self._client.http.download_media(url, filename, progress_callback)
 
 
 class Stream(dict):
