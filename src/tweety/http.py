@@ -68,7 +68,7 @@ class Request:
                 message="Unknown Error Occurs on Twitter" if not response.text else response.text
             )
 
-        if response_json.get("errors"):
+        if response_json.get("errors") and not response_json.get('data'):
             error = response_json['errors'][0]
             return GenericError(
                 response, error.get("code"), error.get("message")
@@ -80,13 +80,14 @@ class Request:
         return response_json
 
     def _get_guest_token(self, max_retries=10):
+        last_response = None
         for retry in range(max_retries):
-            response = self.__get_response__(**self.__builder.get_guest_token())
-            token = self.__builder.guest_token = response.get('guest_token') # noqa
+            last_response = self.__get_response__(**self.__builder.get_guest_token())
+            token = self.__builder.guest_token = last_response.get('guest_token') # noqa
             if token:
                 return token
 
-        raise GuestTokenNotFound(None, None, None, f"Guest Token couldn't be found after {max_retries} retires.")
+        raise GuestTokenNotFound(None, None, last_response, f"Guest Token couldn't be found after {max_retries} retires.")
 
     def _init_api(self):
         data = self.__builder.init_api()
