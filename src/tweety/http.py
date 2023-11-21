@@ -261,6 +261,11 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def delete_retweet(self, tweet_id):
+        request_data = self.__builder.delete_retweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
     def get_community(self, community_id):
         request_data = self.__builder.get_community(community_id)
         response = self.__get_response__(**request_data)

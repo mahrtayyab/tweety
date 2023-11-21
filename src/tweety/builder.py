@@ -55,6 +55,7 @@ class UrlBuilder:
     URL_AUSER_TWEET_RETWEETERS = "https://twitter.com/i/api/graphql/_nBuZh82i3A0Ohkjw4FqCg/Retweeters"  # noqa
     URL_AUSER_LIKE_TWEET = "https://twitter.com/i/api/graphql/lI07N6Otwv1PhnEgXILM7A/FavoriteTweet"  # noqa
     URL_AUSER_POST_TWEET_RETWEET = "https://twitter.com/i/api/graphql/ojPdsZsimiJrUGLR1sjUtA/CreateRetweet"  # noqa
+    URL_AUSER_DELETE_TWEET_RETWEET = "https://twitter.com/i/api/graphql/iQtK4dl5hBmXewYZuEOKVw/DeleteRetweet"  # noqa
     URL_AUSER_CREATE_FRIEND = "https://twitter.com/i/api/1.1/friendships/create.json"  # noqa
     URL_AUSER_DESTROY_FRIEND = "https://twitter.com/i/api/1.1/friendships/destroy.json"  # noqa
     URL_AUSER_GET_COMMUNITY = "https://twitter.com/i/api/graphql/wYwM9x1NTCQKPx50Ih35Tg/CommunitiesFetchOneQuery"  # noqa
@@ -887,6 +888,17 @@ class UrlBuilder:
         }
 
         return "POST", self.URL_AUSER_POST_TWEET_RETWEET, json_data
+
+    @return_with_headers
+    def delete_retweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'source_tweet_id': str(tweet_id),
+                'dark_request': False,
+            },
+            'queryId': utils.create_query_id(),
+        }
+        return "POST", self.URL_AUSER_DELETE_TWEET_RETWEET, json_data
 
     @return_with_headers
     def follow_user(self, user_id):

@@ -540,6 +540,19 @@ class UserMethods:
         response = self.request.retweet_tweet(tweet_id)
         return True if find_objects(response, "rest_id", None) else False
 
+    def delete_retweet(self, tweet_id: Union[str, int , Tweet]):
+        """
+
+        :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
+        :return: Bool
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        response = self.request.delete_retweet(tweet_id)
+        return True if find_objects(response, "rest_id", None) else False
+
     def follow_user(self, user_id):
         """
 
