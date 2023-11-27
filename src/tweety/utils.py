@@ -187,8 +187,8 @@ def parse_time(time):
 
     if isinstance(time, int) or str(time).isdigit():
         try:
-            return datetime.datetime.fromtimestamp(time)
+            return datetime.datetime.fromtimestamp(int(time))
         except (OSError, ValueError):
-            return datetime.datetime.fromtimestamp(time / 1000)
+            return datetime.datetime.fromtimestamp(int(time) / 1000)
 
     return date_parser.parse(time)

@@ -56,9 +56,12 @@ class Request:
         if is_document:
             return response
 
-        response_json = response.json_() # noqa
+        response_json = response.json_()  # noqa
         if ignore_none_data and len(response.text) == 0:
             return None
+
+        if response.text and response.text.lower() == "rate limit exceeded":
+            response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
 
         if not response_json:
             raise UnknownError(
@@ -83,11 +86,12 @@ class Request:
         last_response = None
         for retry in range(max_retries):
             last_response = self.__get_response__(**self.__builder.get_guest_token())
-            token = self.__builder.guest_token = last_response.get('guest_token') # noqa
+            token = self.__builder.guest_token = last_response.get('guest_token')  # noqa
             if token:
                 return token
 
-        raise GuestTokenNotFound(None, None, last_response, f"Guest Token couldn't be found after {max_retries} retires.")
+        raise GuestTokenNotFound(None, None, last_response,
+                                 f"Guest Token couldn't be found after {max_retries} retires.")
 
     def _init_api(self):
         data = self.__builder.init_api()
@@ -110,7 +114,7 @@ class Request:
 
         response = self.__get_response__(**self.__builder.user_by_screen_name(username))
 
-        if response.get("data"): # noqa
+        if response.get("data"):  # noqa
             return response
 
         raise UserNotFound(error_code=50, error_name="GenericUserNotFound", response=response)
@@ -137,7 +141,7 @@ class Request:
 
         request_data = self.__builder.search(keyword, cursor, filter_)
         # del request_data['headers']['content-type']
-        request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
+        # request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
 
         response = self.__get_response__(**request_data)
         return response
@@ -146,7 +150,7 @@ class Request:
         if self.user:
             response = self.__get_response__(**self.__builder.tweet_detail(tweetId, cursor))
         else:
-            response = self.__get_response__(**self.__builder.tweet_detail_as_guest(tweetId, cursor))
+            response = self.__get_response__(**self.__builder.tweet_detail_as_guest(tweetId))
         return response
 
     def get_mentions(self, user_id, cursor=None):
@@ -356,7 +360,8 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+    def download_media(self, media_url, filename: str = None,
+                       progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
         headers = self.__builder._get_headers()
         oldReferer = headers.get('Referer')
