@@ -143,7 +143,10 @@ class Request:
         return response
 
     def get_tweet_detail(self, tweetId, cursor=None):
-        response = self.__get_response__(**self.__builder.tweet_detail(tweetId, cursor))
+        if self.user:
+            response = self.__get_response__(**self.__builder.tweet_detail(tweetId, cursor))
+        else:
+            response = self.__get_response__(**self.__builder.tweet_detail_as_guest(tweetId, cursor))
         return response
 
     def get_mentions(self, user_id, cursor=None):

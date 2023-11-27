@@ -539,6 +539,10 @@ class BotMethods:
         tweetId = re.findall("\d+", identifier)[-1]
 
         response = self.request.get_tweet_detail(tweetId)
+
+        if self.user is None:
+            return Tweet(response, self, response)
+
         _tweet_before = []
         entries = find_objects(response, "type", "TimelineAddEntries")
 
