@@ -541,23 +541,24 @@ class BotMethods:
         response = self.request.get_tweet_detail(tweetId)
 
         if self.user is None:
-            return Tweet(response, self, response)
+            if find_objects(response, "tweetResult", None):
+                return Tweet(response, self, response)
+        else:
+            _tweet_before = []
+            entries = find_objects(response, "type", "TimelineAddEntries")
 
-        _tweet_before = []
-        entries = find_objects(response, "type", "TimelineAddEntries")
+            if not entries or len(entries) == 0:
+                raise InvalidTweetIdentifier(response=response)
 
-        if not entries or len(entries) == 0:
-            raise InvalidTweetIdentifier(response=response)
+            for entry in entries['entries']:
+                if str(entry['entryId']).split("-")[0] == "tweet":
+                    tweet = Tweet(entry, self, response)
 
-        for entry in entries['entries']:
-            if str(entry['entryId']).split("-")[0] == "tweet":
-                tweet = Tweet(entry, self, response)
-
-                if str(tweet.id) == str(tweetId):
-                    tweet.threads.extend(_tweet_before)
-                    return tweet
-                else:
-                    _tweet_before.append(tweet)
+                    if str(tweet.id) == str(tweetId):
+                        tweet.threads.extend(_tweet_before)
+                        return tweet
+                    else:
+                        _tweet_before.append(tweet)
 
         raise InvalidTweetIdentifier(response=response)
 

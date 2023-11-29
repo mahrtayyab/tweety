@@ -355,3 +355,35 @@ ActionRequired
             :type: httpx.Response
 
             Raw Response returned by the Twitter
+
+ListNotFound
+---------------------
+
+.. py:class:: ListNotFound
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when List queried is not Found**
+    :reference: `tweety.exceptions_.ListNotFound`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+
+            Main Exception Message / Description of the Action to be performed
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter

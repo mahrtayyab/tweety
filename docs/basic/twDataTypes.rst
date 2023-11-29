@@ -504,6 +504,209 @@ CommunityMembers
 
                 :value: ``CommunityMembers(id={id_of_community}, count={number_of_results})``
 
+Lists
+---------------------
+
+.. py:class:: Lists
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.lists.Lists`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: lists
+            :type: list[TwList]
+
+            List of Twitter List
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+ListMembers
+---------------------
+
+.. py:class:: ListMembers
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.lists.ListMembers`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            Users of Twitter List
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``ListMembers(id={id_of_list}, count={total_results})``
+
+ListTweets
+---------------------
+
+.. py:class:: ListTweets
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.lists.ListTweets`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet]
+
+            Tweets of the List
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``ListTweets(id={id_of_list}, count={total_results})``
+
+UserFollowers
+---------------------
+
+.. py:class:: UserFollowers
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.follow.UserFollowers`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            Users List
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
+UserFollowings
+---------------------
+
+.. py:class:: UserFollowings
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.follow.UserFollowings`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            Users List
+
+        .. py:attribute:: cursor
+            :type: str
+
+            Cursor for next page
+
+        .. py:attribute:: is_next_page
+            :type: bool
+
+            Is next page of tweets available
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_next_page()
+
+            Get next page of tweets if available
+
+            .. py:data:: Return
+                :type: list[Tweet]
+
 TweetNotifications
 ---------------------
 
@@ -2121,3 +2324,68 @@ Pool
                 :type: str
 
                 :value: ``Card(id={rest_id_of_poll}, choices={list_of_choices}, end_time={end_time_of_pool}, duration={duration_of_pool} minutes)``
+
+TwList
+---------------------
+
+.. py:class:: TwList
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.TwList`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: str
+
+            Id of the List
+
+        .. py:attribute:: name
+            :type: str
+
+            Name of the List
+
+        .. py:attribute:: created_at
+            :type: datetime.datetime
+
+            Time at which list was created
+
+        .. py:attribute:: description
+            :type: str
+
+            Description of List
+
+        .. py:attribute:: is_member
+            :type: bool
+
+            is the authenticated member of this list
+
+        .. py:attribute:: member_count
+            :type: int
+
+            Number of member List has
+
+        .. py:attribute:: subscriber_count
+            :type: int
+
+            Number of subscriber List has
+
+        .. py:attribute:: admin
+            :type: User
+
+            Admin of the List
+
+
+    .. py:data:: Methods:
+
+        .. py:method:: __repr__()
+
+            Developer Representation of the Object
+
+            .. py:data:: Return
+                :type: str
+
+                :value: ``List(id={id_of_list}, name={name_of_list}, admin={admin_of_list}, subscribers={subscribers_of_list})``

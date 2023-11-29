@@ -5,7 +5,7 @@ Changelogs
 =============
 
 Update 0.8:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.4
 * More clean Code
@@ -14,7 +14,7 @@ Update 0.8:
 * Added ``card`` attribute to the `Tweet`
 
 Update 1.0:
------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.5
 * All Data Objects are JSON Serializable now (mostly)
@@ -23,7 +23,7 @@ Update 1.0:
 * Whole directory structure has been reworked , please do check documentation before upgrading
 
 Update 1.0.1:
--------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.5.2
 * Fixed the ``sheet not Found`` error in ``to_xlsx()`` method
@@ -39,14 +39,14 @@ Update 1.0.1:
 * Early Adaptation to Twitter 2.0
 
 Update 1.1:
------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.6.0
 * Moved from `requests` to `httpx`
 * Lot of Bug Fixes
 
 Update 1.2:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.6.1
 * ``quoted_tweet`` has been fixed
@@ -54,7 +54,7 @@ Update 1.2:
 * Bug Fixes
 
 Update 1.3:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.7
 * Early Cookies implementations
@@ -67,7 +67,7 @@ Update 1.3:
 * **Please** do check the full documentation before upgrading
 
 Update 1.4:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.7.1
 * Fixed 'TypeError: Union[arg, ...]'
@@ -80,7 +80,7 @@ Update 1.4:
 * **Please** do check the full documentation before upgrading
 
 Update 1.5:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.8
 * Many bug fixes
@@ -93,7 +93,7 @@ Update 1.5:
 * **Please do check the full documentation before upgrading**
 
 Update 1.6:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9
 * Many bug fixes
@@ -104,7 +104,7 @@ Update 1.6:
 
 
 Update 1.7:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.5
 * Fixed sign in issues
@@ -119,14 +119,14 @@ Update 1.7:
 * **Please do check the full documentation before upgrading**
 
 Update 1.7.1:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.6
 * Fixed sign in issues once again
 * **Please do check the full documentation before upgrading**
 
 Update 1.8:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.9
 * Added interactive version of `sign_in` called `start`
@@ -142,7 +142,7 @@ Update 1.8:
 * **Please do check the full documentation before upgrading**
 
 Update 1.8.1:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.9.1
 * Fixed the Import Errors
@@ -150,7 +150,7 @@ Update 1.8.1:
 * **Please do check the full documentation before upgrading**
 
 Update 1.9:
-------------
+-------------------
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 0.9.9.5
 * Fixed tweet comments pagination
@@ -169,4 +169,14 @@ Update 1.9:
 * Added `get_community`, `get_community_tweets`, `iter_community_tweet`, `get_community_members`, `iter_community_members` method to BotMethods
 * Added `get_tweet_notifications`, `iter_tweet_notifications`, `enable_user_notification`, `disable_user_notification`, method to UserMethods
 * Added `Community`, `CommunityTweets`, `CommunityMembers`, `TweetNotifications` Data Types
+* **Please do check the full documentation before upgrading**
+
+Update 2.0:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 1.0
+* Added many new methods to Base `Twitter` Class, do check full documentation
+* Added `best_stream` method to `Media` Class
+* Added video upload
+* Many bug fixes
 * **Please do check the full documentation before upgrading**

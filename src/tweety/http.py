@@ -183,7 +183,7 @@ class Request:
         return response
 
     def create_pool(self, pool):
-        request_data = self.__builder.create_tweet(pool)
+        request_data = self.__builder.create_pool(pool)
         response = self.__get_response__(**request_data)
         return response
 

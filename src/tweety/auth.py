@@ -55,7 +55,7 @@ class AuthMethods:
         try:
             return self.sign_in(username, password, extra=extra)
         except ActionRequired as e:
-            action = input(f"Action Required :> {str(e.message)} : ")
+            action = input(f"\rAction Required :> {str(e.message)} : ")
             return self.sign_in(username, password, extra=action)
 
     def sign_in(
