@@ -45,6 +45,9 @@ class BaseGeneratorClass(dict):
         for page in range(1, int(self.pages) + 1):
             results = self.get_next_page()
 
+            if len(results) == 0:
+                break
+
             yield self, results
 
             if not self.is_next_page:

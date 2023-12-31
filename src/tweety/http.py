@@ -2,6 +2,8 @@ import inspect
 import os
 import re
 from typing import Callable
+from urllib.parse import quote
+
 import httpx as s
 from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
@@ -12,11 +14,12 @@ s.Response.json_ = custom_json
 
 
 class Request:
-    def __init__(self, max_retries=10, proxy=None):
+    def __init__(self, client, max_retries=10, proxy=None, **kwargs):
         self.user = None
         self.username = None
+        self._client = client
         self._limits = {}
-        self.__session = s.Client(proxies=proxy, timeout=60)
+        self.__session = s.Client(proxies=proxy, timeout=60, **kwargs)
         self.__builder = UrlBuilder()
         self.__guest_token = self._get_guest_token(max_retries)
         self.__builder.guest_token = self.__guest_token
@@ -139,10 +142,8 @@ class Request:
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
 
+        keyword = quote(keyword, safe="()%")
         request_data = self.__builder.search(keyword, cursor, filter_)
-        # del request_data['headers']['content-type']
-        # request_data['headers']['referer'] = f"https://twitter.com/search?q={keyword}"
-
         response = self.__get_response__(**request_data)
         return response
 

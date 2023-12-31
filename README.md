@@ -1,5 +1,5 @@
 # tweety
-Twitter's API is annoying to work with, and has lots of limitations — luckily their frontend (JavaScript) has it's own API, which I reverse–engineered. xtremely fast.
+Reverse Engineered Twitter Frontend API.
 
 [![Downloads](https://static.pepy.tech/personalized-badge/tweety-ns?period=total&units=international_system&left_color=orange&right_color=blue&left_text=Downloads)](https://pepy.tech/project/tweety-ns)
 ## Prerequisites
@@ -30,9 +30,14 @@ pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade
   
   app = Twitter("session")
   
+# assuming app is authenticated class instance
+  
   all_tweets = app.get_tweets("elonmusk")
   for tweet in all_tweets:
       print(tweet)
 ```
+
+> [!IMPORTANT] 
+> Even Twitter Web Client has a lot of rate limits now, Abusing tweety can lead to `read_only` Twitter account.
 
 Full Documentation and Changelogs are [here](https://mahrtayyab.github.io/tweety_docs/)

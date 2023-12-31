@@ -1,5 +1,7 @@
-import re
+import logging
 from typing import Union
+from urllib.parse import urlparse
+
 from .utils import find_objects
 from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, CommunityMembers, UserFollowers, UserFollowings
 from .exceptions_ import *
@@ -11,7 +13,7 @@ from .types.twDataTypes import AudioSpace
 class BotMethods:
     LOGIN_URL = "https://api.twitter.com/1.1/onboarding/task.json?flow_name=login"
 
-    def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None):
+    def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None, **httpx_kwargs):
         """
         Constructor of the Twitter Public class
 
@@ -28,10 +30,10 @@ class BotMethods:
         self._last_json = {}
 
         self._event_builders = []
-        self.session = Session(session_name) if isinstance(session_name, str) else session_name
+        self.session = Session(self, session_name) if isinstance(session_name, str) else session_name
         self.logged_in = False
         self._proxy = proxy.get_dict() if isinstance(proxy, Proxy) else proxy
-        self.request = self.http = Request(max_retries=10, proxy=self._proxy)
+        self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, **httpx_kwargs)
         self.user = None
 
     def get_user_info(self, username: str = None) -> User:
@@ -536,7 +538,7 @@ class BotMethods:
         :return: .types.twDataTypes.Tweet
         """
 
-        tweetId = re.findall("\d+", identifier)[-1]
+        tweetId = urlparse(str(identifier)).path.split("/")[-1]
 
         response = self.request.get_tweet_detail(tweetId)
 

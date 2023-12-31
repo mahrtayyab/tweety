@@ -1,3 +1,6 @@
+import glob
+import json
+import os.path
 import traceback
 
 from . import User, List, Tweet, SelfThread
@@ -70,7 +73,8 @@ class ListTweets(BaseGeneratorClass):
     OBJECTS_TYPES = {
         "tweet": Tweet,
         "homeConversation": SelfThread,
-        "profile": SelfThread
+        "profile": SelfThread,
+        "list": SelfThread,
     }
 
     def __init__(self, list_id, client, pages=1, wait_time=2, cursor=None):
@@ -91,9 +95,7 @@ class ListTweets(BaseGeneratorClass):
     def get_next_page(self):
         _tweets = []
         if self.is_next_page:
-
             response = self.client.http.get_list_tweets(self.list_id, cursor=self.cursor)
-
             entries = self._get_entries(response)
 
             for entry in entries:

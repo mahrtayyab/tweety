@@ -1,4 +1,5 @@
 import json
+import urllib
 from urllib.parse import urlencode
 import random
 from .exceptions_ import DeniedLogin
@@ -32,7 +33,7 @@ class UrlBuilder:
     URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
     URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
     URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
-    URL_SEARCH = "https://twitter.com/i/api/graphql/NA567V_8AFwu0cZEkAAKcw/SearchTimeline"
+    URL_SEARCH = "https://twitter.com/i/api/graphql/Aj1nGkALq99Xg3XI0OZBtw/SearchTimeline"
     URL_AUDIO_SPACE_BY_ID = "https://twitter.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
     URL_AUDIO_SPACE_STREAM = "https://twitter.com/i/api/1.1/live_video_stream/status/{}"
     URL_TWEET_DETAILS = "https://twitter.com/i/api/graphql/3XDB26fBve-MmjHaWTUZxA/TweetDetail"
@@ -118,10 +119,12 @@ class UrlBuilder:
 
         if self.guest_token or self.cookies:
             headers['Content-Type'] = 'application/json'
-            # headers['referer'] = f'https://twitter.com/{self.username}'
             headers['Sec-Fetch-Site'] = 'same-origin'
 
-            if self.guest_token:
+            if self.cookies:
+                headers['X-Twitter-Auth-Type'] = 'OAuth2Session'
+
+            if self.guest_token and not self.cookies:
                 headers['X-Guest-Token'] = self.guest_token
 
         return headers
@@ -259,13 +262,15 @@ class UrlBuilder:
 
     @return_with_headers
     def search(self, keyword, cursor, filter_):
-        variables = {"rawQuery": str(keyword), "count": 20, "querySource": "typed_query", "product": "Top"}
-        features = {"rweb_lists_timeline_redesign_enabled": True,
-                    "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+        keyword = str(keyword)
+        variables = {"rawQuery": keyword, "count": 20, "querySource": "typed_query", "product": "Top"}
+        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "responsive_web_home_pinned_timelines_enabled": True,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
                     "responsive_web_graphql_timeline_navigation_enabled": True,
                     "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True, "tweetypie_unmention_optimization_enabled": True,
+                    "responsive_web_edit_tweet_api_enabled": True,
                     "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
                     "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
                     "responsive_web_twitter_article_tweet_consumption_enabled": False,
@@ -274,19 +279,17 @@ class UrlBuilder:
                     "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
                     "longform_notetweets_rich_text_read_enabled": True,
                     "longform_notetweets_inline_media_enabled": True,
-                    "responsive_web_media_download_video_enabled": False, "responsive_web_enhance_cards_enabled": False}
+                    "responsive_web_media_download_video_enabled": False, "responsive_web_enhance_cards_enabled": False,
+                    "rweb_lists_timeline_redesign_enabled": False, "rweb_video_timestamps_enabled":True}
         fieldToggles = {"withArticleRichContentState": False}
-
         if cursor:
             variables['cursor'] = cursor
 
         if filter_:
             variables['product'] = filter_
+        params = {'variables': str(json.dumps(variables, separators=(',', ':'))), 'features': str(json.dumps(features , separators=(',', ':')))}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
-                  'fieldToggles': str(json.dumps(fieldToggles))}
-
-        return "GET", self._build(self.URL_SEARCH, urlencode(params))
+        return "GET", self._build(self.URL_SEARCH, urlencode(params, safe="()%", quote_via=urllib.parse.quote))
 
     @return_with_headers
     def tweet_detail(self, tweet_id, cursor=None):
@@ -1336,7 +1339,7 @@ class FlowData:
                 'flow_context': {
                     'debug_overrides': {},
                     'start_location': {
-                        'location': 'unknown',
+                        'location': 'splash_screen',
                     },
                 },
             },

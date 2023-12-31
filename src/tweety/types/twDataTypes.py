@@ -727,7 +727,7 @@ class Media(dict):
 
     def best_stream(self):
         if self.type == "photo":
-            return self.direct_url
+            return self
         elif self.type == "video":
             _res = [eval(stream.res) for stream in self.streams if stream.res]
             max_res = max(_res)
@@ -735,12 +735,12 @@ class Media(dict):
                 if eval(stream.res) == max_res:
                     file_format = stream.content_type.split("/")[-1]
                     if not file_format == "x-mpegURL":
-                        return stream.url
+                        return stream
         elif self.type == "animated_gif":
             for stream in self.streams:
                 file_format = stream.content_type.split("/")[-1]
                 if not file_format == "x-mpegURL":
-                    return stream.url
+                    return stream
         return None
 
     def __repr__(self):
@@ -1148,6 +1148,9 @@ class User(dict):
 
     def get_id(self):
         raw_id = self._user.get("id")
+
+        if not raw_id:
+            raw_id = self._user.get('rest_id')
 
         if not str(raw_id).isdigit():
             raw_id = decodeBase64(raw_id).split(":")[-1]

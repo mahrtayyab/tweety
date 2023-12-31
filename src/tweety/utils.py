@@ -54,7 +54,7 @@ def decodeBase64(encoded_string):
     return str(base64.b64decode(bytes(encoded_string, "utf-8")))[2:-1]
 
 
-def bar_progress(filename, current, total, width=80):
+def bar_progress(filename, total, current, width=80):
     progress_message = f"[{filename}] Downloading: %d%% [%d / %d] bytes" % (current / total * 100, current, total)
     sys.stdout.write("\r" + progress_message)
     sys.stdout.flush()

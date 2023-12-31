@@ -55,6 +55,7 @@ class UserTweets(BaseGeneratorClass):
                     _tweets.append(parsed)
                 except:
                     pass
+
             self.is_next_page = self._get_cursor(response)
             self._get_cursor_top(response)
 
@@ -147,6 +148,7 @@ class SelfTimeline(BaseGeneratorClass):
 
     def __len__(self):
         return len(self.tweets)
+
 
 class TweetComments(BaseGeneratorClass):
     OBJECTS_TYPES = {

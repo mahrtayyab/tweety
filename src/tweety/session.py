@@ -3,7 +3,8 @@ import os.path
 
 
 class Session:
-    def __init__(self, session_name):
+    def __init__(self, client, session_name):
+        self._client = client
         self.user = None
         self.session_name = os.path.basename(session_name)
         self.session_file_path = self._get_session_file_path(session_name, self.session_name)
