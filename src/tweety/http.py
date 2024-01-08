@@ -3,7 +3,6 @@ import os
 import re
 from typing import Callable
 from urllib.parse import quote
-
 import httpx as s
 from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
@@ -90,8 +89,19 @@ class Request:
         for retry in range(max_retries):
             last_response = self.__get_response__(**self.__builder.get_guest_token())
             token = self.__builder.guest_token = last_response.get('guest_token')  # noqa
+
             if token:
                 return token
+
+            request_data = self.__builder.get_guest_token_fallback()
+            del request_data['headers']['Authorization']
+            del request_data['headers']['Content-Type']
+            del request_data['headers']['X-Csrf-Token']
+            response = self.__get_response__(is_document=True, **request_data)
+            guest_token = re.findall(GUEST_TOKEN_REGEX, response.text)
+
+            if guest_token:
+                return guest_token[0]
 
         raise GuestTokenNotFound(None, None, last_response,
                                  f"Guest Token couldn't be found after {max_retries} retires.")

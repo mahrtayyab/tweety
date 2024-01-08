@@ -180,3 +180,9 @@ Update 2.0:
 * Added video upload
 * Many bug fixes
 * **Please do check the full documentation before upgrading**
+
+Update 2.1:
+------------
+
+* Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 1.0.2
+* Lot of bug fixes and code improvements

@@ -38,16 +38,15 @@ class TweetLikes(BaseGeneratorClass):
                 users = self._get_tweet_content_key(entry)
                 for user in users:
                     try:
-                        parsed = User(user, self._client)
-                        _users.append(parsed)
+                        parsed = User(self._client, user)
+                        if parsed:
+                            _users.append(parsed)
                     except:
                         pass
 
             self.is_next_page = self._get_cursor(response)
             self._get_cursor_top(response)
-
-            for user in _users:
-                self.users.append(user)
+            self.users.extend(_users)
 
             self['users'] = self.users
             self['is_next_page'] = self.is_next_page

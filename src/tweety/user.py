@@ -1,6 +1,4 @@
-import functools
 from typing import Union, Tuple, List
-
 from .exceptions_ import ListNotFound
 from .types.inbox import Message
 from .utils import create_conversation_id, AuthRequired, find_objects

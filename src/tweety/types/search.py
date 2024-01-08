@@ -29,7 +29,7 @@ class Search(BaseGeneratorClass):
 
     def __repr__(self):
         return "Search(keyword={}, count={}, filter={})".format(
-            self.keyword,len(self.results),self.filter
+            self.keyword, len(self.results), self.filter
         )
 
     def get_next_page(self):
@@ -71,9 +71,10 @@ class Search(BaseGeneratorClass):
                 if object_type is None:
                     continue
 
-                parsed = object_type(entry, self.client, None)
-                thisObjects.append(parsed)
-                self.results.append(parsed)
+                parsed = object_type(self.client, entry,  None)
+                if parsed:
+                    thisObjects.append(parsed)
+                    self.results.append(parsed)
             except:
                 traceback.print_exc()
                 pass

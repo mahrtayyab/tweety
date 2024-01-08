@@ -205,3 +205,19 @@ class ListNotFound(Exception):
         self.error_name = error_name
         self.response = response
         super().__init__(self.message)
+
+
+class AudioSpaceNotFound(Exception):
+    """
+        Exception Raised when queried Audio Space isn't found
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="Audio Space not found", **kw):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)

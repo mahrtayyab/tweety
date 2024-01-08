@@ -39,15 +39,14 @@ class Lists(BaseGeneratorClass):
 
             for item in lists:
                 try:
-                    parsed = List(item, self.client)
-                    _lists.append(parsed)
+                    parsed = List(self.client, item)
+                    if parsed:
+                        _lists.append(parsed)
                 except:
                     pass
 
             self.is_next_page = self._get_cursor(response)
-
-            for _list in _lists:
-                self.lists.append(_list)
+            self.lists.extend(_lists)
 
             self['tweets'] = self.lists
             self['is_next_page'] = self.is_next_page
@@ -105,15 +104,13 @@ class ListTweets(BaseGeneratorClass):
                     if object_type is None:
                         continue
 
-                    parsed = object_type(entry, self.client, None)
+                    parsed = object_type(self.client, entry, None)
                     _tweets.append(parsed)
                 except:
                     pass
             self.is_next_page = self._get_cursor(response)
             self._get_cursor_top(response)
-
-            for tweet in _tweets:
-                self.tweets.append(tweet)
+            self.tweets.extend(_tweets)
 
             self['tweets'] = self.tweets
             self['is_next_page'] = self.is_next_page
@@ -167,16 +164,14 @@ class ListMembers(BaseGeneratorClass):
 
             for response_user in response_users:
                 try:
-
-                    parsed = User(response_user, self.client, None)
-                    _users.append(parsed)
+                    parsed = User(self.client, response_user, None)
+                    if parsed:
+                        _users.append(parsed)
                 except:
                     pass
             self.is_next_page = self._get_cursor(response)
             self._get_cursor_top(response)
-
-            for user in _users:
-                self.users.append(user)
+            self.users.extend(_users)
 
             self['users'] = self.users
             self['is_next_page'] = self.is_next_page

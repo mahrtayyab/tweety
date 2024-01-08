@@ -22,17 +22,16 @@ class Bookmarks(BaseGeneratorClass):
             entries = self._get_entries(response)
             for entry in entries:
                 try:
-                    parsed = Tweet(entry, self.client, response)
-                    self.tweets.append(parsed)
-                    _tweets.append(parsed)
+                    parsed = Tweet(self.client, entry, response)
+                    if parsed:
+                        self.tweets.append(parsed)
+                        _tweets.append(parsed)
                 except:
                     pass
 
             self.is_next_page = self._get_cursor(response)
             self._get_cursor_top(response)
-
-            for tweet in _tweets:
-                self.tweets.append(tweet)
+            self.tweets.extend(_tweets)
 
             self['tweets'] = self.tweets
             self['is_next_page'] = self.is_next_page

@@ -27,7 +27,7 @@ def return_with_headers(func):
 
 class UrlBuilder:
     URL_GUEST_TOKEN = "https://api.twitter.com/1.1/guest/activate.json"
-    # URL_GUEST_TOKEN = "https://twitter.com/"
+    URL_HOME_PAGE = "https://twitter.com/"
     URL_API_INIT = "https://twitter.com/i/api/1.1/branch/init.json"
     URL_USER_BY_SCREEN_NAME = "https://twitter.com/i/api/graphql/oUZZZ8Oddwxs8Cd3iW3UEA/UserByScreenName"
     URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
@@ -144,6 +144,10 @@ class UrlBuilder:
         return "POST", self.URL_GUEST_TOKEN
 
     @return_with_headers
+    def get_guest_token_fallback(self):
+        return "GET", self.URL_HOME_PAGE
+
+    @return_with_headers
     def init_api(self):
         return "POST", self.URL_API_INIT
 
@@ -251,7 +255,7 @@ class UrlBuilder:
             'include_ext_trusted_friends_metadata': True,
             'send_error_codes': True,
             'simple_quoted_tweet': True,
-            'count': '40',
+            'count': '100',
             'requestContext': 'launch',
             'candidate_source': 'trends',
             'include_page_configuration': False,
@@ -1116,7 +1120,7 @@ class UrlBuilder:
             'include_ext_trusted_friends_metadata': True,
             'send_error_codes': True,
             'simple_quoted_tweet': True,
-            'count': '20',
+            'count': '50',
             'ext': 'mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
         }
 

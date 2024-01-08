@@ -1,6 +1,7 @@
 import base64
 import datetime
 import hashlib
+import inspect
 import os.path
 import random
 import re
@@ -32,17 +33,19 @@ SENSITIVE_MEDIA_TAGS = ['adult_content', 'graphic_violence', 'other']
 def AuthRequired(cls):
     def method_wrapper_decorator(func):
         def wrapper(self, *args, **kwargs):
-            if self.user is None:
+            if self.me is None:
                 raise AuthenticationRequired(200, "GenericForbidden", None)
 
             return func(self, *args, **kwargs)
 
         return wrapper
 
-    for name, method in vars(cls).items():
-        if name != "__init__" and callable(method):
-            setattr(cls, name, method_wrapper_decorator(method))
-    return cls
+    if inspect.isclass(cls):
+        for name, method in vars(cls).items():
+            if name != "__init__" and callable(method):
+                setattr(cls, name, method_wrapper_decorator(method))
+        return cls
+    return method_wrapper_decorator(cls)
 
 
 def replace_between_indexes(original_string, from_index, to_index, replacement_text):
@@ -67,6 +70,7 @@ def parse_wait_time(wait_time):
         return random.randint(*wait_time)
 
     return int(wait_time)
+
 
 def custom_json(self):
     try:

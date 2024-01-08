@@ -1,9 +1,6 @@
-import sys
-import traceback
 from .twDataTypes import SelfThread, ConversationThread
 from ..exceptions_ import UserProtected, UserNotFound
-from ..utils import find_objects
-from . import Tweet, Excel, deprecated
+from . import Tweet, Excel
 from .base import BaseGeneratorClass
 
 
@@ -51,16 +48,15 @@ class UserTweets(BaseGeneratorClass):
                     if object_type is None:
                         continue
 
-                    parsed = object_type(entry, self.client, None)
-                    _tweets.append(parsed)
+                    parsed = object_type(self.client, entry, None)
+                    if parsed:
+                        _tweets.append(parsed)
                 except:
                     pass
 
             self.is_next_page = self._get_cursor(response)
             self._get_cursor_top(response)
-
-            for tweet in _tweets:
-                self.tweets.append(tweet)
+            self.tweets.extend(_tweets)
 
             self['tweets'] = self.tweets
             self['is_next_page'] = self.is_next_page
@@ -120,15 +116,14 @@ class SelfTimeline(BaseGeneratorClass):
                     if object_type is None:
                         continue
 
-                    parsed = object_type(entry, self.client, None)
-                    _tweets.append(parsed)
+                    parsed = object_type(self.client, entry, None)
+                    if parsed:
+                        _tweets.append(parsed)
                 except:
                     pass
 
             self.is_next_page = self._get_cursor(response)
-
-            for tweet in _tweets:
-                self.tweets.append(tweet)
+            self.tweets.extend(_tweets)
 
             self['tweets'] = self.tweets
             self['is_next_page'] = self.is_next_page
@@ -190,15 +185,13 @@ class TweetComments(BaseGeneratorClass):
 
                     entry = [i for i in entry['content']['items']]
                     if len(entry) > 0:
-                        parsed = object_type(self.parent, entry, self.client)
+                        parsed = object_type(self.client, self.parent, entry)
                         _comments.append(parsed)
                 except:
                     pass
 
             self.is_next_page = self._get_cursor(response)
-
-            for comment in _comments:
-                self.tweets.append(comment)
+            self.tweets.extend(_comments)
 
             self['tweets'] = self.tweets
             self['is_next_page'] = self.is_next_page

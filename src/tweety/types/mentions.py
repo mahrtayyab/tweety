@@ -32,16 +32,15 @@ class Mention(BaseGeneratorClass):
                 tweet['author'], tweet['rest_id'], tweet['__typename'] = user, tweet_id, "Tweet"
 
                 try:
-                    parsed = Tweet(tweet, self.client, response)
-                    _tweets.append(parsed)
+                    parsed = Tweet(self.client, tweet, response)
+                    if parsed:
+                        _tweets.append(parsed)
                 except:
                     pass
 
             self.is_next_page = self._get_cursor(response)
             self._get_cursor_top(response)
-
-            for tweet in _tweets:
-                self.tweets.append(tweet)
+            self.tweets.extend(_tweets)
 
             self['tweets'] = self.tweets
             self['is_next_page'] = self.is_next_page
