@@ -1,8 +1,3 @@
-import glob
-import json
-import os.path
-import traceback
-
 from . import User, List, Tweet, SelfThread
 from .base import BaseGeneratorClass
 from ..utils import find_objects

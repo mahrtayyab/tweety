@@ -1,6 +1,5 @@
 from .twDataTypes import User
 from .base import BaseGeneratorClass
-from ..utils import find_objects
 
 
 class UserFollowers(BaseGeneratorClass):

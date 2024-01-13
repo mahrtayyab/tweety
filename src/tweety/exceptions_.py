@@ -221,3 +221,19 @@ class AudioSpaceNotFound(Exception):
         self.error_name = error_name
         self.response = response
         super().__init__(self.message)
+
+
+class ProtectedTweet(Exception):
+    """
+        Exception Raised when queried Tweet is protected, and you need authorization to access it
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="Tweet is private/protected", **kw):
+        self.message = message
+        self.error_code = error_code
+        self.error_name = error_name
+        self.response = response
+        super().__init__(self.message)

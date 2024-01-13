@@ -5,7 +5,7 @@ from typing import Callable
 from dateutil import parser
 import openpyxl
 import dateutil
-from ..exceptions_ import UserNotFound, UserProtected
+from ..exceptions_ import UserNotFound, UserProtected, ProtectedTweet
 from ..utils import *
 
 
@@ -153,7 +153,15 @@ class Tweet(_TwType):
             for thread in self.threads:  # noqa
                 yield thread
 
+    def _check_if_protected(self):
+
+        is_protected = find_objects(self._raw, "__typename", "TweetUnavailable", recursive=False)
+
+        if is_protected and is_protected.get('reason') == "Protected":
+            raise ProtectedTweet(403, "TweetUnavailable", response=self._raw)
+
     def _format_tweet(self):
+        self._check_if_protected()
         self._tweet = find_objects(self._raw, "__typename", ["Tweet", "TweetWithVisibilityResults"], recursive=False)
 
         if self._tweet.get('tweet'):
@@ -196,8 +204,16 @@ class Tweet(_TwType):
         self.community_note = self._get_community_note()
         self.community = self._get_community()
         self.url = self._get_url()
+        self.broadcast = self._get_broadcast()
         self.threads = self.get_threads()
         self.comments = []
+
+    def _get_broadcast(self):
+        for url in self.urls:
+            if "broadcast" in str(url):
+                return Broadcast(self._client, self._card)
+
+        return None
 
     def _get_url(self):
         return "https://twitter.com/{}/status/{}".format(
@@ -458,32 +474,60 @@ class Tweet(_TwType):
         return self._original_tweet.get("bookmark_count", None)
 
     def _get_tweet_urls(self):
-        if not self._original_tweet.get("entities"):
-            return []
+        urls = self._original_tweet.get('entities', {}).get('urls', [])
+        urls = [URL(self._client, url) for url in urls]
 
-        if not self._original_tweet['entities'].get("urls"):
-            return []
+        if self.rich_text:
+            urls.extend(self.rich_text.urls)
 
-        return [url for url in self._original_tweet['entities']['urls']]
+        return urls
 
     def _get_tweet_hashtags(self):
-        if not self._original_tweet.get("entities"):
-            return []
+        hashtags = self._original_tweet.get('entities', {}).get('hashtags', [])
+        hashtags = [Hashtag(self._client, hashtag) for hashtag in hashtags]
 
-        if not self._original_tweet['entities'].get("hashtags"):
-            return []
+        if self.rich_text:
+            hashtags.extend(self.rich_text.hashtags)
 
-        return [hashtag for hashtag in self._original_tweet['entities']['hashtags']]
+        return hashtags
 
     def _get_tweet_symbols(self):
-        if not self._original_tweet.get("entities"):
-            return []
+        symbols = self._original_tweet.get('entities', {}).get('symbols', [])
 
-        if not self._original_tweet['entities'].get("symbols"):
-            return []
+        if self.rich_text:
+            symbols.extend(self.rich_text.symbols)
 
-        return [symbol for symbol in self._original_tweet['entities']['symbols']]
+        return symbols
 
+
+class URL(_TwType):
+    def __init__(self, client, url):
+        self._client = client
+        self._raw = url
+        self.display_url = self._raw.get('display_url')
+        self.expanded_url = self._raw.get('expanded_url')
+        self.url = self._raw.get('url')
+        self.indices = self._raw.get('indices')
+
+    def __str__(self):
+        return self.expanded_url
+
+    def __repr__(self):
+        return "URL(expanded_url={})".format(self.expanded_url)
+
+
+class Hashtag(_TwType):
+    def __init__(self, client, hashtag):
+        self._client = client
+        self._raw = hashtag
+        self.indices = self._raw.get('indices')
+        self.text = self._raw.get('text')
+
+    def __str__(self):
+        return self.text
+
+    def __repr__(self):
+        return "Hashtag(text={})".format(self.text)
 
 class RichText(_TwType):
     HTML_TAGS = {
@@ -495,8 +539,8 @@ class RichText(_TwType):
         self._client = client
         self._raw = data
         self._tweet = tweet
-        self._note = self._raw['note_tweet_results']['result']
-        self._entities = self._note['entity_set']
+        self._note = self._raw.get('note_tweet_results', {}).get('result', {})
+        self._entities = self._note.get('entity_set', {})
         self.tags = self._get_tags()
         self.id = self._get_id()
         self.text = self._get_text()
@@ -524,10 +568,10 @@ class RichText(_TwType):
         return self._note.get('text', '')
 
     def _get_hashtags(self):
-        return self._entities.get('hashtags', [])
+        return [Hashtag(self._client, i) for i in self._entities.get('hashtags', [])]
 
     def _get_urls(self):
-        return self._entities.get('urls', [])
+        return [URL(self._client, i) for i in self._entities.get('urls', [])]
 
     def _get_symbols(self):
         return self._entities.get('symbols', [])
@@ -842,6 +886,85 @@ class Trends(_TwType):
 
     def __repr__(self):
         return f"Trends(name={self.name})"
+
+
+class Broadcast(_TwType):
+    def __init__(self, client, broadcast):
+        self._client = client
+        self._raw = broadcast
+        self._broadcast = self._raw.get('legacy', {})
+        self._parsed = self._parse_keys()
+        self.url = self._get_url()
+        self.width = self._get_width()
+        self.state = self._get_state()
+        self.title = self._get_title()
+        self.source = self._get_source()
+        self.id = self._get_id()
+        self.user_id = self.broadcaster_id = self._get_broadcaster_id()
+        self.height = self._get_height()
+        self.username = self.broadcaster_username = self._get_broadcaster_username()
+        self.media_key = self._get_media_key()
+        self.broadcaster_name = self._get_broadcaster_display_name()
+        self.media_id = self._get_media_id()
+        self.thumbnail_large = self._get_image("broadcast_thumbnail_large")
+        self.thumbnail = self._get_image("broadcast_thumbnail")
+        self.thumbnail_x_large = self._get_image("broadcast_thumbnail_x_large")
+        self.thumbnail_original = self._get_image("broadcast_thumbnail_original")
+        self.thumbnail_small = self._get_image("broadcast_thumbnail_small")
+
+    def _get_url(self):
+        return self._parsed.get('broadcast_url', {}).get('string_value')
+
+    def _get_width(self):
+        return self._parsed.get('broadcast_width', {}).get('string_value')
+
+    def _get_state(self):
+        return self._parsed.get('broadcast_state', {}).get('string_value')
+
+    def _get_title(self):
+        return self._parsed.get('broadcast_title', {}).get('string_value')
+
+    def _get_source(self):
+        return self._parsed.get('broadcast_source', {}).get('string_value')
+
+    def _get_id(self):
+        return self._parsed.get('broadcast_id', {}).get('string_value')
+
+    def _get_broadcaster_id(self):
+        return self._parsed.get('broadcaster_twitter_id', {}).get('string_value')
+
+    def _get_height(self):
+        return self._parsed.get('broadcast_height', {}).get('string_value')
+
+    def _get_broadcaster_username(self):
+        return self._parsed.get('broadcaster_username', {}).get('string_value')
+
+    def _get_media_key(self):
+        return self._parsed.get('broadcast_media_key', {}).get('string_value')
+
+    def _get_broadcaster_display_name(self):
+        return self._parsed.get('broadcaster_display_name', {}).get('string_value')
+
+    def _get_media_id(self):
+        return self._parsed.get('broadcast_media_id', {}).get('string_value')
+
+    def _get_image(self, key):
+        return self._parsed.get(key, {}).get('value', {}).get('image_value')
+
+    def _parse_keys(self):
+        parsed = {}
+        if isinstance(self._broadcast['binding_values'], list):
+            for value in self._broadcast['binding_values']:
+                key, value_ = value['key'], value['value']
+                parsed[key] = value_
+        elif isinstance(self._broadcast['binding_values'], dict):
+            parsed = self._broadcast['binding_values']
+        return parsed
+
+    def __repr__(self):
+        return "Broadcast(id={}, title={}, state={}, broadcaster_username={})".format(
+            self.id, self.title, self.state, self.broadcaster_username
+        )
 
 
 class Poll(_TwType):

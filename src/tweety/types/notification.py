@@ -1,4 +1,3 @@
-from ..utils import find_objects
 from .base import BaseGeneratorClass
 from . import *
 

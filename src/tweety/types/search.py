@@ -1,7 +1,5 @@
-import time
 import traceback
-
-from . import Tweet, Excel, User, deprecated, List
+from . import Tweet, Excel, User, List
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread
 

@@ -364,7 +364,7 @@ class UserMethods:
 
         response = self.request.create_tweet(text, files, filter_, reply_to, pool)
         response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
-        return Tweet(response, self, response)
+        return Tweet(self, response, response)
 
     def iter_lists(
             self,
@@ -563,7 +563,7 @@ class UserMethods:
 
         response = self.request.follow_user(user_id)
         response['__typename'] = "User"
-        return User(response, self)
+        return User(self, response)
 
     def unfollow_user(self, user_id):
         """
@@ -577,7 +577,7 @@ class UserMethods:
 
         response = self.request.unfollow_user(user_id)
         response['__typename'] = "User"
-        return User(response, self)
+        return User(self, response)
 
     def pool_vote(self, poll_id, tweet, choice, poll_name=None):
         """
@@ -604,7 +604,7 @@ class UserMethods:
 
         response = self.request.poll_vote(poll_id, poll_name, tweet, choice)
         response['card']['legacy'] = response['card']
-        return Poll(response['card'])
+        return Poll(self, response['card'])
 
     def delete_tweet(self, tweet_id):
         """
@@ -659,7 +659,7 @@ class UserMethods:
         if not response.get('data', {}).get('list', {}).get('name'):
             raise ListNotFound(404, "ListNotFound", None)
 
-        return TwList(response['data'], self)
+        return TwList(self, response['data'])
 
     def create_list(
             self,
@@ -678,7 +678,7 @@ class UserMethods:
             raise ValueError("'name' is required")
 
         response = self.request.create_list(name, description, is_private)
-        return TwList(response['data'], self)
+        return TwList(self, response['data'])
 
     def delete_list(
             self,
@@ -711,7 +711,7 @@ class UserMethods:
         if not response.get('data', {}).get('list', {}).get('name'):
             raise ListNotFound(404, "ListNotFound", None)
 
-        return TwList(response['data'], self)
+        return TwList(self, response['data'])
 
     def remove_list_member(
             self,
@@ -728,7 +728,7 @@ class UserMethods:
         if not response.get('data', {}).get('list', {}).get('name'):
             raise ListNotFound(404, "ListNotFound", None)
 
-        return TwList(response['data'], self)
+        return TwList(self, response['data'])
 
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):

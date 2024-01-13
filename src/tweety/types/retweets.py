@@ -1,6 +1,5 @@
 from .base import BaseGeneratorClass
 from .twDataTypes import User
-from ..utils import find_objects
 
 
 class TweetRetweets(BaseGeneratorClass):

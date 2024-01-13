@@ -62,6 +62,7 @@ def bar_progress(filename, total, current, width=80):
     sys.stdout.write("\r" + progress_message)
     sys.stdout.flush()
 
+
 def parse_wait_time(wait_time):
     if not wait_time:
         return 0
