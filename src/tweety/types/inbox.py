@@ -125,7 +125,7 @@ class Conversation(dict):
             try:
                 user = self._inbox['users'].get(str(participant['user_id']))
                 if user:
-                    users.append(User(user, self._client))
+                    users.append(User(self._client, user))
             except Exception as e:
                 pass
 
@@ -204,7 +204,7 @@ class Message(dict):
         user = self._inbox['users'].get(str(user))
         if user:
             user['__typename'] = "User"
-            return User(user, self._client)
+            return User(self._client, user)
 
         return None
 
@@ -230,7 +230,7 @@ class Message(dict):
                 media = attachment.get('animated_gif')
 
             if media:
-                return Media(media, self._client)
+                return Media(self._client, media)
 
         return None
 

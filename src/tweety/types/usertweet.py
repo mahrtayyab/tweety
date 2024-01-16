@@ -1,7 +1,7 @@
 from .twDataTypes import SelfThread, ConversationThread
 from ..exceptions_ import UserProtected, UserNotFound
 from . import Tweet, Excel
-from .base import BaseGeneratorClass
+from .base import BaseGeneratorClass, find_objects
 
 
 class UserTweets(BaseGeneratorClass):
@@ -217,3 +217,52 @@ class TweetComments(BaseGeneratorClass):
             self.tweet_id,
             len(self.tweets), self.parent
         )
+
+
+class TweetHistory(BaseGeneratorClass):
+    LATEST_TWEET_ENTRY_ID = "latestTweet"
+
+    def __init__(self, tweet_id, client):
+        super().__init__()
+        self.client = client
+        self._tweet_id = tweet_id
+        self.latest = None
+        self.tweets = self['tweets'] = self._get_history()
+
+    def _get_history(self):
+        results = []
+        response = self.client.http.get_tweet_edit_history(self._tweet_id)
+        entries = find_objects(response, "type", "TimelineAddEntries", recursive=False, none_value={})
+        entries = entries.get('entries', [])
+        if not entries:
+            _tweet = self.client.tweet_detail(self._tweet_id)
+            self.latest = self['latest'] = _tweet
+            results.append(_tweet)
+        else:
+            for entry in entries:
+                _tweet = Tweet(self.client, entry, None)
+
+                if entry['entryId'] == self.LATEST_TWEET_ENTRY_ID:
+                    self.latest = self['latest'] = _tweet
+
+                results.append(_tweet)
+        return results
+
+    def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
+        return self.tweets[index]
+
+    def __iter__(self):
+        for __tweet in self.tweets:
+            yield __tweet
+
+    def __len__(self):
+        return len(self.tweets)
+
+    def __repr__(self):
+        return "TweetHistory(tweets={}, author={})".format(
+            len(self.tweets), self.tweets[0].author
+        )
+

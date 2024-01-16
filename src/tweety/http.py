@@ -54,7 +54,6 @@ class Request:
 
         response = self.__session.request(**request_data)
         self._update_rate_limit(response, inspect.stack()[1][3])
-
         if is_document:
             return response
 
@@ -70,7 +69,7 @@ class Request:
                 error_code=response.status_code,
                 error_name="Server Error",
                 response=response,
-                message="Unknown Error Occurs on Twitter" if not response.text else response.text
+                message="Unknown Error Occurs on Twitter"
             )
 
         if response_json.get("errors") and not response_json.get('data'):
@@ -162,6 +161,10 @@ class Request:
             response = self.__get_response__(**self.__builder.tweet_detail(tweetId, cursor))
         else:
             response = self.__get_response__(**self.__builder.tweet_detail_as_guest(tweetId))
+        return response
+
+    def get_tweet_edit_history(self, tweet_id):
+        response = self.__get_response__(**self.__builder.tweet_edit_history(tweet_id))
         return response
 
     def get_mentions(self, user_id, cursor=None):

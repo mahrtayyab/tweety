@@ -129,6 +129,31 @@ class Excel:
         self.workbook.save(self.filename)
 
 
+class EditControl(_TwType):
+    def __init__(self, client, edit_control, parent):
+        self._client = client
+        self._raw = edit_control['edit_control_initial'] if edit_control.get('edit_control_initial') else edit_control
+        self._parent = parent
+        self.tweet_ids = self._raw.get('edit_tweet_ids', [])
+        self.edits_remaining = self._raw.get('edits_remaining', '0')
+        self.is_edit_eligible = self._raw.get('is_edit_eligible', False)
+        self.is_latest = str(self._parent.id) == str(self.tweet_ids[-1])
+        self.latest_tweet_id = self.tweet_ids[-1]
+        # self.history = [self.parent]
+
+    @property
+    def latest(self):
+        if not self.is_latest:
+            _latest = self._client.tweet_detail(self.tweet_ids[-1])
+            return _latest
+        return self._parent
+
+    def __repr__(self):
+        return "EditControl(parent={}, is_latest={})".format(
+            self._parent, self.is_latest
+        )
+
+
 class Tweet(_TwType):
     def __init__(self, client, tweet, full_http_response=None):  # noqa
         self._comments_cursor = None
@@ -204,9 +229,25 @@ class Tweet(_TwType):
         self.community_note = self._get_community_note()
         self.community = self._get_community()
         self.url = self._get_url()
+        self.edit_control = self._get_edit_control()
+        self.has_newer_version = self._get_has_newer_version()
         self.broadcast = self._get_broadcast()
         self.threads = self.get_threads()
         self.comments = []
+
+    def _get_has_newer_version(self):
+        if self.edit_control:
+            return not self.edit_control.is_latest
+        return False
+
+    def get_latest(self):
+        if self.edit_control:
+            return self.edit_control.latest
+        return self
+
+    def _get_edit_control(self):
+        edit_control = find_objects(self._raw, "edit_control", None, recursive=False)
+        return EditControl(self._client, edit_control, self)
 
     def _get_broadcast(self):
         for url in self.urls:
@@ -263,8 +304,7 @@ class Tweet(_TwType):
                     except:
                         pass
 
-            elif str(entry['entryId'].split("-")[0]) == "tweet" and entry['content']['itemContent'][
-                'tweetDisplayType'] == "SelfThread":
+            elif str(entry['entryId'].split("-")[0]) == "tweet" and entry['content']['itemContent']['tweetDisplayType'] == "SelfThread":
                 try:
                     parsed = Tweet(self._client, entry, None)
                     _threads.append(parsed)
@@ -493,11 +533,23 @@ class Tweet(_TwType):
 
     def _get_tweet_symbols(self):
         symbols = self._original_tweet.get('entities', {}).get('symbols', [])
+        symbols = [Symbol(self._client, symbol) for symbol in symbols]
 
         if self.rich_text:
             symbols.extend(self.rich_text.symbols)
 
         return symbols
+
+
+class Symbol(_TwType):
+    def __init__(self, client, symbol):
+        self._client = client
+        self._raw = symbol
+        self.indices = self._raw['indices']
+        self.text = self._raw['text']
+
+    def __repr__(self):
+        return "Symbol(text={})".format(self.text)
 
 
 class URL(_TwType):
@@ -574,7 +626,7 @@ class RichText(_TwType):
         return [URL(self._client, i) for i in self._entities.get('urls', [])]
 
     def _get_symbols(self):
-        return self._entities.get('symbols', [])
+        return [Symbol(self._client, symbol) for symbol in self._entities.get('symbols', [])]
 
     def _get_tags(self):
         return [RichTag(self._client, i) for i in self._note.get('richtext', {}).get('richtext_tags', [])]
@@ -1101,7 +1153,6 @@ class Coordinates(dict):
 
     def __repr__(self):
         return f"Coordinates(latitude={self.latitude}, longitude={self.longitude})"
-
 
 class User(_TwType):
     def __init__(self, client, user_data, *args):

@@ -1,7 +1,7 @@
 from typing import Union
 from urllib.parse import urlparse
 from .utils import find_objects, AuthRequired
-from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, CommunityMembers, UserFollowers, UserFollowings
+from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, CommunityMembers, UserFollowers, UserFollowings, TweetHistory
 from .exceptions_ import *
 from .session import Session
 from .http import Request
@@ -544,6 +544,19 @@ class BotMethods:
         comments = TweetComments(tweet_id, self, get_hidden, pages, wait_time, cursor)
 
         return comments.generator()
+
+    @AuthRequired
+    def tweet_edit_history(self, identifier) -> TweetHistory:
+        """
+        Get Edit History of a Tweet
+
+        :param identifier: (`str`) The unique identifier of the tweet , either the `Tweet id` or `Tweet Link`
+
+        :return: .types.usertweet.TweetHistory
+        """
+
+        tweetId = urlparse(str(identifier)).path.split("/")[-1]
+        return TweetHistory(tweetId, self)
 
     def tweet_detail(self, identifier: str) -> Tweet:
         """

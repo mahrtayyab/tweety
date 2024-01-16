@@ -1,10 +1,33 @@
 
 from .twDataTypes import (
-    User, Excel, Tweet, Media, Stream, deprecated, Trends, RichText, RichTag, SelfThread, Poll, Choice, Community, List
+    User,
+    Excel,
+    Tweet,
+    Media,
+    Stream,
+    deprecated,
+    Trends,
+    RichText,
+    RichTag,
+    SelfThread,
+    Poll,
+    Choice,
+    Community,
+    List,
+    Symbol,
+    URL,
+    EditControl,
+    Hashtag,
+    ConversationThread,
+    Coordinates,
+    ShortUser,
+    MediaSize,
+    Broadcast,
+    AudioSpace
 )
-from .n_types import UploadedMedia, Proxy
+from .n_types import UploadedMedia, Proxy, PROXY_TYPE_SOCKS4, PROXY_TYPE_SOCKS5, PROXY_TYPE_HTTP
 from .search import Search
-from .usertweet import UserTweets, SelfTimeline, TweetComments
+from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory
 from .mentions import Mention
 from .inbox import Inbox, SendMessage, Media, Conversation
 from .bookmarks import Bookmarks
