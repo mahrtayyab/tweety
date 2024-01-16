@@ -1,12 +1,16 @@
 import datetime
 import re
 import threading
-
-from . import User
-from .twDataTypes import Media
+import time
+import traceback
+from . import User, Media
+from ..utils import parse_time, parse_wait_time
 
 
 class Inbox(dict):
+    HAS_MORE_STATUS = "HAS_MORE"
+    AT_END_STATUS = "AT_END"
+
     def __init__(self, user_id, client, cursor=None):
         super().__init__()
         self._client = client
@@ -32,7 +36,7 @@ class Inbox(dict):
         for conv in self.conversations:
             self._tmp_conv_id.append(str(conv.id))
 
-        return _initial_inbox
+        return _initial_inbox or {}
 
     def get_initial(self):
         _threads = []
@@ -40,13 +44,13 @@ class Inbox(dict):
 
         _initial_inbox = self._parse_response(response)
 
-        self.cursor = self['cursor'] = _initial_inbox['cursor']
-        self.last_seen_event_id = self['last_seen_event_id'] = _initial_inbox['last_seen_event_id']
-        self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = _initial_inbox['trusted_last_seen_event_id']
-        self.untrusted_last_seen_event_id = self['untrusted_last_seen_event_id'] = _initial_inbox['untrusted_last_seen_event_id']
+        self.cursor = self['cursor'] = _initial_inbox.get('cursor')
+        self.last_seen_event_id = self['last_seen_event_id'] = _initial_inbox.get('last_seen_event_id')
+        self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = _initial_inbox.get('trusted_last_seen_event_id')
+        self.untrusted_last_seen_event_id = self['untrusted_last_seen_event_id'] = _initial_inbox.get('untrusted_last_seen_event_id')
         if _initial_inbox.get("inbox_timelines"):
             for key, value in _initial_inbox['inbox_timelines'].items():
-                new_thread = threading.Thread(target=self.get_more, args=(value, ))
+                new_thread = threading.Thread(target=self.get_more, args=(value,))
                 _threads.append(new_thread)
                 new_thread.start()
 
@@ -65,13 +69,13 @@ class Inbox(dict):
         self['messages'] = self.messages
 
     def get_more(self, status):
-        stage = status['status']
-        min_entry_id = status.get('min_entry_id')
-        while stage != "AT_END":
+        stage = status.get('status', self.AT_END_STATUS)
+        min_entry_id = status.get('min_entry_id', 0)
+        while stage != self.AT_END_STATUS:
             response = self._client.http.get_trusted_inbox(min_entry_id)
             inbox = self._parse_response(response)
-            min_entry_id = inbox['min_entry_id']
-            stage = inbox['status']
+            min_entry_id = inbox.get('min_entry_id', 0)
+            stage = inbox.get('status', self.AT_END_STATUS)
 
     def get_conversation(self, conversation_id):
         for conv in self.conversations:
@@ -98,6 +102,9 @@ class Inbox(dict):
 
 
 class Conversation(dict):
+    HAS_MORE_STATUS = Inbox.HAS_MORE_STATUS
+    AT_END_STATUS = Inbox.AT_END_STATUS
+
     def __init__(self, conversation, inbox, client, get_all_messages=False):
         super().__init__()
         self._inbox = inbox
@@ -125,6 +132,7 @@ class Conversation(dict):
             try:
                 user = self._inbox['users'].get(str(participant['user_id']))
                 if user:
+                    user['__typename'] = "User"
                     users.append(User(self._client, user))
             except Exception as e:
                 pass
@@ -137,7 +145,7 @@ class Conversation(dict):
     def parse_messages(self):
         messages = []
         if not self._get_all_messages:
-            for entry in self._inbox['entries']:
+            for entry in self._inbox.get('entries', []):
                 if entry.get('message'):
                     if str(entry['message']['conversation_id']) == str(self.id):
                         messages.append(Message(entry['message'], self._inbox, self._client))
@@ -146,18 +154,24 @@ class Conversation(dict):
 
         return messages
 
-    def get_all_messages(self):
+    def get_all_messages(self, wait_time=2, min_entry_id=None, till_date=None):
         messages = []
-        status = "HAS_MORE"
-        min_entry_id = None
-        while status != "AT_END":
+        status = self.HAS_MORE_STATUS
+        min_entry_id = min_entry_id
+        while status != self.AT_END_STATUS:
             response = self._client.http.get_conversation(self.id, min_entry_id)
-            for entry in response['conversation_timeline']['entries']:
-                if entry.get("message"):
-                    messages.append(Message(entry['message'], response['conversation_timeline'], self._client))
+            status = response.get('conversation_timeline', {}).get('status', "AT_END")
+            min_entry_id = response.get('conversation_timeline', {}).get('min_entry_id', 0)
 
-            status = response['conversation_timeline']['status']
-            min_entry_id = response['conversation_timeline']['min_entry_id']
+            for entry in response.get('conversation_timeline', {}).get('entries', []):
+                if entry.get("message"):
+                    _message = Message(entry['message'], response['conversation_timeline'], self._client)
+
+                    if till_date and int(_message.time.timestamp()) <= int(till_date.timestamp()):
+                        break
+
+                    messages.append(_message)
+            time.sleep(parse_wait_time(wait_time))
 
         return messages
 
@@ -182,22 +196,21 @@ class Message(dict):
         self._raw = message
         self._inbox = _inbox
         self._client = client
-        self.conversation_id = self._raw.get('conversation_id')
-        self.id = self._raw.get('id')
-        self.epoch_time = self._get_message_data('time')
-        self.time = datetime.datetime.utcfromtimestamp(int(self.epoch_time) / 1000) if self.epoch_time else None
-        self.request_id = self._raw.get('request_id')
-        self.text = self._get_text()
-        self.receiver = self.get_recipient('recipient_id')
-        self.sender = self.get_recipient('sender_id')
-        self.media = self._get_media()
+        self.conversation_id = self['conversation_id'] = self._raw.get('conversation_id')
+        self.id = self['id'] = self._raw.get('id')
+        self.epoch_time = self['epoch_time'] = self._get_message_data('time')
+        self.time = self['time'] = parse_time(self.epoch_time)
+        self.request_id = self['request_id'] = self._raw.get('request_id')
+        self.text = self['text'] = self._get_text()
+        self.receiver = self['receiver'] = self.get_recipient('recipient_id')
+        self.sender = self['sender'] = self.get_recipient('sender_id')
+        self.media = self['media'] = self._get_media()
 
     def _get_message_data(self, dataKey):
         return self._raw['message_data'].get(dataKey)
 
     def get_recipient(self, target):
         user = self._get_message_data(target)
-
         if not user:
             return None
 

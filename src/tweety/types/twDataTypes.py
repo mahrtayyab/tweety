@@ -336,7 +336,11 @@ class Tweet(_TwType):
 
     def _get_community_note(self):
         if self._tweet.get("birdwatch_pivot"):
-            return self._tweet['birdwatch_pivot']['subtitle']['text']
+            text = self._tweet['birdwatch_pivot']['subtitle']['text']
+            # entities = self._tweet['birdwatch_pivot']['subtitle'].get('entities', [])
+            # for entity in entities:
+            #     text = replace_between_indexes(text, entity['fromIndex'], entity['toIndex'], entity['ref']['url'])
+            return text
 
         return None
 

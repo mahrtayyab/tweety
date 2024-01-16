@@ -54,7 +54,8 @@ class GenericError:
         88: RateLimitReached,
         399: InvalidCredentials,
         220: InvalidCredentials,
-        214: InvalidBroadcast
+        214: InvalidBroadcast,
+        366: InvalidTweetIdentifier,
     }
 
     def __init__(self, response, error_code, message=None):
