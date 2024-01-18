@@ -23,7 +23,8 @@ from .twDataTypes import (
     ShortUser,
     MediaSize,
     Broadcast,
-    AudioSpace
+    AudioSpace,
+    Gif
 )
 from .n_types import UploadedMedia, Proxy, PROXY_TYPE_SOCKS4, PROXY_TYPE_SOCKS5, PROXY_TYPE_HTTP
 from .search import Search
@@ -37,6 +38,7 @@ from .community import CommunityTweets, CommunityMembers
 from .notification import TweetNotifications
 from .lists import Lists, ListMembers, ListTweets
 from .follow import UserFollowers, UserFollowings
+from .gifs import GifSearch
 
 
 

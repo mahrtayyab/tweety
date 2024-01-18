@@ -2,7 +2,7 @@ from typing import Union
 from urllib.parse import urlparse
 from .utils import find_objects, AuthRequired
 from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, \
-    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia
+    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch
 from .exceptions_ import *
 from .session import Session
 from .http import Request
@@ -650,4 +650,9 @@ class BotMethods:
                         _tweet_before.append(tweet)
 
         raise InvalidTweetIdentifier(response=response)
+
+    def search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
+        search = GifSearch(search_term, self, pages, cursor, wait_time)
+        list(search.generator())
+        return search
 

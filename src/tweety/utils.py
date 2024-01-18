@@ -99,7 +99,7 @@ def create_query_id():
 
 
 def check_if_file_is_image(file):
-    if not os.path.exists(file):
+    if not os.path.exists(file) and not str(file).startswith("https://"):
         raise ValueError("Path {} doesn't exists".format(file))
 
     file_extension = file.split(".")[-1]
@@ -117,6 +117,9 @@ def get_random_string(length):
 
 
 def calculate_md5(file_path):
+    if str(file_path).startswith("https://"):
+        return None
+
     md5_hash = hashlib.md5()
     with open(file_path, "rb") as file:
         for chunk in iter(lambda: file.read(4096), b""):

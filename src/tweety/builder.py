@@ -35,6 +35,7 @@ class UrlBuilder:
     URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
     URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
     URL_SEARCH = "https://twitter.com/i/api/graphql/Aj1nGkALq99Xg3XI0OZBtw/SearchTimeline"
+    URL_GIF_SEARCH = "https://twitter.com/i/api/1.1/foundmedia/search.json"
     URL_AUDIO_SPACE_BY_ID = "https://twitter.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
     URL_AUDIO_SPACE_STREAM = "https://twitter.com/i/api/1.1/live_video_stream/status/{}"
     URL_TWEET_DETAILS = "https://twitter.com/i/api/graphql/3XDB26fBve-MmjHaWTUZxA/TweetDetail"
@@ -797,13 +798,18 @@ class UrlBuilder:
         return "POST", self.URL_AUSER_CREATE_MEDIA_METADATA, json_data
 
     @return_with_headers
-    def upload_media_init(self, size, mime_type, media_category):
+    def upload_media_init(self, size, mime_type, media_category, source_url=None):
         params = {
             'command': 'INIT',
             'total_bytes': str(int(size)),
             'media_type': mime_type,
             'media_category': media_category,
         }
+
+        if source_url:
+            del params['total_bytes']
+            params['source_url'] = source_url
+
         return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
 
     @return_with_headers
@@ -816,12 +822,15 @@ class UrlBuilder:
         return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
 
     @return_with_headers
-    def upload_media_finalize(self, media_id, md5_hash):
+    def upload_media_finalize(self, media_id, md5_hash=None):
         params = {
             'command': 'FINALIZE',
-            'media_id': media_id,
-            'original_md5': md5_hash,
+            'media_id': media_id
         }
+
+        if md5_hash:
+            params['original_md5'] = md5_hash
+
         return 'POST', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
 
     @return_with_headers
@@ -1369,6 +1378,16 @@ class UrlBuilder:
         }
 
         return "GET", self._build(self.URL_AUSER_SETTINGS, urlencode(params))
+
+    @return_with_headers
+    def search_gifs(self, search_term, cursor=None):
+        params = {
+            'q': search_term
+        }
+        if cursor:
+            params['cursor'] = cursor
+
+        return "GET", self._build(self.URL_GIF_SEARCH, urlencode(params))
 
 
 class FlowData:

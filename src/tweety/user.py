@@ -310,13 +310,15 @@ class UserMethods:
             self,
             username: Union[str, int, User],
             text: str,
-            file: Union[str, UploadedMedia] = None
+            file: Union[str, UploadedMedia] = None,
+            in_group: bool = False  # TODO : Find better way
     ) -> Message:
 
         """
         Send Message to a Twitter User
+        :param in_group: Message is being sent in group or not
         :param file: (`str`, `UploadedMedia`) File to be sent with message too
-        :param username: (`str`, `int`, `User`) Username of the user whom to send message
+        :param username: (`str`, `int`, `User`) Username of the user or id of group whom to send message
         :param text: (`str`) Text to be sent as message
         :return: .types.inbox.Message
 
@@ -326,8 +328,11 @@ class UserMethods:
             client.send_message("elonmusk", "Hi Musk!")
         """
 
-        user_id = self._get_user_id(username)
-        conversation_id = create_conversation_id(self.user.id, user_id)
+        if not in_group:
+            user_id = self._get_user_id(username)
+            conversation_id = create_conversation_id(self.user.id, user_id)
+        else:
+            conversation_id = username
 
         if file:
             file = self._upload_media(file, "dm_image")[0].media_id

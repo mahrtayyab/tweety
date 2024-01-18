@@ -1459,3 +1459,17 @@ class List(_TwType):
             return None
 
         return User(self._client, self._list['user_results'])
+
+class Gif(_TwType):
+    def __init__(self, client, gif):
+        self._client = client
+        self._raw = gif
+        self.provider = self._raw.get('provider', {}).get('name')
+        self.id = self._raw.get('id')
+        self.alt_text = self._raw.get('alt_text')
+        self.url = self._raw.get('original_image', {}).get('url')
+
+    def __repr__(self):
+        return "Gif(id={}, provider={}, alt_text={})".format(
+            self.id, self.provider, self.alt_text
+        )

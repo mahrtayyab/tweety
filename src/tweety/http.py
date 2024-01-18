@@ -229,8 +229,8 @@ class Request:
         response = self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
-    def upload_media_init(self, size, mime_type, media_category):
-        request_data = self.__builder.upload_media_init(size, mime_type, media_category)
+    def upload_media_init(self, size, mime_type, media_category, source_url):
+        request_data = self.__builder.upload_media_init(size, mime_type, media_category, source_url)
         response = self.__get_response__(**request_data)
         return response
 
@@ -376,6 +376,11 @@ class Request:
 
     def delete_list(self, list_id):
         request_data = self.__builder.delete_list(list_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def gif_search(self, search_term, cursor):
+        request_data = self.__builder.search_gifs(search_term, cursor)
         response = self.__get_response__(**request_data)
         return response
 

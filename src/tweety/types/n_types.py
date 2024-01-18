@@ -147,6 +147,7 @@ class UploadedMedia:
         self._client = client
         self._alt_text = alt_text
         self._sensitive_media_warning = sensitive_media_warning if sensitive_media_warning else []
+        self._source_url = self._file if str(self._file).startswith("https://") else None
         self.size = self._get_size()
         self.mime_type = self.get_mime_type()
         self._media_category = self._get_media_category(media_category)
@@ -155,10 +156,12 @@ class UploadedMedia:
     def _get_media_category(self, category):
         media_for = category.split("_")[0]
         media_type = self.mime_type.split("/")[0]
-        return f"{media_for}_{media_type}"
+        return f"{media_for}_{media_type}" if "gif" not in self.mime_type else f"{media_for}_gif"
 
     def _get_size(self):
-        return os.path.getsize(self._file)
+        if not self._source_url:
+            return os.path.getsize(self._file)
+        return 0
 
     def get_mime_type(self):
         return check_if_file_is_image(self._file)
@@ -168,7 +171,7 @@ class UploadedMedia:
         return bytes(f'------WebKitFormBoundary{get_random_string(16)}', "utf-8")
 
     def _initiate_upload(self):
-        response = self._client.http.upload_media_init(self.size, self.mime_type, self._media_category)
+        response = self._client.http.upload_media_init(self.size, self.mime_type, self._media_category, source_url=self._source_url)
         return response['media_id_string']
 
     def _append_upload(self, media_id):
@@ -185,7 +188,10 @@ class UploadedMedia:
         self._client.http.set_media_set_metadata(self.media_id, self._alt_text, self._sensitive_media_warning)
 
     def _finish_upload(self, media_id):
-        response = self._client.http.upload_media_finalize(media_id, self.md5_hash)
+        if not self._source_url:
+            response = self._client.http.upload_media_finalize(media_id, self.md5_hash)
+        else:
+            response = {"processing_info": {"state": "pending", "check_after_secs": 1}}
 
         if not response.get('processing_info'):
             return
@@ -201,7 +207,10 @@ class UploadedMedia:
 
     def upload(self):
         self.media_id = self._initiate_upload()
-        self._append_upload(self.media_id)
+
+        if not self._source_url:
+            self._append_upload(self.media_id)
+
         self._finish_upload(self.media_id)
 
         if self._alt_text:

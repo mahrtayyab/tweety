@@ -202,8 +202,9 @@ class Conversation(dict):
             time.sleep(parse_wait_time(wait_time))
         return messages
 
-    def send_message(self, text):
-        return SendMessage(self._client, self.id, text).send()
+    def send_message(self, text, file=None):
+        return self._client.send_message(self.id, text=text, file=file, in_group=self.type == "GROUP_DM")
+        # return SendMessage(self._client, self.id, text).send()
 
     def __eq__(self, other):
         if isinstance(other, Conversation):
@@ -294,5 +295,6 @@ class SendMessage:
         self._file = file
 
     def send(self):
+
         response = self._client.http.send_message(self._conv, self._text, self._file)
         return Message(response['entries'][0]['message'], response, self._client)
