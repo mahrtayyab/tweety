@@ -31,6 +31,7 @@ class UrlBuilder:
     URL_API_INIT = "https://twitter.com/i/api/1.1/branch/init.json"
     URL_USER_BY_SCREEN_NAME = "https://twitter.com/i/api/graphql/oUZZZ8Oddwxs8Cd3iW3UEA/UserByScreenName"
     URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
+    URL_USER_MEDIAS = "https://twitter.com/i/api/graphql/cEjpJXA15Ok78yO4TUQPeQ/UserMedia"
     URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
     URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
     URL_SEARCH = "https://twitter.com/i/api/graphql/Aj1nGkALq99Xg3XI0OZBtw/SearchTimeline"
@@ -169,6 +170,33 @@ class UrlBuilder:
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
         return "GET", self._build(self.URL_USER_BY_SCREEN_NAME, urlencode(params))
+
+    @return_with_headers
+    def user_media(self, user_id, cursor=None):
+        variables = {"userId": str(user_id), "count": 20, "includePromotedContent": False, "withClientEventToken": False,
+                     "withBirdwatchNotes": False, "withVoice": True, "withV2Timeline": True}
+        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True, "tweetypie_unmention_optimization_enabled": True,
+                    "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": False,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_media_download_video_enabled": False, "responsive_web_enhance_cards_enabled": False}
+
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        return "GET", self._build(self.URL_USER_MEDIAS, urlencode(params))
 
     @return_with_headers
     def user_tweets(self, user_id, replies=False, cursor=None):

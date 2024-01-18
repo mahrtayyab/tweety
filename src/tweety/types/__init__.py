@@ -27,7 +27,7 @@ from .twDataTypes import (
 )
 from .n_types import UploadedMedia, Proxy, PROXY_TYPE_SOCKS4, PROXY_TYPE_SOCKS5, PROXY_TYPE_HTTP
 from .search import Search
-from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory
+from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia
 from .mentions import Mention
 from .inbox import Inbox, SendMessage, Media, Conversation
 from .bookmarks import Bookmarks

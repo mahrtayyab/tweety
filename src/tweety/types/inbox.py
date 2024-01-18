@@ -123,7 +123,16 @@ class Conversation(dict):
         self.trusted = self['trusted'] = self._get_key("trusted")
         self.type = self['type'] = self._get_key("type")
         self.participants = self['participants'] = self.get_participants()
+        self.name = self['name'] = self._get_key("name", self._get_one_to_one_name())
         self.messages = self['messages'] = self.parse_messages()
+        self.cursor = None
+        self.conversation_status = self.HAS_MORE_STATUS
+
+    def _get_one_to_one_name(self):
+        for participant in self.participants:
+            if participant != self._client.me:
+                return participant.name
+        return ""
 
     def get_participants(self):
         users = []
@@ -154,25 +163,43 @@ class Conversation(dict):
 
         return messages
 
-    def get_all_messages(self, wait_time=2, min_entry_id=None, till_date=None):
+    def get_next_page(self, till_date=None, count=None):
         messages = []
-        status = self.HAS_MORE_STATUS
-        min_entry_id = min_entry_id
-        while status != self.AT_END_STATUS:
-            response = self._client.http.get_conversation(self.id, min_entry_id)
-            status = response.get('conversation_timeline', {}).get('status', "AT_END")
-            min_entry_id = response.get('conversation_timeline', {}).get('min_entry_id', 0)
+        response = self._client.http.get_conversation(self.id, self.cursor)
+        self.conversation_status = response.get('conversation_timeline', {}).get('status', "AT_END")
+        self.cursor = response.get('conversation_timeline', {}).get('min_entry_id', 0)
 
-            for entry in response.get('conversation_timeline', {}).get('entries', []):
-                if entry.get("message"):
-                    _message = Message(entry['message'], response['conversation_timeline'], self._client)
+        for entry in response.get('conversation_timeline', {}).get('entries', []):
+            if entry.get("message"):
+                _message = Message(entry['message'], response['conversation_timeline'], self._client)
 
-                    if till_date and int(_message.time.timestamp()) <= int(till_date.timestamp()):
-                        break
+                if till_date and int(_message.time.timestamp()) <= int(till_date.timestamp()):
+                    break
 
-                    messages.append(_message)
+                messages.append(_message)
+
+                if count and len(messages) == count:
+                    break
+
+        return messages
+
+    def get_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
+        all_messages = []
+        for messages in self.iter_all_messages(wait_time=wait_time, cursor=cursor, till_date=till_date, count=count):
+            all_messages.extend(messages)
+        return all_messages
+
+    def iter_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
+        messages = []
+        self.cursor = cursor if cursor != 0 else self.cursor
+        while True:
+            page = self.get_next_page(till_date, count)
+            messages.extend(page)
+            yield page
+            if self.conversation_status == self.AT_END_STATUS:
+                break
+
             time.sleep(parse_wait_time(wait_time))
-
         return messages
 
     def send_message(self, text):

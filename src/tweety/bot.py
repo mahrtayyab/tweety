@@ -1,7 +1,8 @@
 from typing import Union
 from urllib.parse import urlparse
 from .utils import find_objects, AuthRequired
-from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, CommunityMembers, UserFollowers, UserFollowings, TweetHistory
+from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, \
+    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia
 from .exceptions_ import *
 from .session import Session
 from .http import Request
@@ -126,6 +127,63 @@ class BotMethods:
         userTweets = UserTweets(user_id, self, pages, replies, wait_time, cursor)
 
         return userTweets.generator()
+
+    @AuthRequired
+    def get_user_media(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ) -> UserMedia:
+        """
+         Get the media from a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: .types.usertweet.UserMedia
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userMedia = UserMedia(user_id, self, pages, wait_time, cursor)
+
+        list(userMedia.generator())
+
+        return userMedia
+
+    @AuthRequired
+    def iter_user_media(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+
+        """
+         Generator for getting the media from a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: (.types.usertweet.UserMedia, list[.types.twDataTypes.Tweet])
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userMedia = UserMedia(user_id, self, pages, wait_time, cursor)
+
+        return userMedia.generator()
 
     @AuthRequired
     def get_trends(self):

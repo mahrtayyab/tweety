@@ -143,6 +143,11 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def get_medias(self, user_id, cursor=None):
+        request_data = self.__builder.user_media(user_id=user_id, cursor=cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
     def get_trends(self):
         response = self.__get_response__(**self.__builder.trends())
         return response
