@@ -1233,6 +1233,12 @@ class User(_TwType):
 
     def unfollow(self):
         return self._client.unfollow_user(self.id)
+    
+    def block(self):
+        return self._client.block_user(self.id)
+    
+    def unblock(self):
+        return self._client.unblock_user(self.id)
 
     def enable_notifications(self):
         if not self.notifications:

@@ -573,7 +573,7 @@ class UserMethods:
     def unfollow_user(self, user_id):
         """
 
-        :param user_id: User Id of the user you want to follow
+        :param user_id: User Id of the user you want to unfollow
         :return:
         """
 
@@ -581,6 +581,34 @@ class UserMethods:
             user_id = user_id.id
 
         response = self.request.unfollow_user(user_id)
+        response['__typename'] = "User"
+        return User(self, response)
+
+    def block_user(self, user_id):
+        """
+
+        :param user_id: User Id of the user you want to block
+        :return:
+        """
+
+        if isinstance(user_id, User):
+            user_id = user_id.id
+
+        response = self.request.block_user(user_id)
+        response['__typename'] = "User"
+        return User(self, response)
+    
+    def unblock_user(self, user_id):
+        """
+
+        :param user_id: User Id of the user you want to unblock
+        :return:
+        """
+
+        if isinstance(user_id, User):
+            user_id = user_id.id
+
+        response = self.request.unblock_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
 

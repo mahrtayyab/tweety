@@ -323,6 +323,18 @@ class Request:
         request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
         response = self.__get_response__(**request_data)
         return response
+    
+    def block_user(self, user_id):
+        request_data = self.__builder.block_user(user_id)
+        request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
+        response = self.__get_response__(**request_data)
+        return response
+
+    def unblock_user(self, user_id):
+        request_data = self.__builder.unblock_user(user_id)
+        request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
+        response = self.__get_response__(**request_data)
+        return response
 
     def get_user_followers(self, user_id, cursor=None):
         request_data = self.__builder.get_user_followers(user_id, cursor)
