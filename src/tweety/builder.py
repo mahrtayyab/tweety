@@ -63,6 +63,8 @@ class UrlBuilder:
     URL_AUSER_DELETE_TWEET_RETWEET = "https://twitter.com/i/api/graphql/iQtK4dl5hBmXewYZuEOKVw/DeleteRetweet"  # noqa
     URL_AUSER_CREATE_FRIEND = "https://twitter.com/i/api/1.1/friendships/create.json"  # noqa
     URL_AUSER_DESTROY_FRIEND = "https://twitter.com/i/api/1.1/friendships/destroy.json"  # noqa
+    URL_AUSER_BLOCK_FRIEND = "https://twitter.com/i/api/1.1/blocks/create.json"  # noqa
+    URL_AUSER_UNBLOCK_FRIEND = "https://twitter.com/i/api/1.1/blocks/destroy.json"  # noqa
     URL_AUSER_GET_COMMUNITY = "https://twitter.com/i/api/graphql/wYwM9x1NTCQKPx50Ih35Tg/CommunitiesFetchOneQuery"  # noqa
     URL_AUSER_GET_COMMUNITY_TWEETS = "https://twitter.com/i/api/graphql/X3ziwTzWWeaFPsesEwWY-A/CommunityTweetsTimeline"  # noqa
     URL_AUSER_GET_COMMUNITY_TWEETS_TOP = "https://twitter.com/i/api/graphql/UwEaY0_gBZFCQq-gEnArjg/CommunityTweetsRankedTimeline"  # noqa
@@ -1045,6 +1047,48 @@ class UrlBuilder:
         }
 
         return "POST", self.URL_AUSER_DESTROY_FRIEND, None, data
+    
+    @return_with_headers
+    def block_user(self, user_id):
+        data = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_has_nft_avatar': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'user_id': user_id,
+        }
+
+        return "POST", self.URL_AUSER_BLOCK_FRIEND, None, data
+    
+    @return_with_headers
+    def unblock_user(self, user_id):
+        data = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_has_nft_avatar': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'user_id': user_id,
+        }
+
+        return "POST", self.URL_AUSER_UNBLOCK_FRIEND, None, data
 
     @return_with_headers
     def get_user_followers(self, user_id, cursor=None):
