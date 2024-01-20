@@ -3,6 +3,8 @@ from .base import BaseGeneratorClass
 
 
 class UserFollowers(BaseGeneratorClass):
+    _RESULT_ATTR = "users"
+
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.users = []
@@ -14,46 +16,30 @@ class UserFollowers(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _users = []
-        if self.is_next_page:
-            response = self.client.http.get_user_followers(self.user_id, cursor=self.cursor)
+        response = self.client.http.get_user_followers(self.user_id, cursor=cursor)
 
-            entries = self._get_entries(response)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                try:
+        for entry in entries:
+            try:
 
-                    parsed = User(self.client, entry, None)
-                    if parsed:
-                        _users.append(parsed)
-                except:
-                    pass
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.users.extend(_users)
+                parsed = User(self.client, entry, None)
+                if parsed:
+                    _users.append(parsed)
+            except:
+                pass
 
-            self['users'] = self.users
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _users
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.users[index]
-
-    def __iter__(self):
-        for __user in self.users:
-            yield __user
-
-    def __len__(self):
-        return len(self.users)
+        return _users, cursor, cursor_top
 
 
 class UserFollowings(BaseGeneratorClass):
+    _RESULT_ATTR = "users"
+
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.users = []
@@ -65,40 +51,22 @@ class UserFollowings(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _users = []
-        if self.is_next_page:
-            response = self.client.http.get_user_followings(self.user_id, cursor=self.cursor)
+        response = self.client.http.get_user_followings(self.user_id, cursor=cursor)
 
-            entries = self._get_entries(response)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                try:
+        for entry in entries:
+            try:
 
-                    parsed = User(self.client, entry, None)
-                    if parsed:
-                        _users.append(parsed)
-                except:
-                    pass
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.users.extend(_users)
+                parsed = User(self.client, entry, None)
+                if parsed:
+                    _users.append(parsed)
+            except:
+                pass
 
-            self['users'] = self.users
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _users
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.users[index]
-
-    def __iter__(self):
-        for __user in self.users:
-            yield __user
-
-    def __len__(self):
-        return len(self.users)
+        return _users, cursor, cursor_top

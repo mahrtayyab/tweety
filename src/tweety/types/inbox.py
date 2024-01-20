@@ -48,6 +48,7 @@ class Inbox(dict):
         self.last_seen_event_id = self['last_seen_event_id'] = _initial_inbox.get('last_seen_event_id')
         self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = _initial_inbox.get('trusted_last_seen_event_id')
         self.untrusted_last_seen_event_id = self['untrusted_last_seen_event_id'] = _initial_inbox.get('untrusted_last_seen_event_id')
+
         if _initial_inbox.get("inbox_timelines"):
             for key, value in _initial_inbox['inbox_timelines'].items():
                 new_thread = threading.Thread(target=self.get_more, args=(value,))
@@ -104,6 +105,7 @@ class Inbox(dict):
 class Conversation(dict):
     HAS_MORE_STATUS = Inbox.HAS_MORE_STATUS
     AT_END_STATUS = Inbox.AT_END_STATUS
+    TYPE_GROUP_DM = "GROUP_DM"
 
     def __init__(self, conversation, inbox, client, get_all_messages=False):
         super().__init__()
@@ -161,14 +163,14 @@ class Conversation(dict):
         else:
             messages = self.get_all_messages()
 
+        messages = sorted(messages, key=lambda x: x.time, reverse=True)
         return messages
 
-    def get_next_page(self, till_date=None, count=None):
+    def get_page(self, cursor, till_date=None):
         messages = []
-        response = self._client.http.get_conversation(self.id, self.cursor)
-        self.conversation_status = response.get('conversation_timeline', {}).get('status', "AT_END")
-        self.cursor = response.get('conversation_timeline', {}).get('min_entry_id', 0)
-
+        response = self._client.http.get_conversation(self.id, cursor)
+        conversation_status = response.get('conversation_timeline', {}).get('status', "AT_END")
+        cursor = response.get('conversation_timeline', {}).get('min_entry_id', 0)
         for entry in response.get('conversation_timeline', {}).get('entries', []):
             if entry.get("message"):
                 _message = Message(entry['message'], response['conversation_timeline'], self._client)
@@ -178,9 +180,10 @@ class Conversation(dict):
 
                 messages.append(_message)
 
-                if count and len(messages) == count:
-                    break
+        return messages, conversation_status, cursor
 
+    def get_next_page(self, till_date=None):
+        messages, self.conversation_status, self.cursor = self.get_page(self.cursor, till_date=till_date)
         return messages
 
     def get_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
@@ -193,18 +196,26 @@ class Conversation(dict):
         messages = []
         self.cursor = cursor if cursor != 0 else self.cursor
         while True:
-            page = self.get_next_page(till_date, count)
-            messages.extend(page)
-            yield page
-            if self.conversation_status == self.AT_END_STATUS:
+            _page = self.get_next_page(till_date)
+
+            actual_page = []
+            for message in _page:
+                if count and len(messages) == count:
+                    break
+                else:
+                    messages.append(message)
+                    actual_page.append(message)
+
+            yield self, actual_page
+
+            if self.conversation_status == self.AT_END_STATUS or (count and len(messages) >= count):
                 break
 
             time.sleep(parse_wait_time(wait_time))
         return messages
 
     def send_message(self, text, file=None):
-        return self._client.send_message(self.id, text=text, file=file, in_group=self.type == "GROUP_DM")
-        # return SendMessage(self._client, self.id, text).send()
+        return self._client.send_message(self.id, text=text, file=file, in_group=self.type == self.TYPE_GROUP_DM)
 
     def __eq__(self, other):
         if isinstance(other, Conversation):
@@ -295,6 +306,5 @@ class SendMessage:
         self._file = file
 
     def send(self):
-
         response = self._client.http.send_message(self._conv, self._text, self._file)
         return Message(response['entries'][0]['message'], response, self._client)

@@ -3,6 +3,8 @@ from .base import BaseGeneratorClass
 
 
 class GifSearch(BaseGeneratorClass):
+    _RESULT_ATTR = "gifs"
+
     def __init__(self, search_term, client, pages=1, cursor=None, wait_time=2):
         super().__init__()
         self.term = search_term
@@ -11,39 +13,23 @@ class GifSearch(BaseGeneratorClass):
         self.cursor = cursor
         self.wait_time = wait_time
         self.is_next_page = True
-        self.results = []
+        self.gifs = []
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _gifs = []
-        if self.is_next_page:
-            response = self.client.http.gif_search(self.term, self.cursor)
+        response = self.client.http.gif_search(self.term, cursor)
 
-            if not response.get('data'):
-                return _gifs
+        if not response.get('data'):
+            return _gifs
 
-            self.cursor = response.get('cursor', {}).get('next')
-            items = response.get('data', {}).get('items', [])
-            for item in items:
-                _gifs.append(Gif(self.client, item))
+        items = response.get('data', {}).get('items', [])
+        for item in items:
+            _gifs.append(Gif(self.client, item))
 
-            self.results.extend(_gifs)
-            self['gifs'] = self.results
-            self['cursor'] = self.cursor
+        cursor = response.get('cursor', {}).get('next')
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return self, _gifs
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.results[index]
-
-    def __iter__(self):
-        for __tweet in self.results:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.results)
+        return _gifs, cursor, cursor_top
 
     def __repr__(self):
         return f"GifSearch(count={self.__len__()})"

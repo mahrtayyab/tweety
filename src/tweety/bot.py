@@ -27,15 +27,16 @@ class BotMethods:
         self._login_flow = None
         self._login_flow_state = None
         self._last_json = {}
+        self._cached_users = {}
+        self._proxy = proxy.get_dict() if isinstance(proxy, Proxy) else proxy
 
         self._event_builders = []
         self.session = Session(self, session_name) if isinstance(session_name, str) else session_name
         self.logged_in = False
-        self._proxy = proxy.get_dict() if isinstance(proxy, Proxy) else proxy
         self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, **httpx_kwargs)
         self.user = None
 
-    def get_user_info(self, username: str = None) -> User:
+    def get_user_info(self, username: str = None, cached_id_only: bool = False) -> User:
         """
         Get the User Info of the specified username
 
@@ -44,9 +45,14 @@ class BotMethods:
         :return: .types.twDataTypes.User
         """
 
+        if cached_id_only and self._cached_users.get(username.lower()):
+            return self._cached_users[username.lower()]
+
         user_raw = self.request.get_user(username)
 
-        return User(self, user_raw)
+        user = User(self, user_raw)
+        self._cached_users[username.lower()] = user.id
+        return user
 
     @property
     def user_id(self) -> int:
@@ -57,6 +63,10 @@ class BotMethods:
         """
         return self.user.id if self.user else None
 
+    @property
+    def cache(self):
+        return self._cached_users
+
     def _get_user_id(self, username) -> int:
         if isinstance(username, User):
             user_id = username.id
@@ -64,6 +74,8 @@ class BotMethods:
             user_id = username
         elif isinstance(username, str) and str(username).isdigit():
             user_id = int(username)
+        elif self._cached_users.get(username.lower()):
+            user_id = self.get_user_info(username, cached_id_only=True)
         else:
             user_id = self.get_user_info(username).id
 
@@ -583,7 +595,6 @@ class BotMethods:
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None,
             get_hidden: bool = False
-
     ):
         """
 
@@ -656,3 +667,6 @@ class BotMethods:
         list(search.generator())
         return search
 
+    def iter_search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
+        search = GifSearch(search_term, self, pages, cursor, wait_time)
+        return search.generator()

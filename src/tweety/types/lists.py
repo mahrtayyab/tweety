@@ -4,6 +4,8 @@ from ..utils import find_objects
 
 
 class Lists(BaseGeneratorClass):
+    _RESULT_ATTR = "lists"
+
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.lists = []
@@ -24,43 +26,25 @@ class Lists(BaseGeneratorClass):
 
         return {}
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _lists = []
-        if self.is_next_page:
-            response = self.client.http.get_lists(cursor=self.cursor)
-            entries = self._get_entries(response)
-            item = self._get_user_owned_lists(entries)
-            lists = find_objects(item, "__typename", "TimelineTwitterList", none_value=[])
+        response = self.client.http.get_lists(cursor=cursor)
+        entries = self._get_entries(response)
+        item = self._get_user_owned_lists(entries)
+        lists = find_objects(item, "__typename", "TimelineTwitterList", none_value=[])
 
-            for item in lists:
-                try:
-                    parsed = List(self.client, item)
-                    if parsed:
-                        _lists.append(parsed)
-                except:
-                    pass
+        for item in lists:
+            try:
+                parsed = List(self.client, item)
+                if parsed:
+                    _lists.append(parsed)
+            except:
+                pass
 
-            self.is_next_page = self._get_cursor(response)
-            self.lists.extend(_lists)
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-            self['tweets'] = self.lists
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
-
-        return _lists
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.lists[index]
-
-    def __iter__(self):
-        for __list in self.lists:
-            yield __list
-
-    def __len__(self):
-        return len(self.lists)
+        return _lists, cursor, cursor_top
 
 
 class ListTweets(BaseGeneratorClass):
@@ -70,6 +54,7 @@ class ListTweets(BaseGeneratorClass):
         "profile": SelfThread,
         "list": SelfThread,
     }
+    _RESULT_ATTR = "tweets"
 
     def __init__(self, list_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
@@ -86,45 +71,27 @@ class ListTweets(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _tweets = []
-        if self.is_next_page:
-            response = self.client.http.get_list_tweets(self.list_id, cursor=self.cursor)
-            entries = self._get_entries(response)
+        response = self.client.http.get_list_tweets(self.list_id, cursor=cursor)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                object_type = self._get_target_object(entry)
+        for entry in entries:
+            object_type = self._get_target_object(entry)
 
-                try:
-                    if object_type is None:
-                        continue
+            try:
+                if object_type is None:
+                    continue
 
-                    parsed = object_type(self.client, entry, None)
-                    _tweets.append(parsed)
-                except:
-                    pass
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.tweets.extend(_tweets)
+                parsed = object_type(self.client, entry, None)
+                _tweets.append(parsed)
+            except:
+                pass
 
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _tweets
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
+        return _tweets, cursor, cursor_top
 
     def __repr__(self):
         return "ListTweets(id={}, count={})".format(
@@ -133,6 +100,7 @@ class ListTweets(BaseGeneratorClass):
 
 
 class ListMembers(BaseGeneratorClass):
+    _RESULT_ATTR = "users"
 
     def __init__(self, list_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
@@ -150,42 +118,24 @@ class ListMembers(BaseGeneratorClass):
         all_users = find_objects(response, "__typename", "User", none_value=[])
         return all_users
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _users = []
-        if self.is_next_page:
-            response = self.client.http.get_list_members(self.list_id, cursor=self.cursor)
+        response = self.client.http.get_list_members(self.list_id, cursor=cursor)
 
-            response_users = self._get_users(response)
+        response_users = self._get_users(response)
 
-            for response_user in response_users:
-                try:
-                    parsed = User(self.client, response_user, None)
-                    if parsed:
-                        _users.append(parsed)
-                except:
-                    pass
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.users.extend(_users)
+        for response_user in response_users:
+            try:
+                parsed = User(self.client, response_user, None)
+                if parsed:
+                    _users.append(parsed)
+            except:
+                pass
 
-            self['users'] = self.users
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _users
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.users[index]
-
-    def __iter__(self):
-        for __user in self.users:
-            yield __user
-
-    def __len__(self):
-        return len(self.users)
+        return _users, cursor, cursor_top
 
     def __repr__(self):
         return "ListMembers(id={}, count={})".format(

@@ -1,3 +1,5 @@
+import traceback
+
 from . import SelfThread, Tweet, Excel, User
 from .base import BaseGeneratorClass
 from ..utils import find_objects
@@ -9,6 +11,7 @@ class CommunityTweets(BaseGeneratorClass):
         "homeConversation": SelfThread,
         "profile": SelfThread
     }
+    _RESULT_ATTR = "tweets"
 
     def __init__(self, community_id, client, pages=1, filter_=None, wait_time=2, cursor=None):
         super().__init__()
@@ -26,49 +29,32 @@ class CommunityTweets(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _tweets = []
-        if self.is_next_page:
-            response = self.client.http.get_community_tweets(self.community_id, self.filter, cursor=self.cursor)
+        response = self.client.http.get_community_tweets(self.community_id, self.filter, cursor=cursor)
 
-            entries = self._get_entries(response)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                object_type = self._get_target_object(entry)
+        for entry in entries:
+            object_type = self._get_target_object(entry)
 
-                try:
-                    if object_type is None:
-                        continue
+            try:
+                if object_type is None:
+                    continue
 
-                    parsed = object_type(self.client, entry, None)
-                    if parsed:
-                        _tweets.append(parsed)
-                except:
-                    pass
-            self.is_next_page = self._get_cursor(response)
-            self.tweets.extend(_tweets)
+                parsed = object_type(self.client, entry, None)
+                if parsed:
+                    _tweets.append(parsed)
+            except:
+                pass
 
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _tweets
+        return _tweets, cursor, cursor_top
 
     def to_xlsx(self, filename=None):
         return Excel(self, filename)
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
 
     def __repr__(self):
         return "CommunityTweets(id={}, count={})".format(
@@ -77,6 +63,7 @@ class CommunityTweets(BaseGeneratorClass):
 
 
 class CommunityMembers(BaseGeneratorClass):
+    _RESULT_ATTR = "users"
 
     def __init__(self, community_id, client, pages=1, filter_=None, wait_time=2, cursor=None):
         super().__init__()
@@ -94,51 +81,24 @@ class CommunityMembers(BaseGeneratorClass):
         all_users = find_objects(response, "__typename", "User", none_value=[])
         return all_users
 
-    def _get_cursor(self, response):
-        newCursor = find_objects(response, "next_cursor", value=None)
-
-        if not newCursor or newCursor == self.cursor:
-            return False
-
-        self.cursor = newCursor
-        return True
-
-    def get_next_page(self):
+    def get_page(self, cursor):
         _users = []
-        if self.is_next_page:
-            response = self.client.http.get_community_members(self.community_id, self.filter, cursor=self.cursor)
+        response = self.client.http.get_community_members(self.community_id, self.filter, cursor=cursor)
 
-            response_users = self._get_users(response)
+        response_users = self._get_users(response)
 
-            for response_user in response_users:
-                try:
-                    parsed = User(self.client, response_user, None)
-                    if parsed:
-                        _users.append(parsed)
-                except:
-                    pass
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.users.extend(_users)
+        for response_user in response_users:
+            try:
+                parsed = User(self.client, response_user, None)
+                if parsed:
+                    _users.append(parsed)
+            except:
+                pass
 
-            self['users'] = self.users
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = find_objects(response, "next_cursor", value=None)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _users
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.users[index]
-
-    def __iter__(self):
-        for __user in self.users:
-            yield __user
-
-    def __len__(self):
-        return len(self.users)
+        return _users, cursor, cursor_top
 
     def __repr__(self):
         return "CommunityMembers(id={}, count={})".format(

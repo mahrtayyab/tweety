@@ -1,4 +1,3 @@
-import traceback
 from . import Tweet, Excel, User, List
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread
@@ -12,6 +11,7 @@ class Search(BaseGeneratorClass):
         "user": User,
         "list": List
     }
+    _RESULT_ATTR = "results"
 
     def __init__(self, keyword, client, pages=1, filter_=None, wait_time=2, cursor=None):
         super().__init__()
@@ -30,17 +30,31 @@ class Search(BaseGeneratorClass):
             self.keyword, len(self.results), self.filter
         )
 
-    def get_next_page(self):
-        if self.is_next_page:
-            response = self.client.http.perform_search(self.keyword, self.cursor, self.filter)
-            thisTweets = self._parse_response(response)
+    def get_page(self, cursor):
+        thisObjects = []
+        response = self.client.http.perform_search(self.keyword, cursor, self.filter)
+        entries = self._get_entries(response)
 
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        if self.filter == "Lists":
+            entries = self._get_list_entries(entries)
 
-            return thisTweets
+        for entry in entries:
+            object_type = self._get_target_object(entry)
 
-        return []
+            try:
+                if object_type is None:
+                    continue
+
+                parsed = object_type(self.client, entry, None)
+                if parsed:
+                    thisObjects.append(parsed)
+            except:
+                pass
+
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
+
+        return thisObjects, cursor, cursor_top
 
     def _get_target_object(self, tweet):
         entry_type = str(tweet['entryId']).split("-")[0]
@@ -55,46 +69,8 @@ class Search(BaseGeneratorClass):
                     results.append(item)
         return results
 
-    def _parse_response(self, response):
-        thisObjects = []
-        entries = self._get_entries(response)
-
-        if self.filter == "Lists":
-            entries = self._get_list_entries(entries)
-
-        for entry in entries:
-            object_type = self._get_target_object(entry)
-
-            try:
-                if object_type is None:
-                    continue
-
-                parsed = object_type(self.client, entry,  None)
-                if parsed:
-                    thisObjects.append(parsed)
-                    self.results.append(parsed)
-            except:
-                traceback.print_exc()
-                pass
-
-                self['results'] = self.results
-
-        self.is_next_page = self._get_cursor(response)
-        self._get_cursor_top(response)
-        return thisObjects
-
     def to_xlsx(self, filename=None):
         if self.filter == "users":
             return AttributeError("to_xlsx with 'users' filter isn't supported yet")
 
         return Excel(self.results, f"search-{self.keyword}", filename)
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.results[index]
-
-    def __iter__(self):
-        for _result in self.results:
-            yield _result

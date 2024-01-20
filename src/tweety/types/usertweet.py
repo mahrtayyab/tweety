@@ -10,6 +10,7 @@ class UserTweets(BaseGeneratorClass):
         "homeConversation": SelfThread,
         "profile": SelfThread
     }
+    _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
         super().__init__()
@@ -33,60 +34,42 @@ class UserTweets(BaseGeneratorClass):
         pinned_tweet = Tweet(self.client, pinned, None)
         return pinned_tweet
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _tweets = []
-        if self.is_next_page:
 
-            response = self.client.http.get_tweets(self.user_id, replies=self.get_replies, cursor=self.cursor)
+        response = self.client.http.get_tweets(self.user_id, replies=self.get_replies, cursor=cursor)
 
-            if not response['data']['user'].get("result"):
-                raise UserNotFound(response=response)
+        if not response['data']['user'].get("result"):
+            raise UserNotFound(response=response)
 
-            if response['data']['user']['result']['__typename'] == "UserUnavailable":
-                raise UserProtected(403, "UserUnavailable", response)
+        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+            raise UserProtected(403, "UserUnavailable", response)
 
-            entries = self._get_entries(response)
-            if not self.pinned:
-                self.pinned = self._get_pinned_tweet(response)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                object_type = self._get_target_object(entry)
+        if not self.pinned:
+            self.pinned = self._get_pinned_tweet(response)
 
-                try:
-                    if object_type is None:
-                        continue
+        for entry in entries:
+            object_type = self._get_target_object(entry)
 
-                    parsed = object_type(self.client, entry, None)
-                    if parsed:
-                        _tweets.append(parsed)
-                except:
-                    pass
+            try:
+                if object_type is None:
+                    continue
 
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.tweets.extend(_tweets)
+                parsed = object_type(self.client, entry, None)
+                if parsed:
+                    _tweets.append(parsed)
+            except:
+                pass
 
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _tweets
+        return _tweets, cursor, cursor_top
 
     def to_xlsx(self, filename=None):
         return Excel(self, filename)
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
 
 
 class UserMedia(BaseGeneratorClass):
@@ -95,6 +78,7 @@ class UserMedia(BaseGeneratorClass):
         "homeConversation": SelfThread,
         "profile": Tweet
     }
+    _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
@@ -107,65 +91,43 @@ class UserMedia(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
+    @staticmethod
+    def _result_attr():
+        return "tweets"
+
     def _get_target_object(self, tweet):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _tweets = []
-        if self.is_next_page:
 
-            response = self.client.http.get_medias(self.user_id, cursor=self.cursor)
-            if not response['data']['user'].get("result"):
-                raise UserNotFound(response=response)
+        response = self.client.http.get_medias(self.user_id, cursor=cursor)
+        if not response['data']['user'].get("result"):
+            raise UserNotFound(response=response)
 
-            if response['data']['user']['result']['__typename'] == "UserUnavailable":
-                raise UserProtected(403, "UserUnavailable", response)
+        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+            raise UserProtected(403, "UserUnavailable", response)
 
-            entries = self._get_entries(response)
-            _entry_ = [i for i in entries if "profile-grid" in i.get('entryId', '')]
+        entries = find_objects(response, "tweetDisplayType", "MediaGrid", none_value=[])
 
-            if _entry_:
-                _entry_ = _entry_[0]
-                entries = find_objects(_entry_, "items", None, recursive=False, none_value=[])
-            else:
-                entries = []
+        for entry in entries:
+            object_type = Tweet
 
-            for entry in entries:
-                object_type = self._get_target_object(entry)
+            try:
+                if object_type is None:
+                    continue
 
-                try:
-                    if object_type is None:
-                        continue
+                parsed = object_type(self.client, entry, None)
+                if parsed:
+                    _tweets.append(parsed)
+            except:
+                pass
 
-                    parsed = object_type(self.client, entry, None)
-                    if parsed:
-                        _tweets.append(parsed)
-                except:
-                    pass
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.tweets.extend(_tweets)
-
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
-
-        return _tweets
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
+        return _tweets, cursor, cursor_top
 
 
 class SelfTimeline(BaseGeneratorClass):
@@ -174,6 +136,7 @@ class SelfTimeline(BaseGeneratorClass):
         "homeConversation": SelfThread,
         "profile": SelfThread
     }
+    _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
@@ -189,53 +152,36 @@ class SelfTimeline(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _tweets = []
-        if self.is_next_page:
-            response = self.client.http.get_home_timeline(cursor=self.cursor)
+        response = self.client.http.get_home_timeline(cursor=cursor)
 
-            entries = self._get_entries(response)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                object_type = self._get_target_object(entry)
+        for entry in entries:
+            object_type = self._get_target_object(entry)
 
-                try:
-                    if object_type is None:
-                        continue
+            try:
+                if object_type is None:
+                    continue
 
-                    parsed = object_type(self.client, entry, None)
-                    if parsed:
-                        _tweets.append(parsed)
-                except:
-                    pass
+                parsed = object_type(self.client, entry, None)
+                if parsed:
+                    _tweets.append(parsed)
+            except:
+                pass
 
-            self.is_next_page = self._get_cursor(response)
-            self.tweets.extend(_tweets)
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
-
-        return _tweets
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
+        return _tweets, cursor, cursor_top
 
 
 class TweetComments(BaseGeneratorClass):
     OBJECTS_TYPES = {
         "conversationthread": ConversationThread,
     }
+    _RESULT_ATTR = "tweets"
 
     def __init__(self, tweet_id, client, get_hidden=False, pages=1, wait_time=2, cursor=None):
         super().__init__()
@@ -256,53 +202,35 @@ class TweetComments(BaseGeneratorClass):
     def _get_parent(self):
         return self.tweet_id if isinstance(self.tweet_id, Tweet) else self.client.tweet_detail(self.tweet_id)
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _comments = []
-        if self.is_next_page:
-            response = self.client.http.get_tweet_detail(self.tweet_id, self.cursor)
+        response = self.client.http.get_tweet_detail(self.tweet_id, cursor)
 
-            entries = self._get_entries(response)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                object_type = self._get_target_object(entry)
+        for entry in entries:
+            object_type = self._get_target_object(entry)
 
-                try:
-                    if object_type is None:
-                        continue
+            try:
+                if object_type is None:
+                    continue
 
-                    entry = [i for i in entry['content']['items']]
-                    if len(entry) > 0:
-                        parsed = object_type(self.client, self.parent, entry)
-                        _comments.append(parsed)
-                except:
-                    pass
+                entry = [i for i in entry['content']['items']]
 
-            self.is_next_page = self._get_cursor(response)
-            self.tweets.extend(_comments)
+                if len(entry) > 0:
+                    parsed = object_type(self.client, self.parent, entry)
+                    _comments.append(parsed)
+            except:
+                pass
 
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-        return _comments
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
+        return _comments, cursor, cursor_top
 
     def __repr__(self):
         return "TweetComments(tweet_id={}, count={}, parent={})".format(
-            self.tweet_id,
-            len(self.tweets), self.parent
+            self.tweet_id, len(self.tweets), self.parent
         )
 
 

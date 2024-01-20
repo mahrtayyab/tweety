@@ -3,6 +3,8 @@ from . import *
 
 
 class TweetNotifications(BaseGeneratorClass):
+    _RESULT_ATTR = "tweets"
+
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
@@ -14,45 +16,26 @@ class TweetNotifications(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _tweets = []
-        if self.is_next_page:
 
-            response = self.client.http.get_tweet_notifications(cursor=self.cursor)
-            users = response.get('globalObjects', {}).get('users', {})
-            tweets = response.get('globalObjects', {}).get('tweets', {})
+        response = self.client.http.get_tweet_notifications(cursor=cursor)
+        users = response.get('globalObjects', {}).get('users', {})
+        tweets = response.get('globalObjects', {}).get('tweets', {})
 
-            for tweet_id, tweet in tweets.items():
-                user = users.get(str(tweet['user_id']))
-                user['__typename'] = "User"
-                tweet['author'], tweet['rest_id'], tweet['__typename'] = user, tweet_id, "Tweet"
+        for tweet_id, tweet in tweets.items():
+            user = users.get(str(tweet['user_id']))
+            user['__typename'] = "User"
+            tweet['author'], tweet['rest_id'], tweet['__typename'] = user, tweet_id, "Tweet"
 
-                try:
-                    parsed = Tweet(self.client, tweet, response)
-                    if parsed:
-                        _tweets.append(parsed)
-                except:
-                    pass
+            try:
+                parsed = Tweet(self.client, tweet, response)
+                if parsed:
+                    _tweets.append(parsed)
+            except:
+                pass
 
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.tweets.extend(_tweets)
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
-
-        return _tweets
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
+        return _tweets, cursor, cursor_top

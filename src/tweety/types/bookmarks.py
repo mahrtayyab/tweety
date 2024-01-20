@@ -3,6 +3,8 @@ from .base import BaseGeneratorClass
 
 
 class Bookmarks(BaseGeneratorClass):
+    _RESULT_ATTR = "tweets"
+
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
@@ -14,44 +16,25 @@ class Bookmarks(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _tweets = []
-        if self.is_next_page:
-            response = self.client.http.get_bookmarks(cursor=self.cursor)
+        response = self.client.http.get_bookmarks(cursor=cursor)
 
-            entries = self._get_entries(response)
-            for entry in entries:
-                try:
-                    parsed = Tweet(self.client, entry, response)
-                    if parsed:
-                        self.tweets.append(parsed)
-                        _tweets.append(parsed)
-                except:
-                    pass
+        entries = self._get_entries(response)
+        for entry in entries:
+            try:
+                parsed = Tweet(self.client, entry, response)
+                if parsed:
+                    self.tweets.append(parsed)
+                    _tweets.append(parsed)
+            except:
+                pass
 
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.tweets.extend(_tweets)
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-            self['tweets'] = self.tweets
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
-
-        return _tweets
+        return _tweets, cursor, cursor_top
 
     def to_xlsx(self, filename=None):
         return Excel(self, filename)
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.tweets[index]
-
-    def __iter__(self):
-        for __tweet in self.tweets:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.tweets)
 

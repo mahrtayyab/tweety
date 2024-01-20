@@ -3,6 +3,8 @@ from .twDataTypes import User
 
 
 class TweetLikes(BaseGeneratorClass):
+    _RESULT_ATTR = "users"
+
     def __init__(self, tweet_id, client, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.client = client
@@ -16,8 +18,7 @@ class TweetLikes(BaseGeneratorClass):
 
     def __repr__(self):
         return "TweetLikes(tweet_id={}, count={})".format(
-            self.tweet_id,
-            len(self.users)
+            self.tweet_id, len(self.users)
         )
 
     @staticmethod
@@ -27,42 +28,21 @@ class TweetLikes(BaseGeneratorClass):
 
         return []
 
-    def get_next_page(self):
+    def get_page(self, cursor):
         _users = []
-        if self.is_next_page:
-            response = self.client.http.get_tweet_likes(tweet_id=self.tweet_id, cursor=self.cursor)
+        response = self.client.http.get_tweet_likes(tweet_id=self.tweet_id, cursor=cursor)
 
-            entries = self._get_entries(response)
+        entries = self._get_entries(response)
 
-            for entry in entries:
-                users = self._get_tweet_content_key(entry)
-                for user in users:
-                    try:
-                        parsed = User(self.client, user)
-                        if parsed:
-                            _users.append(parsed)
-                    except:
-                        pass
+        for entry in entries:
+            try:
+                parsed = User(self.client, entry)
+                if parsed:
+                    _users.append(parsed)
+            except:
+                pass
 
-            self.is_next_page = self._get_cursor(response)
-            self._get_cursor_top(response)
-            self.users.extend(_users)
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
 
-            self['users'] = self.users
-            self['is_next_page'] = self.is_next_page
-            self['cursor'] = self.cursor
-
-        return _users
-
-    def __getitem__(self, index):
-        if isinstance(index, str):
-            return getattr(self, index)
-
-        return self.users[index]
-
-    def __iter__(self):
-        for __tweet in self.users:
-            yield __tweet
-
-    def __len__(self):
-        return len(self.users)
+        return _users, cursor, cursor_top
