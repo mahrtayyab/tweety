@@ -102,6 +102,7 @@ def check_if_file_is_image(file):
     if not os.path.exists(file) and not str(file).startswith("https://"):
         raise ValueError("Path {} doesn't exists".format(file))
 
+    file = file.split("?")[0]
     file_extension = file.split(".")[-1]
 
     if file_extension not in list(MIME_TYPES.keys()):
