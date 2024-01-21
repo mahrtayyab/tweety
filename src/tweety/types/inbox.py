@@ -187,7 +187,7 @@ class Conversation(dict):
 
     def get_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
         all_messages = []
-        for messages in self.iter_all_messages(wait_time=wait_time, cursor=cursor, till_date=till_date, count=count):
+        for _, messages in self.iter_all_messages(wait_time=wait_time, cursor=cursor, till_date=till_date, count=count):
             all_messages.extend(messages)
         return all_messages
 
