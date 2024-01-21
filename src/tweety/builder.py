@@ -481,7 +481,8 @@ class UrlBuilder:
             'include_ext_media_color': True,
             'supports_reactions': True,
             'include_ext_edit_control': True,
-            'ext': 'mediaColor,altText,mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
+            'include_ext_business_affiliations_label': True,
+            'ext': 'mediaColor,altText,businessAffiliationsLabel,mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
         }
 
         if active_conversation:

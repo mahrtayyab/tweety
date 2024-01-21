@@ -130,7 +130,7 @@ class Excel:
 
 
 class EditControl(_TwType):
-    def __init__(self, client, edit_control, parent):
+    def __init__(self, client, edit_control, parent, *args, **kwargs):
         self._client = client
         self._raw = edit_control['edit_control_initial'] if edit_control.get('edit_control_initial') else edit_control
         self._parent = parent
@@ -155,7 +155,7 @@ class EditControl(_TwType):
 
 
 class Tweet(_TwType):
-    def __init__(self, client, tweet, full_http_response=None):  # noqa
+    def __init__(self, client, tweet, full_http_response=None, *args, **kwargs):  # noqa
         self._comments_cursor = None
         self._raw = tweet
         self._client = client
@@ -558,7 +558,7 @@ class Tweet(_TwType):
 
 
 class Symbol(_TwType):
-    def __init__(self, client, symbol):
+    def __init__(self, client, symbol, *args, **kwargs):
         self._client = client
         self._raw = symbol
         self.indices = self._raw['indices']
@@ -569,7 +569,7 @@ class Symbol(_TwType):
 
 
 class URL(_TwType):
-    def __init__(self, client, url):
+    def __init__(self, client, url, *args, **kwargs):
         self._client = client
         self._raw = url
         self.display_url = self._raw.get('display_url')
@@ -585,7 +585,7 @@ class URL(_TwType):
 
 
 class Hashtag(_TwType):
-    def __init__(self, client, hashtag):
+    def __init__(self, client, hashtag, *args, **kwargs):
         self._client = client
         self._raw = hashtag
         self.indices = self._raw.get('indices')
@@ -603,7 +603,7 @@ class RichText(_TwType):
         "Italic": "em"
     }
 
-    def __init__(self, client, data, tweet):
+    def __init__(self, client, data, tweet, *args, **kwargs):
         self._client = client
         self._raw = data
         self._tweet = tweet
@@ -682,7 +682,7 @@ class RichText(_TwType):
 
 
 class RichTag(_TwType):
-    def __init__(self, client, data):
+    def __init__(self, client, data, *args, **kwargs):
         self._client = client
         self._raw = data
         self.from_index = self._raw.get('from_index')
@@ -696,7 +696,7 @@ class RichTag(_TwType):
 
 
 class SelfThread(_TwType):
-    def __init__(self, client, conversation_tweet):
+    def __init__(self, client, conversation_tweet, *args, **kwargs):
         self._client = client
         self._raw = conversation_tweet
         self.tweets = []
@@ -730,7 +730,7 @@ class SelfThread(_TwType):
 
 
 class ConversationThread(_TwType):
-    def __init__(self, client, parent_tweet, thread_tweets):
+    def __init__(self, client, parent_tweet, thread_tweets, *args, **kwargs):
         self._client = client
         self.tweets = []
         self.parent = parent_tweet
@@ -775,7 +775,7 @@ class ConversationThread(_TwType):
 
 
 class Media(_TwType):
-    def __init__(self, client, media_dict):
+    def __init__(self, client, media_dict, *args, **kwargs):
         self._raw = media_dict
         self._client = client
         self.display_url = self._raw.get("display_url")
@@ -869,7 +869,7 @@ class Media(_TwType):
 
 
 class Stream(_TwType):
-    def __init__(self, client, video_dict, length, ratio):
+    def __init__(self, client, video_dict, length, ratio, *args, **kwargs):
         self._raw = video_dict
         self._client = client
         self.bitrate = self._raw.get("bitrate")
@@ -895,7 +895,7 @@ class Stream(_TwType):
 
 
 class MediaSize(_TwType):
-    def __init__(self, client, data, name):
+    def __init__(self, client, data, name, *args, **kwargs):
         self._client = client
         self._raw = data
         self.name = self['name'] = name
@@ -910,7 +910,7 @@ class MediaSize(_TwType):
 
 
 class ShortUser(_TwType):
-    def __init__(self, client, user_dict):
+    def __init__(self, client, user_dict, *args, **kwargs):
         self._client = client
         self.__raw = user_dict
         self._indices = self.__raw.get("indices")
@@ -934,7 +934,7 @@ class ShortUser(_TwType):
 
 
 class Trends(_TwType):
-    def __init__(self, client, trend_item):
+    def __init__(self, client, trend_item, *args, **kwargs):
         self._raw = trend_item
         self._trend = find_objects(self._raw, "trend", None)
         self.name = self._get_name()
@@ -957,7 +957,7 @@ class Trends(_TwType):
 
 
 class Broadcast(_TwType):
-    def __init__(self, client, broadcast):
+    def __init__(self, client, broadcast, *args, **kwargs):
         self._client = client
         self._raw = broadcast
         self._broadcast = self._raw.get('legacy', {})
@@ -1040,7 +1040,7 @@ class Poll(_TwType):
     CHOICE_COUNT_REGEX = r"choice\d+_count"
     CHOICE_COUNT_FORMAT = "choice{}_count"
 
-    def __init__(self, client, card):
+    def __init__(self, client, card, *args, **kwargs):
         self._client = client
         self._raw = card
         self._pool = self._raw['legacy']
@@ -1129,7 +1129,7 @@ class Choice(dict):
 
 
 class Place(_TwType):
-    def __init__(self, client, place_dict):
+    def __init__(self, client, place_dict, *args, **kwargs):
         self._client = client
         self._raw = place_dict
         self.id = self._raw.get("id")
@@ -1171,7 +1171,7 @@ class Coordinates(dict):
         return f"Coordinates(latitude={self.latitude}, longitude={self.longitude})"
 
 class User(_TwType):
-    def __init__(self, client, user_data, *args):
+    def __init__(self, client, user_data, *args, **kwargs):
         self._raw = user_data
         self._client = client
         self._user = find_objects(self._raw, "__typename", "User", recursive=False)
@@ -1292,7 +1292,7 @@ class User(_TwType):
 
 
 class PeriScopeUser(_TwType):
-    def __init__(self, client, user_data):
+    def __init__(self, client, user_data, *args, **kwargs):
         self._client = client
         self._raw = user_data
         self.id = self._raw.get('periscope_user_id')
@@ -1303,7 +1303,7 @@ class PeriScopeUser(_TwType):
 
 
 class AudioSpace(_TwType):
-    def __init__(self, client, audio_space):
+    def __init__(self, client, audio_space, *args, **kwargs):
         self._raw = audio_space
         self._client = client
         self._space = find_objects(self._raw, "audioSpace", None, recursive=False)
@@ -1341,7 +1341,7 @@ class AudioSpace(_TwType):
 
 
 class Community(_TwType):
-    def __init__(self, client, data):
+    def __init__(self, client, data, *args, **kwargs):
         self._raw = data
         self._client = client
         self._community = find_objects(self._raw, "__typename", "Community", recursive=False)
@@ -1393,7 +1393,7 @@ class Community(_TwType):
 
 
 class List(_TwType):
-    def __init__(self, client, list_data, *args):
+    def __init__(self, client, list_data, *args, **kwargs):
         self._raw = list_data
         self._client = client
         self._list = self._get_list()
@@ -1466,8 +1466,9 @@ class List(_TwType):
 
         return User(self._client, self._list['user_results'])
 
+
 class Gif(_TwType):
-    def __init__(self, client, gif):
+    def __init__(self, client, gif, *args, **kwargs):
         self._client = client
         self._raw = gif
         self.provider = self._raw.get('provider', {}).get('name')

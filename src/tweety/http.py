@@ -181,7 +181,8 @@ class Request:
         return response
 
     def get_inbox(self, user_id, cursor=None):
-        response = self.__get_response__(**self.__builder.get_inbox(cursor))
+        request = self.__builder.get_inbox(cursor)
+        response = self.__get_response__(**request)
         return response
 
     def get_trusted_inbox(self, max_id):
