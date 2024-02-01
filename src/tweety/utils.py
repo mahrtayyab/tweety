@@ -177,6 +177,7 @@ def find_objects(obj, key, value, recursive=True, none_value=None):
 
     return results
 
+
 def create_pool(duration: int, *choices):
     data = {
         "twitter:long:duration_minutes": duration,
@@ -189,6 +190,7 @@ def create_pool(duration: int, *choices):
         data[key] = choice
 
     return data
+
 
 def parse_time(time):
     if not time:

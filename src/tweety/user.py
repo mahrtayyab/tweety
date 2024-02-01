@@ -3,7 +3,7 @@ from .exceptions_ import ListNotFound
 from .types.inbox import Message
 from .utils import create_conversation_id, AuthRequired, find_objects
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
-                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets)
+                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets, Topic, TopicTweets)
 
 
 @AuthRequired
@@ -345,6 +345,7 @@ class UserMethods:
             files: List[Union[str, UploadedMedia, Tuple[str, str]]] = None,
             filter_: str = None,
             reply_to: Union[str, int, Tweet] = None,
+            quote: Union[str, int, Tweet] = None,
             pool: dict = None
     ) -> Tweet:
 
@@ -356,6 +357,7 @@ class UserMethods:
         :param files: (`list[Union[str, UploadedMedia, tuple[str, str]]]`) Files to be sent with Tweet (max 4)
         :param filter_: (`str`) Filter to applied for Tweet audience
         :param reply_to: (`str` | `int` | `Tweet`) ID of tweet to reply to
+        :param quote: (`str` | `int` | `Tweet`) ID / URL of tweet to be quoted
         :return: Tweet
         """
 
@@ -364,10 +366,24 @@ class UserMethods:
         else:
             files = []
 
-        if isinstance(reply_to, Tweet):
+        if reply_to and isinstance(reply_to, Tweet):
             reply_to = reply_to.id
 
-        response = self.request.create_tweet(text, files, filter_, reply_to, pool)
+        if not reply_to and quote:
+            if isinstance(quote, int) or str(quote).isdigit():
+                quote = self.tweet_detail(quote)
+
+            if isinstance(quote, Tweet):
+                quote = quote.url
+
+            if str(quote).startswith("https://twitter.com/"):
+                quote = quote
+            else:
+                quote = None
+        else:
+            quote = None
+
+        response = self.request.create_tweet(text, files, filter_, reply_to, quote, pool)
         response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
         return Tweet(self, response, response)
 
@@ -762,6 +778,64 @@ class UserMethods:
             raise ListNotFound(404, "ListNotFound", None)
 
         return TwList(self, response['data'])
+
+    def get_topic(self, topic_id):
+        """
+
+        :param topic_id: ID of the Topic
+        :return:
+        """
+
+        response = self.request.get_topic_landing_page(topic_id)
+        return Topic(self, response)
+
+    def get_topic_tweets(
+            self,
+            topic_id: Union[str, int, Topic],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ) -> TopicTweets:
+        """
+            Get Tweets of a Topic
+
+            :param topic_id: Topic ID of which to get tweets of
+            :param pages: (`int`) The number of pages to get
+            :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+            :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+            :return: .types.lists.TopicTweets
+        """
+
+        if isinstance(topic_id, Topic):
+            topic_id = topic_id.id
+
+        topic_tweets = TopicTweets(topic_id, self, pages, cursor, wait_time)
+        list(topic_tweets.generator())
+        return topic_tweets
+
+    def iter_topic_tweets(
+            self,
+            topic_id: Union[str, int, Topic],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ) -> TopicTweets:
+        """
+            Get Tweets of a Topic as Generator
+
+            :param topic_id: Topic ID of which to get tweets of
+            :param pages: (`int`) The number of pages to get
+            :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+            :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+            :return: (.types.lists.TopicTweets, List[.types.twDataTypes.Tweet])
+        """
+
+        if isinstance(topic_id, Topic):
+            topic_id = topic_id.id
+
+        topic_tweets = TopicTweets(topic_id, self, pages, cursor, wait_time)
+        return topic_tweets.generator()
+
 
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):

@@ -2,8 +2,8 @@ import datetime
 import os
 import time
 from http.cookiejar import MozillaCookieJar
-
 from httpx._content import encode_multipart_data
+from . import Gif
 from ..utils import calculate_md5, get_random_string, check_if_file_is_image
 from ..exceptions_ import *
 
@@ -141,17 +141,32 @@ class Cookies:
 class UploadedMedia:
     FILE_CHUNK_SIZE = 2 * 1024 * 1024  # 2 mb
 
-    def __init__(self, file_path, client, alt_text=None, sensitive_media_warning=None, media_category="tweet_image"):
+    def __init__(
+            self,
+            file_path,
+            client,
+            alt_text=None,
+            sensitive_media_warning=None,
+            media_category="tweet_image"
+    ):
         self.media_id = None
         self._file = file_path
         self._client = client
         self._alt_text = alt_text
         self._sensitive_media_warning = sensitive_media_warning if sensitive_media_warning else []
-        self._source_url = self._file if str(self._file).startswith("https://") else None
+        self._source_url = self._get_source_url()
         self.size = self._get_size()
         self.mime_type = self.get_mime_type()
         self._media_category = self._get_media_category(media_category)
         self.md5_hash = calculate_md5(self._file)
+
+    def _get_source_url(self):
+        if isinstance(self._file, Gif):
+            return self._file.url
+        elif str(self._file).startswith("https://"):
+            return self._file
+
+        return None
 
     def _get_media_category(self, category):
         media_for = category.split("_")[0]
@@ -172,6 +187,7 @@ class UploadedMedia:
 
     def _initiate_upload(self):
         response = self._client.http.upload_media_init(self.size, self.mime_type, self._media_category, source_url=self._source_url)
+        print(response)
         return response['media_id_string']
 
     def _append_upload(self, media_id):

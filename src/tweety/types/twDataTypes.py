@@ -44,7 +44,10 @@ class _TwType(dict):
 
             for k, v in vars(self).items():
                 if not k.startswith("_"):
-                    self[k] = v
+                    if isinstance(v, int):
+                        self[k] = str(v)
+                    else:
+                        self[k] = v
 
         cls.__init__ = new_init
 
@@ -239,7 +242,21 @@ class Tweet(_TwType):
         self.threads = self.get_threads()
         self.is_liked = self._get_is_liked()
         self.is_retweeted = self._get_is_retweeted()
+        self.can_reply = self._get_conversation_control()
         self.comments = []
+
+    def _get_conversation_control(self):
+        if not self._original_tweet.get('conversation_control') or self.author == self._client.me:
+            return True
+
+        conversation_control = self._original_tweet['conversation_control']
+        control_policy = conversation_control.get('policy', '')
+
+        if control_policy in ["Community", "Verified", "ByInvitation"]:
+            actions = find_objects(self._raw, "limited_actions", None, none_value=[])
+            if "limited_replies" in actions:
+                return False
+        return True
 
     def _get_is_liked(self):
         return self._original_tweet.get('favorited', False)
@@ -597,6 +614,7 @@ class Hashtag(_TwType):
     def __repr__(self):
         return "Hashtag(text={})".format(self.text)
 
+
 class RichText(_TwType):
     HTML_TAGS = {
         "Bold": "b",
@@ -848,7 +866,7 @@ class Media(_TwType):
         return f"Media(id={self.id}, type={self.type})"
 
     def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
-        url = self.best_stream().url
+        url = self.best_stream().direct_url
 
         if not url:
             raise ValueError("No Media Download URL found")
@@ -1480,3 +1498,25 @@ class Gif(_TwType):
         return "Gif(id={}, provider={}, alt_text={})".format(
             self.id, self.provider, self.alt_text
         )
+
+
+class Topic(_TwType):
+    def __init__(self, client, topic):
+        self._client = client
+        self._raw = topic
+        self.original_topic = find_objects(self._raw, "__typename", ["TopicPageHeader", "TimelineTopic"], recursive=False)
+
+        if not self.original_topic:
+            raise ValueError("Topic Not Found")
+
+        self.original_topic = self.original_topic['topic'] if self.original_topic.get('topic') else self.original_topic
+
+        self.id = self.original_topic.get('topic_id')
+        self.description = self.original_topic.get('description')
+        self.name = self.original_topic.get('name')
+        self.is_following = self.original_topic.get('following')
+        self.icon_url = self.original_topic.get('icon_url')
+        self.is_not_interested = self.original_topic.get('not_interested')
+
+    def __repr__(self):
+        return "Topic(id={}, name={})".format(self.id, self.name)

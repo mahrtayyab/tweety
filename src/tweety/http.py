@@ -217,11 +217,12 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def create_tweet(self, text, files, filter_, reply_to, pool):
+    def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool):
         if pool:
             response = self.create_pool(pool)
             pool = response.get('card_uri')
-        request_data = self.__builder.create_tweet(text, files, filter_, reply_to, pool)
+
+        request_data = self.__builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool)
         response = self.__get_response__(**request_data)
         return response
 
@@ -394,6 +395,16 @@ class Request:
 
     def gif_search(self, search_term, cursor):
         request_data = self.__builder.search_gifs(search_term, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_mutual_friends(self, cursor):
+        request_data = self.__builder.get_mutual_friend(cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_topic_landing_page(self, topic_id, cursor=None):
+        request_data = self.__builder.get_topic_landing_page(topic_id, cursor)
         response = self.__get_response__(**request_data)
         return response
 
