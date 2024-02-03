@@ -35,6 +35,7 @@ class UrlBuilder:
     URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
     URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
     URL_SEARCH = "https://twitter.com/i/api/graphql/Aj1nGkALq99Xg3XI0OZBtw/SearchTimeline"
+    URL_SEARCH_TYPEHEAD = "https://twitter.com/i/api/1.1/search/typeahead.json"
     URL_GIF_SEARCH = "https://twitter.com/i/api/1.1/foundmedia/search.json"
     URL_TOPIC_LANDING = "https://twitter.com/i/api/graphql/IY9rfrxdSmamr10ZxvVBxg/TopicLandingPage"
     URL_AUDIO_SPACE_BY_ID = "https://twitter.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
@@ -83,7 +84,8 @@ class UrlBuilder:
     URL_AUSER_DELETE_LIST = "https://twitter.com/i/api/graphql/UnN9Th1BDbeLjpgjGSpL3Q/DeleteList"  # noqa
     URL_AUSER_GET_USER_FOLLOWERS = "https://twitter.com/i/api/graphql/ihMPm0x-pC35X86L_nUp_Q/Followers"  # noqa
     URL_AUSER_GET_USER_FOLLOWINGS = "https://twitter.com/i/api/graphql/bX-gXhcglOa--1gzgDlb8A/Following"  # noqa
-    URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/1.1/friends/following/list.json"  # noqa
+    # URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/1.1/friends/following/list.json"  # noqa
+    URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/graphql/35Y2QFmL84HIisnm-FHAng/FollowersYouKnow"  # noqa
 
     def __init__(self):
         self.cookies = None
@@ -330,6 +332,18 @@ class UrlBuilder:
                   'features': str(json.dumps(features, separators=(',', ':')))}
 
         return "GET", self._build(self.URL_SEARCH, urlencode(params, safe="()%", quote_via=urllib.parse.quote))
+
+    @return_with_headers
+    def search_typehead(self, q, result_type='events,users,topics,lists'):
+        params = {
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'q': str(q),
+            'src': 'search_box',
+            'result_type': result_type,
+        }
+        return "GET", self._build(self.URL_SEARCH_TYPEHEAD, urlencode(params))
 
     @return_with_headers
     def tweet_detail(self, tweet_id, cursor=None):
@@ -1440,26 +1454,28 @@ class UrlBuilder:
         return "GET", self._build(self.URL_GIF_SEARCH, urlencode(params))
 
     @return_with_headers
-    def get_mutual_friend(self, user_id, cursor=-1):
-        params = {
-            'include_profile_interstitial_type': '1',
-            'include_blocking': '1',
-            'include_blocked_by': '1',
-            'include_followed_by': '1',
-            'include_want_retweets': '1',
-            'include_mute_edge': '1',
-            'include_can_dm': '1',
-            'include_can_media_tag': '1',
-            'include_ext_has_nft_avatar': '1',
-            'include_ext_is_blue_verified': '1',
-            'include_ext_verified_type': '1',
-            'include_ext_profile_image_shape': '1',
-            'skip_status': '1',
-            'cursor': str(cursor),
-            'user_id': str(user_id),
-            'count': '50',
-            'with_total_count': 'true',
-        }
+    def get_mutual_friend(self, user_id, cursor):
+        variables = {"userId": str(user_id), "count": 20, "includePromotedContent": False}
+        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True, "tweetypie_unmention_optimization_enabled": True,
+                    "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": True,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_media_download_video_enabled": False, "responsive_web_enhance_cards_enabled": False}
+
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
         return "GET", self._build(self.URL_AUSER_GET_MUTUAL_FRIENDS, urlencode(params))
 

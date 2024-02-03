@@ -1188,6 +1188,7 @@ class Coordinates(dict):
     def __repr__(self):
         return f"Coordinates(latitude={self.latitude}, longitude={self.longitude})"
 
+
 class User(_TwType):
     def __init__(self, client, user_data, *args, **kwargs):
         self._raw = user_data

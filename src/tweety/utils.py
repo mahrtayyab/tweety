@@ -203,3 +203,9 @@ def parse_time(time):
             return datetime.datetime.fromtimestamp(int(time) / 1000)
 
     return date_parser.parse(time)
+
+def get_user_from_typehead(target_username, users):
+    for user in users:
+        if user.username.lower() == target_username.lower():
+            return user
+    return None

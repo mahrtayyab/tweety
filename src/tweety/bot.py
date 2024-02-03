@@ -1,8 +1,8 @@
 from typing import Union
 from urllib.parse import urlparse
-from .utils import find_objects, AuthRequired
+from .utils import find_objects, AuthRequired, get_user_from_typehead
 from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, \
-    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch
+    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch, ShortUser, TypeHeadSearch
 from .exceptions_ import *
 from .session import Session
 from .http import Request
@@ -36,7 +36,7 @@ class BotMethods:
         self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, **httpx_kwargs)
         self.user = None
 
-    def get_user_info(self, username: str = None, cached_id_only: bool = False) -> User:
+    def get_user_info(self, username: str = None) -> User:
         """
         Get the User Info of the specified username
 
@@ -44,9 +44,6 @@ class BotMethods:
 
         :return: .types.twDataTypes.User
         """
-
-        if cached_id_only and self._cached_users.get(username.lower()):
-            return self._cached_users[username.lower()]
 
         user_raw = self.request.get_user(username)
 
@@ -67,18 +64,26 @@ class BotMethods:
     def cache(self):
         return self._cached_users
 
-    def _get_user_id(self, username) -> int:
-        if isinstance(username, User):
-            user_id = username.id
-        elif isinstance(username, int):
-            user_id = username
-        elif isinstance(username, str) and str(username).isdigit():
-            user_id = int(username)
-        elif self._cached_users.get(username.lower()):
-            user_id = self.get_user_info(username, cached_id_only=True)
-        else:
-            user_id = self.get_user_info(username).id
+    def get_user_id(self, username):
+        return self._get_user_id(username)
 
+    def _get_user_id(self, username):
+        if isinstance(username, (User, ShortUser)):
+            user_id = username.id
+        elif isinstance(username, int) or (isinstance(username, str) and str(username).isdigit()):
+            user_id = username
+        elif self._cached_users.get(username.lower()):
+            user_id = self._cached_users[username.lower()]
+        else:
+            user = get_user_from_typehead(username, self.typehead_user_search(username))
+
+            if not user:
+                user = self.get_user_info(username)
+
+            if user:
+                user_id = user.id
+            else:
+                raise UserNotFound()
         return user_id
 
     def get_tweets(
@@ -280,6 +285,10 @@ class BotMethods:
         search = Search(keyword, self, pages, filter_, wait_time, cursor)
 
         return search.generator()
+
+    @AuthRequired
+    def typehead_user_search(self, keyword):
+        return TypeHeadSearch(self, keyword, "users")
 
     @AuthRequired
     def get_audio_space(self, space_id: Union[str, Tweet]) -> AudioSpace:

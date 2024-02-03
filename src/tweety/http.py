@@ -161,6 +161,11 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def search_typehead(self, q, result_type='events,users,topics,lists'):
+        request = self.__builder.search_typehead(q, result_type)
+        response = self.__get_response__(**request)
+        return response
+
     def get_tweet_detail(self, tweetId, cursor=None):
         if self.user:
             response = self.__get_response__(**self.__builder.tweet_detail(tweetId, cursor))
@@ -398,8 +403,8 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def get_mutual_friends(self, cursor):
-        request_data = self.__builder.get_mutual_friend(cursor)
+    def get_mutual_friends(self, user_id, cursor):
+        request_data = self.__builder.get_mutual_friend(user_id, cursor)
         response = self.__get_response__(**request_data)
         return response
 

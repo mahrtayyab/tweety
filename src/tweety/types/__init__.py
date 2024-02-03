@@ -28,7 +28,7 @@ from .twDataTypes import (
     Topic
 )
 from .n_types import UploadedMedia, Proxy, PROXY_TYPE_SOCKS4, PROXY_TYPE_SOCKS5, PROXY_TYPE_HTTP
-from .search import Search
+from .search import Search, TypeHeadSearch
 from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia
 from .mentions import Mention
 from .inbox import Inbox, SendMessage, Media, Conversation
@@ -38,7 +38,7 @@ from .retweets import TweetRetweets
 from .community import CommunityTweets, CommunityMembers
 from .notification import TweetNotifications
 from .lists import Lists, ListMembers, ListTweets
-from .follow import UserFollowers, UserFollowings
+from .follow import UserFollowers, UserFollowings, MutualFollowers
 from .gifs import GifSearch
 from .topic import TopicTweets
 

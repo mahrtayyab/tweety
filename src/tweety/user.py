@@ -3,7 +3,7 @@ from .exceptions_ import ListNotFound
 from .types.inbox import Message
 from .utils import create_conversation_id, AuthRequired, find_objects
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
-                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets, Topic, TopicTweets)
+                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets, Topic, TopicTweets, MutualFollowers)
 
 
 @AuthRequired
@@ -532,6 +532,61 @@ class UserMethods:
         lists = ListTweets(list_id, self, pages, wait_time, cursor)
         list(lists.generator())
         return lists
+
+    def get_mutual_followers(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ) -> MutualFollowers:
+        """
+         Get the mutual friends of a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the followers of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: .types.follow.UserFollowers
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        mutualFollowers = MutualFollowers(user_id, self, pages, wait_time, cursor)
+
+        list(mutualFollowers.generator())
+
+        return mutualFollowers
+
+    def iter_mutual_followers(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ) -> MutualFollowers:
+        """
+         Get the mutual friends of a user as generator
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the followers of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: .types.follow.UserFollowers
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        mutualFollowers = MutualFollowers(user_id, self, pages, wait_time, cursor)
+
+        return mutualFollowers.generator()
+
 
     def like_tweet(self, tweet_id: Union[str, int, Tweet]):
         """

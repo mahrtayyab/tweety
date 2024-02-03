@@ -1,4 +1,7 @@
 import time
+
+from tweety.types import ShortUser
+
 from . import User, Tweet
 from ..utils import find_objects, parse_wait_time
 
@@ -41,10 +44,16 @@ class BaseGeneratorClass(dict):
         self['cursor'], self['cursor_top'], self['is_next_page'] = self.cursor, self.cursor_top, self.is_next_page
 
         for result in results:
-            if isinstance(result, User):
+            if isinstance(result, (User, ShortUser)):
                 self.client._cached_users[result.username.lower()] = result.id
             elif isinstance(result, Tweet):
                 self.client._cached_users[result.author.username.lower()] = result.author.id
+
+                for user in result.user_mentions:
+                    self.client._cached_users[user.username.lower()] = user.id
+
+                if result.is_retweet and result.retweeted_tweet:
+                    self.client._cached_users[result.retweeted_tweet.author.username.lower()] = result.retweeted_tweet.author.id
 
         return results
 

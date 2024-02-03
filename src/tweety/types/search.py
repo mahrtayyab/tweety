@@ -1,3 +1,5 @@
+import traceback
+
 from . import Tweet, Excel, User, List
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread
@@ -74,3 +76,49 @@ class Search(BaseGeneratorClass):
             return AttributeError("to_xlsx with 'users' filter isn't supported yet")
 
         return Excel(self.results, f"search-{self.keyword}", filename)
+
+
+class TypeHeadSearch(dict):
+    DATA_TYPES = {
+        "users": User
+    }
+
+    def __init__(self, client, keyword, result_type='events,users,topics,lists'):
+        super().__init__()
+        self.client = client
+        self.keyword = keyword
+        self.result_type = result_type
+        self.results = []
+        self._get_results()
+
+    def _get_results(self):
+        response = self.client.http.search_typehead(self.keyword, self.result_type)
+        for _type_name, _type_object in self.DATA_TYPES.items():
+            for result in response.get(_type_name, []):
+                try:
+                    if _type_name == "users":
+                        result['__typename'] = "User"
+
+                    parsed = _type_object(self.client, result)
+                    self.results.append(parsed)
+                except:
+                    pass
+        self['results'] = self.results
+        return self.results
+
+    def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
+        return self.results[index]
+
+    def __iter__(self):
+        for i in self.results:
+            yield i
+
+    def __len__(self):
+        return len(self.results)
+
+    def __repr__(self):
+        return "TypeHeadSearch(keyword={})".format(self.keyword)
+

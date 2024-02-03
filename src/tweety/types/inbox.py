@@ -1,7 +1,7 @@
 import re
 import threading
 import time
-from . import User, Media
+from . import User, Media, URL, Hashtag, ShortUser, Symbol
 from ..utils import parse_time, parse_wait_time
 
 
@@ -234,6 +234,7 @@ class Message(dict):
         self._raw = message
         self._inbox = _inbox
         self._client = client
+        self._entities = self._get_message_data('entities', {})
         self.conversation_id = self['conversation_id'] = self._raw.get('conversation_id')
         self.id = self['id'] = self._raw.get('id')
         self.epoch_time = self['epoch_time'] = self._get_message_data('time')
@@ -243,9 +244,25 @@ class Message(dict):
         self.receiver = self['receiver'] = self.get_recipient('recipient_id')
         self.sender = self['sender'] = self.get_recipient('sender_id')
         self.media = self['media'] = self._get_media()
+        self.urls = self['urls'] = self._get_urls()
+        self.symbols = self['symbols'] = self._get_symbols()
+        self.hashtags = self['hashtags'] = self._get_hashtags()
+        self.user_mentions = self['user_mentions'] = self._get_user_mentions()
 
-    def _get_message_data(self, dataKey):
-        return self._raw['message_data'].get(dataKey)
+    def _get_urls(self):
+        return [URL(self._client, i) for i in self._entities.get('urls', [])]
+
+    def _get_hashtags(self):
+        return [Hashtag(self._client, i) for i in self._entities.get('hashtags', [])]
+
+    def _get_symbols(self):
+        return [Symbol(self._client, i) for i in self._entities.get('symbols', [])]
+
+    def _get_user_mentions(self):
+        return [ShortUser(self._client, i) for i in self._entities.get('user_mentions', [])]
+
+    def _get_message_data(self, dataKey, default=None):
+        return self._raw['message_data'].get(dataKey, default)
 
     def get_recipient(self, target):
         user = self._get_message_data(target)
