@@ -107,3 +107,38 @@ class MutualFollowers(BaseGeneratorClass):
         cursor_top = self._get_cursor_(response, "Top")
 
         return _users, cursor, cursor_top
+
+
+class BlockedUsers(BaseGeneratorClass):
+    _RESULT_ATTR = "users"
+
+    def __init__(self, client, pages=1, wait_time=2, cursor=None):
+        super().__init__()
+        self.users = []
+        self.cursor = cursor
+        self.cursor_top = cursor
+        self.is_next_page = True
+        self.client = client
+        self.pages = pages
+        self.user_id = self.client.me.id
+        self.wait_time = wait_time
+
+    def get_page(self, cursor):
+        _users = []
+        response = self.client.http.get_blocked_users(cursor=cursor)
+
+        entries = self._get_entries(response)
+
+        for entry in entries:
+            try:
+
+                parsed = User(self.client, entry, None)
+                if parsed:
+                    _users.append(parsed)
+            except:
+                pass
+
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
+
+        return _users, cursor, cursor_top

@@ -138,11 +138,12 @@ class SelfTimeline(BaseGeneratorClass):
     }
     _RESULT_ATTR = "tweets"
 
-    def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
+    def __init__(self, user_id, client, timeline_type, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
         self.cursor = cursor
         self.is_next_page = True
+        self.timeline_type = timeline_type
         self.client = client
         self.user_id = user_id
         self.pages = pages
@@ -154,7 +155,7 @@ class SelfTimeline(BaseGeneratorClass):
 
     def get_page(self, cursor):
         _tweets = []
-        response = self.client.http.get_home_timeline(cursor=cursor)
+        response = self.client.http.get_home_timeline(timeline_type=self.timeline_type,cursor=cursor)
 
         entries = self._get_entries(response)
 

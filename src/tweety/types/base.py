@@ -45,15 +45,15 @@ class BaseGeneratorClass(dict):
 
         for result in results:
             if isinstance(result, (User, ShortUser)):
-                self.client._cached_users[result.username.lower()] = result.id
+                self.client._cached_users[str(result.username).lower()] = result.id
             elif isinstance(result, Tweet):
-                self.client._cached_users[result.author.username.lower()] = result.author.id
+                self.client._cached_users[str(result.author.username).lower()] = result.author.id
 
                 for user in result.user_mentions:
-                    self.client._cached_users[user.username.lower()] = user.id
+                    self.client._cached_users[str(user.username).lower()] = user.id
 
                 if result.is_retweet and result.retweeted_tweet:
-                    self.client._cached_users[result.retweeted_tweet.author.username.lower()] = result.retweeted_tweet.author.id
+                    self.client._cached_users[str(result.retweeted_tweet.author.username).lower()] = result.retweeted_tweet.author.id
 
         return results
 

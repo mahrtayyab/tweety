@@ -88,11 +88,15 @@ class UserProtected(Exception):
         message -- explanation of the error
     """
 
-    def __init__(self, error_code=403, error_name="UserUnavailable", response=None, message="The User is Protected OR Unavailable, please make sure you are authenticated and authorized", **kw):
+    def __init__(self, error_code=403, error_name="UserUnavailable", response=None, message=None, **kw):
+        if not message:
+            message = "The User is Protected OR Unavailable, please make sure you are authenticated and authorized"
+
         self.message = message
         self.error_code = error_code
         self.error_name = error_name
         self.response = response
+
         super().__init__(self.message)
 
 

@@ -10,6 +10,8 @@ from ..exceptions_ import *
 PROXY_TYPE_SOCKS4 = SOCKS4 = 1
 PROXY_TYPE_SOCKS5 = SOCKS5 = 2
 PROXY_TYPE_HTTP = HTTP = 3
+HOME_TIMELINE_TYPE_FOR_YOU = "HomeTimeline"
+HOME_TIMELINE_TYPE_FOLLOWING = "HomeLatestTimeline"
 
 
 class Proxy:
@@ -20,6 +22,10 @@ class Proxy:
         self.username = username
         self.port = port
         self.proxy = self.__parse__()
+
+    def __iter__(self):
+        for k, v in self.proxy.items():
+            yield k, v
 
     def __proxy_url__(self):
         if self.username and self.password:
@@ -187,7 +193,6 @@ class UploadedMedia:
 
     def _initiate_upload(self):
         response = self._client.http.upload_media_init(self.size, self.mime_type, self._media_category, source_url=self._source_url)
-        print(response)
         return response['media_id_string']
 
     def _append_upload(self, media_id):

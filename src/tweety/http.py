@@ -1,6 +1,7 @@
 import inspect
 import os
 import re
+import warnings
 from typing import Callable
 from urllib.parse import quote
 import httpx as s
@@ -27,10 +28,23 @@ class Request:
     def session(self):
         return self.__session
 
-    def set_cookies(self, cookies):
+    def add_header(self, key, value):
+        self.__session.headers[key] = value
+        self.__builder.custom_headers.update({key: value})
+
+    def remove_header(self, key):
+        if self.__session.headers.get(key):
+            del self.__session.headers[key]
+
+        if self.__builder.custom_headers.get(key):
+            del self.__builder.custom_headers[key]
+
+    def set_cookies(self, cookies, verify=True):
         self.__session.headers['Cookie'] = cookies
         self.__builder.set_cookies(cookies)
-        self._verify_cookies()
+
+        if verify:
+            self._verify_cookies()
 
     def set_user(self, user):
         self.user = user
@@ -173,6 +187,21 @@ class Request:
             response = self.__get_response__(**self.__builder.tweet_detail_as_guest(tweetId))
         return response
 
+    def get_tweet_analytics(self, tweet_id):
+        request = self.__builder.get_tweet_analytics(tweet_id)
+        response = self.__get_response__(**request)
+        return response
+
+    def get_blocked_users(self, cursor):
+        request = self.__builder.get_blocked_users(cursor)
+        response = self.__get_response__(**request)
+        return response
+
+    def get_tweet_translation(self, tweet_id, target_language):
+        request = self.__builder.tweet_translate(tweet_id, target_language)
+        response = self.__get_response__(**request)
+        return response
+
     def get_tweet_edit_history(self, tweet_id):
         response = self.__get_response__(**self.__builder.tweet_edit_history(tweet_id))
         return response
@@ -259,8 +288,8 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def get_home_timeline(self, cursor=None):
-        request_data = self.__builder.home_timeline(cursor)
+    def get_home_timeline(self, timeline_type, cursor=None):
+        request_data = self.__builder.home_timeline(timeline_type, cursor)
         response = self.__get_response__(**request_data)
         return response
 
@@ -286,6 +315,11 @@ class Request:
 
     def like_tweet(self, tweet_id):
         request_data = self.__builder.like_tweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def unlike_tweet(self, tweet_id):
+        request_data = self.__builder.unlike_tweet(tweet_id)
         response = self.__get_response__(**request_data)
         return response
 
@@ -425,7 +459,12 @@ class Request:
 
         with self.__session.stream('GET', media_url, follow_redirects=True, headers=headers, timeout=600) as response:
             response.raise_for_status()
-            total_size = int(response.headers['Content-Length'])
+            try:
+                total_size = int(response.headers['Content-Length'])
+            except:
+                warnings.warn("Unable to get 'Content-Length', it will be set to zero")
+                total_size = 0
+
             downloaded = 0
             f = open(filename, 'wb')
             for chunk in response.iter_bytes(chunk_size=8192):

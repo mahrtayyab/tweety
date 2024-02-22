@@ -1,7 +1,7 @@
 import os.path
 import html
 import warnings
-from typing import Callable
+from typing import Callable, Union
 from dateutil import parser
 import openpyxl
 import dateutil
@@ -181,6 +181,68 @@ class Tweet(_TwType):
             for thread in self.threads:  # noqa
                 yield thread
 
+    def like(self):
+        return self._client.like_tweet(self.id)
+
+    def unlike(self):
+        return self._client.unlike_tweet(self.id)
+
+    def retweet(self):
+        return self._client.retweet_tweet(self.id)
+
+    def translate(self, language):
+        return self._client.translate_tweet(self.id, language)
+
+    def delete(self):
+        if self.author.id != self._client.me.id:
+            return False
+
+        return self._client.delete_tweet(self.id)
+
+    def download_all_media(self, progress_callback=None):
+        for media in self.media:
+            media.download(progress_callback=progress_callback)
+
+    def get_threads(self):
+        _threads = []
+        if not self._full_http_response:
+            return _threads
+
+        instruction = find_objects(self._full_http_response, "type", "TimelineAddEntries")
+        if not instruction:
+            return _threads
+
+        entries = instruction.get('entries', [])
+        for entry in entries:
+
+            if str(entry['entryId'].split("-")[0]) == "conversationthread":
+                _thread = [i for i in entry['content']['items']]
+                self_threads = [i for i in _thread if i['item']['itemContent'].get('tweetDisplayType') == "SelfThread"]
+
+                if len(self_threads) == 0:
+                    continue
+
+                for _ in self_threads:
+                    try:
+                        parsed = Tweet(self._client, _, None)
+                        _threads.append(parsed)
+                    except:
+                        pass
+
+            elif str(entry['entryId'].split("-")[0]) == "tweet" and entry['content']['itemContent']['tweetDisplayType'] == "SelfThread":
+                try:
+                    parsed = Tweet(self._client, entry, None)
+                    _threads.append(parsed)
+                except:
+                    pass
+        return _threads
+
+    def get_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
+        return self._client.get_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
+
+    def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
+        return self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
+
     def _check_if_protected(self):
 
         is_protected = find_objects(self._raw, "__typename", "TweetUnavailable", recursive=False)
@@ -290,12 +352,6 @@ class Tweet(_TwType):
             self.author.username, self.id
         )
 
-    def like(self):
-        return self._client.like_tweet(self.id)
-
-    def retweet(self):
-        return self._client.retweet_tweet(self.id)
-
     def _get_original_tweet(self):
         tweet = self._tweet
 
@@ -306,46 +362,6 @@ class Tweet(_TwType):
 
     def _get_has_moderated_replies(self):
         return self._tweet.get('hasModeratedReplies', False)
-
-    def get_threads(self):
-        _threads = []
-        if not self._full_http_response:
-            return _threads
-
-        instruction = find_objects(self._full_http_response, "type", "TimelineAddEntries")
-        if not instruction:
-            return _threads
-
-        entries = instruction.get('entries', [])
-        for entry in entries:
-
-            if str(entry['entryId'].split("-")[0]) == "conversationthread":
-                _thread = [i for i in entry['content']['items']]
-                self_threads = [i for i in _thread if i['item']['itemContent'].get('tweetDisplayType') == "SelfThread"]
-
-                if len(self_threads) == 0:
-                    continue
-
-                for _ in self_threads:
-                    try:
-                        parsed = Tweet(self._client, _, None)
-                        _threads.append(parsed)
-                    except:
-                        pass
-
-            elif str(entry['entryId'].split("-")[0]) == "tweet" and entry['content']['itemContent']['tweetDisplayType'] == "SelfThread":
-                try:
-                    parsed = Tweet(self._client, entry, None)
-                    _threads.append(parsed)
-                except:
-                    pass
-        return _threads
-
-    def get_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
-        return self._client.get_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
-
-    def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
-        return self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
     def _get_pool(self):
         if not self._card or "poll" not in self._card.get('legacy', {}).get('name', ''):
@@ -841,8 +857,7 @@ class Media(_TwType):
 
         for i in videoDict.get("variants"):
             if not i.get("content_type").split("/")[-1] == "x-mpegURL":
-                self.streams.append(
-                    Stream(self._client, i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio")))
+                self.streams.append(Stream(self._client, i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio")))
 
     def best_stream(self):
         if self.type == "photo":
@@ -1197,7 +1212,8 @@ class User(_TwType):
 
         if not self._user:
             if find_objects(self._raw, "__typename", "UserUnavailable", recursive=False):
-                raise UserProtected(response=user_data)
+                message = find_objects(self._raw, "message", None, recursive=False,none_value=None)
+                raise UserProtected(response=user_data, message=message)
             else:
                 raise UserNotFound(response=user_data)
 
@@ -1233,6 +1249,7 @@ class User(_TwType):
         self.possibly_sensitive = self._get_key("possibly_sensitive", default=False)
         self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
+        self.is_blocked = self._get_is_blocked()
 
     def __eq__(self, other):
         if isinstance(other, User):
@@ -1270,6 +1287,15 @@ class User(_TwType):
             return self._client.disable_user_notification(self.id)
 
         return True
+
+    def add_to_list(self, list_id):
+        return self._client.add_list_member(list_id, self.id)
+
+    def remove_from_list(self, list_id):
+        return self._client.remove_list_member(list_id, self.id)
+
+    def _get_is_blocked(self):
+        return self._original_user.get('blocking', False)
 
     def _get_verified(self):
         verified = self._get_key("verified", False)
@@ -1521,3 +1547,42 @@ class Topic(_TwType):
 
     def __repr__(self):
         return "Topic(id={}, name={})".format(self.id, self.name)
+
+
+class TweetTranslate(_TwType):
+    def __init__(self, client, translate, *args, **kwargs):
+        self._client = client
+        self._raw = translate
+        self.id = self._raw.get('id')
+        self.translation = self.text = self._raw.get('translation')
+        self.source_language = self._raw.get('sourceLanguage')
+        self.destination_language = self._raw.get('destinationLanguage')
+        self.localized_source_language = self._raw.get('localizedSourceLanguage')
+
+    def __repr__(self):
+        return "TweetTranslate(id={}, source_language={})".format(self.id, self.source_language)
+
+
+class TweetAnalytics(_TwType):
+    def __init__(self, client, analytics):
+        print(analytics)
+        self._raw = analytics
+        self._client = client
+        self._tweet = find_objects(self._raw, "__typename", "Tweet", none_value={})
+        self.expands = self._get_metric("DetailExpands")
+        self.engagements = self._get_metric("Engagements")
+        self.follows = self._get_metric("Follows")
+        self.impressions = self._get_metric("Impressions")
+        self.link_clicks = self._get_metric("LinkClicks")
+        self.profile_visits = self._get_metric("ProfileVisits")
+        self.cost_per_follower = self._get_metric("CostPerFollower")
+
+    def _get_metric(self, metric_key):
+        value = find_objects(self._tweet, "metric_type", metric_key, recursive=False, none_value={})
+        return value.get('metric_value', 0.0)
+
+    def __repr__(self):
+        return "TweetAnalytics(expands={}, engagements={}, follows={}, impressions={}, link_clicks={}, profile_visits={})".format(
+            self.expands, self.engagements, self.follows, self.impressions, self.link_clicks, self.profile_visits
+        )
+

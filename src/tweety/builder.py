@@ -3,8 +3,9 @@ import urllib
 from urllib.parse import urlencode
 import random
 from .exceptions_ import DeniedLogin
-from . import utils
 from functools import wraps
+from . import utils
+from .types import HOME_TIMELINE_TYPE_FOR_YOU, HOME_TIMELINE_TYPE_FOLLOWING
 
 REQUEST_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
 REQUEST_PLATFORMS = ['Linux', 'Windows']
@@ -41,6 +42,8 @@ class UrlBuilder:
     URL_AUDIO_SPACE_BY_ID = "https://twitter.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
     URL_AUDIO_SPACE_STREAM = "https://twitter.com/i/api/1.1/live_video_stream/status/{}"
     URL_TWEET_DETAILS = "https://twitter.com/i/api/graphql/3XDB26fBve-MmjHaWTUZxA/TweetDetail"
+    URL_TWEET_ANALYTICS = "https://twitter.com/i/api/graphql/vnwexpl0q33_Bky-SROVww/TweetActivityQuery"
+    URL_TWEET_TRANSLATE = "https://twitter.com/i/api/1.1/strato/column/None/tweetId={},destinationLanguage={},translationSource=Some(Google),feature=None,timeout=None,onlyCached=None/translation/service/translateTweet"
     URL_TWEET_DETAILS_AS_GUEST = "https://api.twitter.com/graphql/5GOHgZe-8U2j5sVHQzEm9A/TweetResultByRestId"
     URL_TWEET_HISTORY = "https://twitter.com/i/api/graphql/MYJ08HcXJuxtXMXWMP-63w/TweetEditHistory"
     URL_AUSER_INBOX = "https://twitter.com/i/api/1.1/dm/user_updates.json"  # noqa
@@ -58,9 +61,13 @@ class UrlBuilder:
     URL_AUSER_CREATE_MEDIA_METADATA = "https://twitter.com/i/api/1.1/media/metadata/create.json"  # noqa
     URL_AUSER_BOOKMARK = "https://twitter.com/i/api/graphql/bN6kl72VsPDRIGxDIhVu7A/Bookmarks"  # noqa
     URL_AUSER_HOME_TIMELINE = "https://twitter.com/i/api/graphql/W4Tpu1uueTGK53paUgxF0Q/HomeTimeline"  # noqa
+    URL_AUSER_HOME_TIMELINE_LATEST = "https://twitter.com/i/api/graphql/IjTuxEFmAb6DvzycVz4fHg/HomeLatestTimeline"  # noqa
     URL_AUSER_TWEET_FAVOURITERS = "https://twitter.com/i/api/graphql/yoghorQ6KbhB1qpXefXuLQ/Favoriters"  # noqa
     URL_AUSER_TWEET_RETWEETERS = "https://twitter.com/i/api/graphql/_nBuZh82i3A0Ohkjw4FqCg/Retweeters"  # noqa
     URL_AUSER_LIKE_TWEET = "https://twitter.com/i/api/graphql/lI07N6Otwv1PhnEgXILM7A/FavoriteTweet"  # noqa
+    URL_AUSER_UNLIKE_TWEET = "https://twitter.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet"  # noqa
+    URL_AUSER_BOOKMARK_TWEET = "https://twitter.com/i/api/graphql/aoDbu3RHznuiSkQ9aNM67Q/CreateBookmark"  # noqa
+    URL_AUSER_BOOKMARK_DELETE_TWEET = "https://twitter.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark"  # noqa
     URL_AUSER_POST_TWEET_RETWEET = "https://twitter.com/i/api/graphql/ojPdsZsimiJrUGLR1sjUtA/CreateRetweet"  # noqa
     URL_AUSER_DELETE_TWEET_RETWEET = "https://twitter.com/i/api/graphql/iQtK4dl5hBmXewYZuEOKVw/DeleteRetweet"  # noqa
     URL_AUSER_CREATE_FRIEND = "https://twitter.com/i/api/1.1/friendships/create.json"  # noqa
@@ -86,11 +93,13 @@ class UrlBuilder:
     URL_AUSER_GET_USER_FOLLOWINGS = "https://twitter.com/i/api/graphql/bX-gXhcglOa--1gzgDlb8A/Following"  # noqa
     # URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/1.1/friends/following/list.json"  # noqa
     URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/graphql/35Y2QFmL84HIisnm-FHAng/FollowersYouKnow"  # noqa
+    URL_AUSER_GET_BLOCKED_USERS = "https://twitter.com/i/api/graphql/f87G4V_l5E9rJ-Ylw0D-yQ/BlockedAccountsAll"  # noqa
 
     def __init__(self):
         self.cookies = None
         self.user_id = None
         self.guest_token = None
+        self.custom_headers = {}
 
     def set_cookies(self, cookies):
         if isinstance(cookies, dict):
@@ -135,6 +144,8 @@ class UrlBuilder:
 
             if self.guest_token and not self.cookies:
                 headers['X-Guest-Token'] = self.guest_token
+
+        headers.update(self.custom_headers)
 
         return headers
 
@@ -378,6 +389,11 @@ class UrlBuilder:
         return "GET", self._build(self.URL_TWEET_DETAILS, urlencode(params))
 
     @return_with_headers
+    def tweet_translate(self, tweet_id, target_language):
+        url = self.URL_TWEET_TRANSLATE.format(tweet_id, f"Some({target_language})")
+        return "GET", url
+
+    @return_with_headers
     def tweet_detail_as_guest(self, tweet_id):
 
         variables = {"tweetId": str(tweet_id), "withCommunity": False,
@@ -433,6 +449,42 @@ class UrlBuilder:
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
         return "GET", self._build(self.URL_TWEET_HISTORY, urlencode(params))
+
+    @return_with_headers
+    def get_tweet_analytics(self, tweet_id):
+        variables = {"restId": str(tweet_id), "from_time": "2011-01-01T00:00:00.000Z",
+                     "to_time": "2050-02-20T14:07:53.617Z", "first_48_hours_time": "2023-12-30T10:36:27.000Z",
+                     "requested_organic_metrics": ["DetailExpands", "Engagements", "Follows", "Impressions",
+                                                   "LinkClicks", "ProfileVisits"],
+                     "requested_promoted_metrics": ["DetailExpands", "Engagements", "Follows", "Impressions",
+                                                    "LinkClicks", "ProfileVisits", "CostPerFollower"]}
+        features = {"responsive_web_tweet_analytics_m3_enabled": False}
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        return "GET", self._build(self.URL_TWEET_ANALYTICS, urlencode(params))
+
+    @return_with_headers
+    def get_blocked_users(self, cursor=None):
+        variables = {"count": 100, "includePromotedContent": False, "withSafetyModeUserFields": False}
+        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True, "tweetypie_unmention_optimization_enabled": True,
+                    "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": True,
+                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
+                    "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True, "responsive_web_enhance_cards_enabled": False}
+
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        return "GET", self._build(self.URL_AUSER_GET_BLOCKED_USERS, urlencode(params))
 
     @return_with_headers
     def get_mentions(self, cursor=None):
@@ -864,7 +916,7 @@ class UrlBuilder:
         return 'GET', self._build(self.URL_AUSER_CREATE_MEDIA, urlencode(params))
 
     @return_with_headers
-    def home_timeline(self, cursor=None):
+    def home_timeline(self, timeline_type, cursor=None):
         variables = {
             'count': 20,
             'includePromotedContent': True,
@@ -893,16 +945,23 @@ class UrlBuilder:
             'longform_notetweets_rich_text_read_enabled': True,
             'longform_notetweets_inline_media_enabled': True,
             'responsive_web_media_download_video_enabled': False,
-            'responsive_web_enhance_cards_enabled': False,
+            'responsive_web_enhance_cards_enabled': False, 'rweb_video_timestamps_enabled': True,
+            'c9s_tweet_anatomy_moderator_badge_enabled': True
         }
         queryId = utils.create_query_id()
+
         if cursor:
             variables['cursor'] = cursor
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
                   'queryId': str(queryId)}
 
-        return "GET", self._build(self.URL_AUSER_HOME_TIMELINE, urlencode(params))
+        if timeline_type == HOME_TIMELINE_TYPE_FOR_YOU:
+            url = self.URL_AUSER_HOME_TIMELINE
+        else:
+            url = self.URL_AUSER_HOME_TIMELINE_LATEST
+
+        return "GET", self._build(url, urlencode(params))
 
     @return_with_headers
     def get_tweet_likes(self, tweet_id, cursor=None):
@@ -1002,6 +1061,39 @@ class UrlBuilder:
         }
 
         return "POST", self.URL_AUSER_LIKE_TWEET, json_data
+
+    @return_with_headers
+    def unlike_tweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': tweet_id
+            },
+            'queryId': utils.create_query_id()
+        }
+
+        return "POST", self.URL_AUSER_UNLIKE_TWEET, json_data
+
+    @return_with_headers
+    def bookmark_tweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': tweet_id
+            },
+            'queryId': utils.create_query_id()
+        }
+
+        return "POST", self.URL_AUSER_BOOKMARK_TWEET, json_data
+
+    @return_with_headers
+    def delete_tweet_bookmark(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': tweet_id
+            },
+            'queryId': utils.create_query_id()
+        }
+
+        return "POST", self.URL_AUSER_BOOKMARK_DELETE_TWEET, json_data
 
     @return_with_headers
     def retweet_tweet(self, tweet_id):

@@ -1,4 +1,5 @@
 import getpass
+import traceback
 from http.cookiejar import MozillaCookieJar
 from typing import Union
 from .exceptions_ import InvalidCredentials, DeniedLogin, ActionRequired
@@ -48,6 +49,7 @@ class AuthMethods:
             try:
                 return self.connect()
             except InvalidCredentials:
+                self.request.set_cookies("", False)
                 pass
 
         username = input('Please enter the Username: ') if not username else username
@@ -81,6 +83,7 @@ class AuthMethods:
             try:
                 return self.connect()
             except InvalidCredentials:
+                self.request.set_cookies("", False)
                 pass
 
         self._username = username
@@ -144,7 +147,11 @@ class AuthMethods:
         while not self.logged_in:
             _login_payload = self._login_flow.get(self._login_flow_state, json_=self._last_json, username=_username, password=_password, extra=_extra)
             response = self.request.login(self._login_url, _payload=_login_payload)
+
             self._last_json = response.json()
+
+            if response.cookies.get("att"):
+                self.request.add_header("Att", response.cookies.get("att"))
 
             if self._last_json.get('status') != "success":
                 raise DeniedLogin(response=response, message=response.text)
@@ -162,8 +169,9 @@ class AuthMethods:
                 raise DeniedLogin(response=response, message=reason)
 
             if subtask == "LoginSuccessSubtask":
+                self.request.remove_header("Att")
                 self.logged_in = True
-                self.cookies = Cookies(response.headers['set-cookie'], True)
+                self.cookies = Cookies(dict(response.cookies))
                 self.session.save_session(self.cookies)
                 return self.connect()
 

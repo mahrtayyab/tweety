@@ -175,6 +175,9 @@ def find_objects(obj, key, value, recursive=True, none_value=None):
     if len(results) == 0:
         return none_value
 
+    if not recursive:
+        return results[0]
+
     return results
 
 
@@ -204,8 +207,9 @@ def parse_time(time):
 
     return date_parser.parse(time)
 
+
 def get_user_from_typehead(target_username, users):
     for user in users:
-        if user.username.lower() == target_username.lower():
+        if str(user.username).lower() == str(target_username).lower():
             return user
     return None

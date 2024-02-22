@@ -3,7 +3,8 @@ from .exceptions_ import ListNotFound
 from .types.inbox import Message
 from .utils import create_conversation_id, AuthRequired, find_objects
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
-                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets, Topic, TopicTweets, MutualFollowers)
+                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
+                    Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers)
 
 
 @AuthRequired
@@ -23,12 +24,14 @@ class UserMethods:
 
     def get_home_timeline(
             self,
+            timeline_type: str = HOME_TIMELINE_TYPE_FOR_YOU,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
+        :param timeline_type: Type of TimeLine to get (`HomeTimeline`|`HomeLatestTimeline`)
         :param pages: (`int`) The number of pages to get
         :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
@@ -38,19 +41,21 @@ class UserMethods:
         if wait_time is None:
             wait_time = 0
 
-        timeline = SelfTimeline(self.user.id, self, pages, wait_time, cursor)
+        timeline = SelfTimeline(self.user.id, self, timeline_type, pages, wait_time, cursor)
         list(timeline.generator())
 
         return timeline
 
     def iter_home_timeline(
             self,
+            timeline_type: str = HOME_TIMELINE_TYPE_FOR_YOU,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
     ):
         """
 
+        :param timeline_type: Type of TimeLine to get (`HomeTimeline`|`HomeLatestTimeline`)
         :param pages: (`int`) The number of pages to get
         :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
@@ -60,7 +65,7 @@ class UserMethods:
         if wait_time is None:
             wait_time = 0
 
-        timeline = SelfTimeline(self.user.id, self, pages, wait_time, cursor)
+        timeline = SelfTimeline(self.user.id, self, timeline_type, pages, wait_time, cursor)
 
         return timeline.generator()
 
@@ -123,7 +128,7 @@ class UserMethods:
         :param pages: (`int`) The number of pages to get
         :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
-        :return: .types.likes.TweetLikes
+        :return: .types.retweets.TweetRetweets
         """
 
         if isinstance(tweet_id, Tweet):
@@ -146,7 +151,7 @@ class UserMethods:
         :param pages: (`int`) The number of pages to get
         :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
-        :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
+        :return: (.types.retweets.TweetRetweets, list[.types.twDataTypes.User])
         """
 
         if isinstance(tweet_id, Tweet):
@@ -567,7 +572,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ) -> MutualFollowers:
+    ):
         """
          Get the mutual friends of a user as generator
 
@@ -587,7 +592,6 @@ class UserMethods:
 
         return mutualFollowers.generator()
 
-
     def like_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
@@ -601,7 +605,20 @@ class UserMethods:
         response = self.request.like_tweet(tweet_id)
         return True if find_objects(response, "favorite_tweet", "Done") else False
 
-    def retweet_tweet(self, tweet_id: Union[str, int , Tweet]):
+    def unlike_tweet(self, tweet_id: Union[str, int, Tweet]):
+        """
+
+        :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
+        :return: Bool
+        """
+
+        if isinstance(tweet_id, Tweet):
+            tweet_id = tweet_id.id
+
+        response = self.request.unlike_tweet(tweet_id)
+        return True if find_objects(response, "unfavorite_tweet", "Done") else False
+
+    def retweet_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
@@ -778,8 +795,6 @@ class UserMethods:
         :param is_private: Either the List is private or public
         :return: .types.twDataTypes.List
         """
-        if not name or name == "":
-            raise ValueError("'name' is required")
 
         response = self.request.create_list(name, description, is_private)
         return TwList(self, response['data'])
@@ -874,7 +889,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ) -> TopicTweets:
+    ):
         """
             Get Tweets of a Topic as Generator
 
@@ -891,6 +906,46 @@ class UserMethods:
         topic_tweets = TopicTweets(topic_id, self, pages, cursor, wait_time)
         return topic_tweets.generator()
 
+    def get_tweet_analytics(self, tweet_id):
+        response = self.request.get_tweet_analytics(tweet_id)
+        return TweetAnalytics(self, response)
+
+    def get_blocked_users(
+            self,
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ) -> BlockedUsers:
+        """
+            Get Users which have been blocked by the authenticated user
+
+            :param pages: (`int`) The number of pages to get
+            :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+            :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+            :return: .types.follow.BlockedUsers
+        """
+
+        blocked_users = BlockedUsers(self, pages, wait_time, cursor)
+        list(blocked_users.generator())
+        return blocked_users
+
+    def iter_blocked_users(
+            self,
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+            Get Users which have been blocked by the authenticated user as iterator
+
+            :param pages: (`int`) The number of pages to get
+            :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+            :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+            :return: (.types.follow.BlockedUsers, List[.types.twDataTypes.User])
+        """
+
+        blocked_users = BlockedUsers(self, pages, wait_time, cursor)
+        return blocked_users.generator()
 
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):

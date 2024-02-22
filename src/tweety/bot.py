@@ -1,12 +1,12 @@
 from typing import Union
 from urllib.parse import urlparse
 from .utils import find_objects, AuthRequired, get_user_from_typehead
-from .types import Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets, \
-    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch, ShortUser, TypeHeadSearch
+from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
+                    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
+                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace)
 from .exceptions_ import *
 from .session import Session
 from .http import Request
-from .types.twDataTypes import AudioSpace
 
 
 class BotMethods:
@@ -46,15 +46,14 @@ class BotMethods:
         """
 
         user_raw = self.request.get_user(username)
-
         user = User(self, user_raw)
-        self._cached_users[username.lower()] = user.id
+        self._cached_users[str(username).lower()] = user.id
         return user
 
     @property
     def user_id(self) -> int:
         """
-        Get the user unique twitter id
+        Get the user unique twitter id of authenticated user
 
         :return: int
         """
@@ -670,6 +669,10 @@ class BotMethods:
                         _tweet_before.append(tweet)
 
         raise InvalidTweetIdentifier(response=response)
+
+    def translate_tweet(self, tweet_id, language):
+        response = self.http.get_tweet_translation(tweet_id, language)
+        return TweetTranslate(self, response)
 
     def search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
         search = GifSearch(search_term, self, pages, cursor, wait_time)
