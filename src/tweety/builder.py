@@ -31,6 +31,7 @@ class UrlBuilder:
     URL_HOME_PAGE = "https://twitter.com/"
     URL_API_INIT = "https://twitter.com/i/api/1.1/branch/init.json"
     URL_USER_BY_SCREEN_NAME = "https://twitter.com/i/api/graphql/oUZZZ8Oddwxs8Cd3iW3UEA/UserByScreenName"
+    URL_USER_BY_USER_IDS = "https://twitter.com/i/api/graphql/itEhGywpgX9b3GJCzOtSrA/UsersByRestIds"
     URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
     URL_USER_MEDIAS = "https://twitter.com/i/api/graphql/cEjpJXA15Ok78yO4TUQPeQ/UserMedia"
     URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
@@ -188,6 +189,17 @@ class UrlBuilder:
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
         return "GET", self._build(self.URL_USER_BY_SCREEN_NAME, urlencode(params))
+
+    @return_with_headers
+    def users_by_rest_id(self, user_ids):
+        variables = {"userIds" : user_ids}
+        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "responsive_web_graphql_timeline_navigation_enabled": True}
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        return "GET", self._build(self.URL_USER_BY_USER_IDS, urlencode(params))
 
     @return_with_headers
     def user_media(self, user_id, cursor=None):

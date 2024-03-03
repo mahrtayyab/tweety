@@ -1,3 +1,4 @@
+import warnings
 from typing import Union
 from urllib.parse import urlparse
 from .utils import find_objects, AuthRequired, get_user_from_typehead
@@ -36,19 +37,43 @@ class BotMethods:
         self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, **httpx_kwargs)
         self.user = None
 
-    def get_user_info(self, username: str = None) -> User:
+    def get_user_info(self, username: Union[str, int, list] = None):
         """
         Get the User Info of the specified username
 
-        :param: username: (`str`) username to get information of
+        :param: username: (`str` | `int` | List[`str`, `int`]) username or user_id to get information of
 
         :return: .types.twDataTypes.User
         """
 
-        user_raw = self.request.get_user(username)
-        user = User(self, user_raw)
-        self._cached_users[str(username).lower()] = user.id
-        return user
+        if isinstance(username, list):
+            for i in username:
+                if not str(i).isdigit():
+                    raise ValueError("Only Accept List of User IDs.")
+
+        if isinstance(username, list) or str(username).isdigit() or isinstance(username, int):
+            usernames = [username] if not isinstance(username, list) else username
+            users_raw = self.request.get_users_by_rest_id(usernames)
+            users = find_objects(users_raw, "users", None, recursive=False, none_value=[])
+
+            parsed_users = [User(self, user) for user in users if user]
+
+            for user in parsed_users:
+                self._cached_users[str(user.username).lower()] = user.id
+
+            if len(usernames) == 1 and len(parsed_users) > 0:
+                return parsed_users[0]
+            elif len(usernames) == 1 and len(parsed_users) == 0:
+                return None
+            elif len(usernames) > 1 and len(parsed_users) == 0:
+                return []
+            else:
+                return parsed_users
+        else:
+            user_raw = self.request.get_user(username)
+            user = User(self, user_raw)
+            self._cached_users[str(username).lower()] = user.id
+            return user
 
     @property
     def user_id(self) -> int:

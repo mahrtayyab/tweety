@@ -145,6 +145,11 @@ class Request:
 
         raise UserNotFound(error_code=50, error_name="GenericUserNotFound", response=response)
 
+    def get_users_by_rest_id(self, user_ids):
+        request_data = self.__builder.users_by_rest_id([str(i) for i in user_ids])
+        response = self.__get_response__(**request_data)
+        return response
+
     def login(self, _url, _payload):
         request_data = self.__builder.build_flow(_url)
         request_data['json'] = _payload
