@@ -58,6 +58,7 @@ class GenericError:
         32: InvalidCredentials,
         144: InvalidTweetIdentifier,
         88: RateLimitReached,
+        477: RateLimitReached,
         399: InvalidCredentials,
         220: InvalidCredentials,
         214: InvalidBroadcast,
@@ -89,9 +90,9 @@ class GenericError:
                 retry_after=self.retry_after
             )
 
-        raise UnknownError(
+        raise TwitterError(
             error_code=self.error_code,
-            error_name=TWITTER_ERRORS[self.error_code],
+            error_name=TWITTER_ERRORS.get(self.error_code, 0),
             response=self.response,
             message="[{}] {}".format(self.error_code, self.message)
         )

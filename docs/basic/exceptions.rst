@@ -387,3 +387,53 @@ ListNotFound
             :type: httpx.Response
 
             Raw Response returned by the Twitter
+
+ProtectedTweet
+---------------------
+
+.. py:class:: ProtectedTweet
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when queried Tweet is protected, and you need authorization to access it**
+    :reference: `tweety.exceptions_.ProtectedTweet`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+            :value: "Tweet is private/protected"
+
+            Main Exception Message / Description of the Action to be performed
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter
+
+ProxyParseError
+---------------------
+
+.. py:class:: ProxyParseError
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when Proxy Format is Irregular**
+    :reference: `tweety.exceptions_.ProxyParseError`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+
+            Main Exception Message / Description of the Action to be performed

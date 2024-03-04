@@ -54,11 +54,21 @@ class AuthMethods:
 
         username = input('Please enter the Username: ') if not username else username
         password = getpass.getpass('Please enter your password: ') if not password else password
-        try:
-            return self.sign_in(username, password, extra=extra)
-        except ActionRequired as e:
-            action = input(f"\rAction Required :> {str(e.message)} : ")
-            return self.sign_in(username, password, extra=action)
+
+        _extra_once = False
+        while not self.logged_in:
+            try:
+                return self.sign_in(username, password, extra=extra)
+            except ActionRequired as e:
+                action = input(f"\rAction Required :> {str(e.message)} : ")
+                _extra_once = True
+                return self.sign_in(username, password, extra=action)
+            except InvalidCredentials as ask_info:
+                if _extra_once:
+                    action = input(f"\rAction Required :> {str(ask_info.message)} : ")
+                    return self.sign_in(username, password, extra=action)
+                else:
+                    raise ask_info
 
     def sign_in(
             self,

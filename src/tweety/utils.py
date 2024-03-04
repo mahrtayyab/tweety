@@ -9,6 +9,7 @@ import string
 import sys
 import uuid
 from dateutil import parser as date_parser
+from urllib.parse import urlparse
 from .exceptions_ import AuthenticationRequired
 
 GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
@@ -213,3 +214,10 @@ def get_user_from_typehead(target_username, users):
         if str(user.username).lower() == str(target_username).lower():
             return user
     return None
+
+
+def get_tweet_id(tweet_identifier):
+    if str(tweet_identifier.__class__.__name__) == "Tweet":
+        return tweet_identifier.id
+    else:
+        return urlparse(str(tweet_identifier)).path.split("/")[-1]

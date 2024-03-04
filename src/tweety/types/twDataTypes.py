@@ -954,6 +954,9 @@ class ShortUser(_TwType):
         self.from_index = self._indices[0] if self._indices else None
         self.to_index = self._indices[1] if self._indices else None
 
+    def get_full_user(self):
+        return self._client.get_user_info(self.id)
+
     def __eq__(self, other):
         if isinstance(other, ShortUser):
             return self.id == other.id
@@ -1252,7 +1255,7 @@ class User(_TwType):
         self.is_blocked = self._get_is_blocked()
 
     def __eq__(self, other):
-        if isinstance(other, User):
+        if isinstance(other, (User, ShortUser)):
             return self.id == other.id
         elif isinstance(other, (int, str)):
             return str(self.id) == str(other)

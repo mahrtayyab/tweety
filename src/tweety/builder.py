@@ -51,6 +51,7 @@ class UrlBuilder:
     URL_AUSER_TRUSTED_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_timeline/trusted.json"  # noqa
     URL_AUSER_NOTIFICATION_MENTIONS = "https://twitter.com/i/api/2/notifications/mentions.json"  # noqa
     URL_AUSER_SETTINGS = "https://api.twitter.com/1.1/account/settings.json"  # noqa
+    URL_AUSER_ADD_GROUP_MEMBER = "https://twitter.com/i/api/graphql/oBwyQ0_xVbAQ8FAyG0pCRA/AddParticipantsMutation" # noqa
     URL_AUSER_SEND_MESSAGE = "https://twitter.com/i/api/1.1/dm/new2.json"  # noqa
     URL_AUSER_CONVERSATION = "https://twitter.com/i/api/1.1/dm/conversation/{}.json"  # noqa
     URL_AUSER_CREATE_TWEET = "https://twitter.com/i/api/graphql/tTsjMKyhajZvK4q76mpIBg/CreateTweet"  # noqa
@@ -696,6 +697,18 @@ class UrlBuilder:
             params['max_id'] = max_id
 
         return "GET", self._build(self.URL_AUSER_CONVERSATION.format(conversation_id), urlencode(params))
+
+    @return_with_headers
+    def add_member_to_group(self, member_ids, conversation_id):
+        json_data = {
+            'variables': {
+                'addedParticipants': member_ids,
+                'conversationId': conversation_id,
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_AUSER_ADD_GROUP_MEMBER, json_data
 
     @return_with_headers
     def get_bookmarks(self, cursor=None):

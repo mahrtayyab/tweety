@@ -125,6 +125,7 @@ class Conversation(dict):
         self.participants = self['participants'] = self.get_participants()
         self.name = self['name'] = self._get_key("name", self._get_one_to_one_name())
         self.messages = self['messages'] = self.parse_messages()
+        self.is_group = self.type == self.TYPE_GROUP_DM
         self.cursor = None
         self.conversation_status = self.HAS_MORE_STATUS
 

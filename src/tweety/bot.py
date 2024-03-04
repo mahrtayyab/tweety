@@ -1,7 +1,6 @@
 import warnings
 from typing import Union
-from urllib.parse import urlparse
-from .utils import find_objects, AuthRequired, get_user_from_typehead
+from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
                     ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace)
@@ -46,6 +45,9 @@ class BotMethods:
         :return: .types.twDataTypes.User
         """
 
+        if not username and self.user is not None:
+            username = self.user.username
+
         if isinstance(username, list):
             for i in username:
                 if not str(i).isdigit():
@@ -88,7 +90,7 @@ class BotMethods:
     def cache(self):
         return self._cached_users
 
-    def get_user_id(self, username):
+    def get_user_id(self, username: str):
         return self._get_user_id(username)
 
     def _get_user_id(self, username):
@@ -616,7 +618,9 @@ class BotMethods:
         :return: .types.likes.TweetLikes
         """
 
-        comments = TweetComments(tweet_id, self, get_hidden, pages, wait_time, cursor)
+        tweetId = get_tweet_id(tweet_id)
+
+        comments = TweetComments(tweetId, self, get_hidden, pages, wait_time, cursor)
         list(comments.generator())
         return comments
 
@@ -640,10 +644,9 @@ class BotMethods:
         :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        comments = TweetComments(tweet_id, self, get_hidden, pages, wait_time, cursor)
+        comments = TweetComments(tweetId, self, get_hidden, pages, wait_time, cursor)
 
         return comments.generator()
 
@@ -657,7 +660,7 @@ class BotMethods:
         :return: .types.usertweet.TweetHistory
         """
 
-        tweetId = urlparse(str(identifier)).path.split("/")[-1]
+        tweetId = get_tweet_id(identifier)
         return TweetHistory(tweetId, self)
 
     def tweet_detail(self, identifier: str) -> Tweet:
@@ -669,7 +672,7 @@ class BotMethods:
         :return: .types.twDataTypes.Tweet
         """
 
-        tweetId = urlparse(str(identifier)).path.split("/")[-1]
+        tweetId = get_tweet_id(identifier)
 
         response = self.request.get_tweet_detail(tweetId)
 
@@ -696,7 +699,16 @@ class BotMethods:
         raise InvalidTweetIdentifier(response=response)
 
     def translate_tweet(self, tweet_id, language):
-        response = self.http.get_tweet_translation(tweet_id, language)
+        """
+            Translate Tweet in another Language
+
+            :param tweet_id: Tweet ID of the Tweet to be translated
+            :param language: In which Language you want to translate the Tweet (see tweety.filters.Language)
+            :return: .types.twDataTypes.TweetTranslate
+        """
+
+        tweetId = get_tweet_id(tweet_id)
+        response = self.http.get_tweet_translation(tweetId, language)
         return TweetTranslate(self, response)
 
     def search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):

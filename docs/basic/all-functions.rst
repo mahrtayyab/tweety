@@ -8,14 +8,15 @@ All Available Functions
 This page contains all the public method available to work with
 
 .. attention:: All methods requires user to be authenticated
+.. attention:: All method's examples assumes `app` is authenticated instance of `Twitter`
 
 
 Get User Info
 ---------------------
 
-- .. py:method:: Twitter().get_user_info(username: str = None)
+- .. py:method:: Twitter().get_user_info(username: Union[str, int, list] = None)
 
-    Get the User Info of the specified username or ``self``
+    Get the User Info of the specified username
 
     .. py:data:: Arguments
 
@@ -23,23 +24,47 @@ Get User Info
             :type: str
             :value: None
 
-            Username of the user you want to get info of.
+            Username, User ID or List of User IDs of the user you want to get info of.
 
 
     .. py:data:: Return
 
-        :return: `User`
+        :return: `User` | list[`User`]
 
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        user = app.get_user_info('elonmusk')
 
 
-Get Tweets
+Get User ID
+-------------------
+- .. py:method:: Twitter().get_user_id(username: str)
+
+    Get User ID of a specific Username
+
+    .. tip::  (in case you only want User ID, you must be using this method)
+
+    .. py:data:: Arguments
+
+        .. py:data:: username
+            :type: str
+
+            Username of the user you want to get ID of.
+
+
+        .. py:data:: Return
+
+            :return: str
+
+
+        .. code-block:: python
+
+           user = app.get_user_id('elonmusk')
+
+
+
+Get User Tweets
 ---------------------
 
 - .. py:method:: Twitter().get_tweets(username: str , pages: int = 1, replies: bool = False, wait_time: int = 2, cursor: str = None)
@@ -49,7 +74,7 @@ Get Tweets
 
     .. py:data:: Arguments
 
-        .. py:data:: username (Required)
+        .. py:data:: username
             :type: str
 
             Username of the user you want to get Tweets of.
@@ -88,12 +113,57 @@ Get Tweets
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweets = app.get_tweets('elonmusk')
        for tweet in tweets:
            print(tweet)
+
+
+Get User Medias
+---------------------
+
+- .. py:method:: Twitter().get_user_media(username: str , pages: int = 1, wait_time: int = 2, cursor: str = None)
+- .. py:method:: Twitter().iter_user_media(username: str , pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Get the User Media of the specified username (`iter` for generator)
+
+    .. py:data:: Arguments
+
+        .. py:data:: username
+            :type: str
+
+            Username of the user you want to get Tweets of.
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `UserMedia`
+        :return: Generator : (`UserMedia` , list[`Tweet`])
+
+
+    .. code-block:: python
+
+       tweets = app.get_user_media('elonmusk')
+       for tweet in tweets:
+           print(tweet.media)
+
 
 
 Searching a Keyword
@@ -119,7 +189,7 @@ Searching a Keyword
 
 
         .. py:data:: filter_ (optional)
-            :type: str | SearchFilter
+            :type: str
             :value: None
 
             Filter you would like to apply on the search. More about :ref:`filter`
@@ -145,9 +215,6 @@ Searching a Keyword
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweets = app.search('elonmusk')
        for tweet in tweets:
            print(tweet)
@@ -197,21 +264,25 @@ Get a Tweet Detail
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweet = app.tweet_detail("https://twitter.com/Microsoft/status/1442542812197801985")
+
 
 Getting Home Timeline
 ---------------------
 
-- .. py:method:: Twitter().get_home_timeline(pages: int = 1, wait_time: int = 2, cursor: str = None)
-- .. py:method:: Twitter().iter_home_timeline(pages: int = 1, wait_time: int = 2, cursor: str = None)
+- .. py:method:: Twitter().get_home_timeline(timeline_type: str = "HomeTimeline", pages: int = 1, wait_time: int = 2, cursor: str = None)
+- .. py:method:: Twitter().iter_home_timeline(timeline_type: str = "HomeTimeline", pages: int = 1, wait_time: int = 2, cursor: str = None)
 
 
     Getting the Tweets from Home Page of Authenticated User (`iter` for generator)
 
     .. py:data:: Arguments
+
+        .. py:data:: timeline_type (optional)
+            :type: str
+            :value: "HomeTimeline"
+
+            The type of Timeline to Get ("HomeTimeline", "HomeLatestTimeline")
 
         .. py:data:: pages (optional)
             :type: int
@@ -240,10 +311,11 @@ Getting Home Timeline
 
     .. code-block:: python
 
-       from tweety import Twitter
+       from tweety.types import HOME_TIMELINE_TYPE_FOR_YOU, HOME_TIMELINE_TYPE_FOLLOWING
 
-       app = Twitter("session")
-       tweets = app.get_home_timeline()
+       ...
+
+       tweets = app.get_home_timeline(timeline_type=HOME_TIMELINE_TYPE_FOR_YOU)
        for tweet in tweets:
            print(tweet)
 
@@ -292,9 +364,6 @@ Getting Tweet Likes
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweet = app.tweet_detail("1232515235253352")
        likes = app.get_tweet_likes(tweet)
        for like in likes:
@@ -344,9 +413,6 @@ Getting Tweet Retweets
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweet = app.tweet_detail("1232515235253352")
        users = app.get_tweet_retweets(tweet)
        for user in users:
@@ -391,9 +457,6 @@ Getting Mentioned Tweets
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweets = app.get_mentions()
        for tweet in tweets:
            print(tweet)
@@ -437,9 +500,6 @@ Getting Bookmarks
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweets = app.get_bookmarks()
        for tweet in tweets:
            print(tweet)
@@ -474,9 +534,6 @@ Getting Inbox
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        inbox = app.get_inbox()
        for conversation in inbox:
            print(conversation)
@@ -484,7 +541,7 @@ Getting Inbox
 Sending Message
 ---------------------
 
-- .. py:method:: Twitter().send_message(username: Union[str, int, User], text: str, file: Union[str, UploadedMedia] = None)
+- .. py:method:: Twitter().send_message(username: Union[str, int, User], text: str, file: Union[str, UploadedMedia] = None, in_group:bool = False)
 
     Sending Message to a User
 
@@ -505,6 +562,11 @@ Sending Message
 
             Filepath of the file to be sent
 
+        .. py:data:: in_group
+            :type: bool
+
+            Either Message is begin sent in group or not
+
 
     .. py:data:: Return
 
@@ -513,15 +575,12 @@ Sending Message
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        message = app.send_message("user", "Hi")
 
 Creating a Tweet
 ---------------------
 
-- .. py:method:: Twitter().create_tweet(text: str, files: list[Union[str, UploadedMedia, tuple[str, str]]] = None, filter_: str = None, reply_to: str = None)
+- .. py:method:: Twitter().create_tweet(text: str, files: list[Union[str, UploadedMedia, tuple[str, str]]] = None, filter_: str = None, reply_to: str = None, quote: str = None)
 
     Create a Tweet using the authenticated user
 
@@ -542,11 +601,15 @@ Creating a Tweet
 
            Filter to be applied for Tweet Audience. More about :ref:`filter`
 
-        .. py:data:: reply_to(optional)
+        .. py:data:: reply_to (optional)
             :type: str | Tweet
 
             ID of tweet to reply to
 
+        .. py:data:: quote
+            :type: str | Tweet
+
+            ID of tweet to Quote
 
     .. py:data:: Return
 
@@ -555,9 +618,6 @@ Creating a Tweet
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        message = app.create_tweet("user", reply_to="1690430294208483322")
 
 Liking the Tweet
@@ -582,10 +642,31 @@ Liking the Tweet
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.like_tweet("123456789")
+
+Un-Liking the Tweet
+---------------------
+
+- .. py:method:: Twitter().unlike_tweet(tweet_id: Union[str, int , Tweet])
+
+    UnLike a Posted a Like on a Tweet
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: str | int | Tweet
+
+            Id of the Tweet
+
+
+    .. py:data:: Return
+
+        :return: bool
+
+
+    .. code-block:: python
+
+       app.unlike_tweet("123456789")
 
 Retweeting the Tweet
 ---------------------
@@ -609,9 +690,6 @@ Retweeting the Tweet
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.retweet_tweet("123456789")
 
 Delete a Retweet
@@ -636,9 +714,6 @@ Delete a Retweet
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.delete_retweet("123456789")
 
 Follow a User
@@ -662,9 +737,6 @@ Follow a User
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.follow_user("123456789")
 
 UnFollow a User
@@ -688,10 +760,53 @@ UnFollow a User
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.unfollow_user("123456789")
+
+Block a User
+---------------------
+
+- .. py:method:: Twitter().block_user(user_id: Union[str, int , User])
+
+    Block a User
+
+    .. py:data:: Arguments
+
+        .. py:data:: user_id
+            :type: str | int | User
+
+            Id of the User
+
+    .. py:data:: Return
+
+        :return: `User`
+
+
+    .. code-block:: python
+
+       app.block_user("123456789")
+
+Un-Block a User
+---------------------
+
+- .. py:method:: Twitter().unblock_user(user_id: Union[str, int , User])
+
+    Block a User
+
+    .. py:data:: Arguments
+
+        .. py:data:: user_id
+            :type: str | int | User
+
+            Id of the User
+
+    .. py:data:: Return
+
+        :return: `User`
+
+
+    .. code-block:: python
+
+       app.unblock_user("123456789")
 
 Get Community
 ---------------------
@@ -851,9 +966,6 @@ Delete Tweet
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.delete_tweet("123456789")
 
 Enable User Notifications
@@ -876,9 +988,6 @@ Enable User Notifications
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.enable_user_notification("123456789")
 
 Disable User Notifications
@@ -901,9 +1010,6 @@ Disable User Notifications
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        app.disable_user_notification("123456789")
 
 Get Notified Tweets
@@ -944,9 +1050,6 @@ Get Notified Tweets
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweets = app.get_tweet_notifications()
        for tweet in tweets:
            print(tweet)
@@ -1109,8 +1212,8 @@ Get Tweet Comments
 Get Lists
 ---------------------
 
-- .. py:method:: Twitter().get_lists(pages: int = 1, wait_time: int = 2, cursor: str = None, get_hidden: bool = False)
-- .. py:method:: Twitter().iter_lists(pages: int = 1, wait_time: int = 2, cursor: str = None, get_hidden: bool = False)
+- .. py:method:: Twitter().get_lists(pages: int = 1, wait_time: int = 2, cursor: str = None)
+- .. py:method:: Twitter().iter_lists(pages: int = 1, wait_time: int = 2, cursor: str = None)
 
     Get lists of `Authenticated User`
 
@@ -1143,9 +1246,6 @@ Get Lists
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        lists = app.get_lists()
        for _list in lists:
            print(_list)
@@ -1182,9 +1282,6 @@ Create List
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        _list = app.create_list("list_name")
        print(_list)
 
@@ -1209,9 +1306,6 @@ Delete List
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        _list = app.delete_list("123515")
        print(_list)
 
@@ -1236,9 +1330,6 @@ Get List
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        _list = app.get_list("123515")
        print(_list)
 
@@ -1285,9 +1376,6 @@ Get List Tweets
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        tweets = app.get_list_tweets("123515")
        for tweet in tweets:
            print(tweet)
@@ -1336,9 +1424,6 @@ Get List Members
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
        users = app.get_list_member("123515")
        for user in users:
            print(user)
@@ -1369,10 +1454,7 @@ Add List Member
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
-       _list = app.add_list_member("123515", "kharl")
+       _list = app.add_list_member("123515", "elonmusk")
        print(_list)
 
 Remove List Member
@@ -1401,8 +1483,227 @@ Remove List Member
 
     .. code-block:: python
 
-       from tweety import Twitter
-
-       app = Twitter("session")
-       _list = app.remove_list_member("123515", "kharl")
+       _list = app.remove_list_member("123515", "elonmusk")
        print(_list)
+
+Get Topic
+---------------------
+
+- .. py:method:: Twitter().get_topic(topic_id: Union[str, int])
+
+    Get a topic using ID
+
+    .. py:data:: Arguments
+
+        .. py:data:: topic_id
+            :type: int | str
+
+            ID of Topic
+
+    .. py:data:: Return
+
+        :return: `Topic`
+
+
+    .. code-block:: python
+
+       topic = app.get_topic("123515")
+       print(topic)
+
+Get Topic Tweets
+---------------------
+
+- .. py:method:: Twitter().get_topic_tweets(topic_id: str , pages: int = 1, wait_time: int = 2, cursor: str = None)
+- .. py:method:: Twitter().iter_topic_tweets(topic_id: str , pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Get the Tweets of the specified Topic (`iter` for generator)
+
+    .. py:data:: Arguments
+
+        .. py:data:: topic_id
+            :type: str
+
+            ID of the Topic
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+
+        .. py:data:: replies (optional)
+            :type: bool
+            :value: False
+
+            Fetch the Replied Tweets of the User
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `TopicTweets`
+        :return: Generator : (`TopicTweets` , list[`Tweet`])
+
+
+    .. code-block:: python
+
+       tweets = app.get_topic_tweets('123456')
+       for tweet in tweets:
+           print(tweet)
+
+Get Tweet Analytics
+---------------------
+
+- .. py:method:: Twitter().get_tweet_analytics(tweet_id: Union[str, int, Tweet])
+
+    Get Analytics of a Tweet (made by authenticated user)
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: int | str
+
+            ID of Tweet
+
+    .. py:data:: Return
+
+        :return: `TweetAnalytics`
+
+
+    .. code-block:: python
+
+       tweet = app.get_tweet_analytics("123515")
+       print(tweet)
+
+Get Mutual Friends/Followers
+---------------------
+
+- .. py:method:: Twitter().get_mutual_followers(username: str , pages: int = 1, wait_time: int = 2, cursor: str = None)
+- .. py:method:: Twitter().iter_mutual_followers(username: str , pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Get the Mutual Followers/Friends of a User (`iter` for generator)
+
+    .. py:data:: Arguments
+
+        .. py:data:: username
+            :type: str
+
+            Username of the user you want to get Tweets of.
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `MutualFollowers`
+        :return: Generator : (`MutualFollowers` , list[`User`])
+
+
+    .. code-block:: python
+
+       users = app.get_mutual_followers('elonmusk')
+       for user in users:
+           print(user)
+
+Get Blocked Users
+---------------------
+
+- .. py:method:: Twitter().get_blocked_users(pages: int = 1, wait_time: int = 2, cursor: str = None)
+- .. py:method:: Twitter().iter_blocked_users(pages: int = 1, wait_time: int = 2, cursor: str = None)
+
+    Get the users blocked by authenticated user (`iter` for generator)
+
+    .. py:data:: Arguments
+
+        .. py:data:: pages (optional)
+            :type: int
+            :value: 1
+
+            Number of Tweet Pages you want to get
+
+        .. py:data:: wait_time (optional)
+            :type: int
+            :value: 2
+
+            Number of seconds to wait between multiple requests
+
+        .. py:data:: cursor (optional)
+            :type: str
+            :value: None
+
+             Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+
+    .. py:data:: Return
+
+        :return: `BlockedUsers`
+        :return: Generator : (`BlockedUsers` , list[`User`])
+
+
+    .. code-block:: python
+
+       users = app.get_blocked_users()
+       for user in users:
+           print(user)
+
+Get Translated Tweet
+---------------------
+
+- .. py:method:: Twitter().translate_tweet(tweet_id: Union[str, int, Tweet], language: str)
+
+    Get specific Tweet in a specific Language
+
+    .. py:data:: Arguments
+
+        .. py:data:: tweet_id
+            :type: int | str
+
+            ID of Tweet
+
+        .. py:data:: language
+            :type: str
+
+            Language to which you want to translate
+
+
+    .. py:data:: Return
+
+        :return: `TweetTranslate`
+
+
+    .. code-block:: python
+
+       from tweety.filters import Language
+
+       ...
+
+       tweet = app.translate_tweet("123515", Language.English)
+       print(tweet)

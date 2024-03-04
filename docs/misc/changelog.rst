@@ -186,3 +186,34 @@ Update 2.1:
 
 * Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 1.0.2
 * Lot of bug fixes and code improvements
+
+...
+
+Update 3.1
+--------------
+- Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 1.0.9.6
+- Alot of Bug Fixes
+- Added `ProtectedTweet` Exception
+- Added `URL`, `Hashtag` Type
+- Added "tweet_edit_history" method
+- Fixed `Inbox` Class
+- Added `EditControl` Type
+- Added `Symbol` Type
+- Added `get_user_media` method
+- Added `iter_user_media` method
+- Added `is_liked`, `is_retweeted` attributes to `Tweet` class
+- Added `get_next_page` and `get_next_page` method to `Conversation` class
+- Added user id cache
+- Optimized the `BaseGeneratorClass`
+- SelfThread not being parsed is fixed
+- Fixed issue when no user returned in inbox requests
+- Added `get_topic` method
+- Added `get_topic_tweets` method
+- Create Tweet now supports quoting a Tweet
+- Added `get_user_id` method
+- Added `user_mentions`, `urls`, `hashtags`, `symbols` in `Message` object
+- Added `get_mutual_followers` method
+- Added `get_blocked_users` method
+- Added `get_tweet_analytics` method
+- Added `unlike_tweet` method
+- Added `translate_tweet` method

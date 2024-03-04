@@ -4,7 +4,46 @@
 TwDataTypes
 =============
 
-This page contains all the Data Class returned by the different methods
+This page contains all the Data Class
+
+.. py:data:: PROXY_TYPE_SOCKS4 = 1
+
+.. py:data:: PROXY_TYPE_SOCKS5 = 2
+
+.. py:data:: PROXY_TYPE_HTTP = 3
+
+
+
+Proxy
+-------------------
+.. py:class:: Proxy(host: str, port: int, proxy_type: int, username: str = None, password: str = None)
+
+    .. py:data:: Arguments
+
+        .. py:data:: host
+            :type: str
+
+            Host of Proxy
+
+        .. py:data:: port
+            :type: int
+
+            Port of proxy
+
+        .. py:data:: proxy_type
+            :type: int
+
+            Type of Proxy
+
+        .. py:data:: username (optional)
+            :type: str
+
+            Username required for authentication
+
+        .. py:data:: password (optional)
+            :type: str
+
+            Password required for authentication
 
 
 UserTweets
@@ -13,8 +52,6 @@ UserTweets
 .. py:class:: UserTweets
 
     Bases : `BaseGeneratorClass`
-
-    .. note:: **This Object is JSON Serializable and Iterable**
 
     :reference: `tweety.types.usertweet.UserTweets`
 
@@ -29,16 +66,6 @@ UserTweets
             :type: bool
 
             Either to get replies or Not
-
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
 
         .. py:attribute:: user_id
             :type: int
@@ -62,23 +89,84 @@ UserTweets
             .. py:data:: Return
                 :type: None
 
-        .. py:method:: get_next_page()
+UserMedia
+---------------------
 
-            Get next page of tweets if available
+.. py:class:: UserMedia
 
-            .. py:data:: Return
-                :type: list[Tweet | SelfThread]
+    Bases : `BaseGeneratorClass`
 
+    .. note:: **This Object is JSON Serializable and Iterable**
 
-        .. py:method:: __repr__()
+    :reference: `tweety.types.usertweet.UserMedia`
 
-            Developer Representation of the Object
+    .. py:data:: Attributes:
 
-            .. py:data:: Return
-                :type: str
+        .. py:attribute:: tweets
+            :type: list[Tweet | SelfThread]
 
-                :return: ``UserTweets(user={username}, count={number_of_results})``
+            List of User Tweets
 
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
+
+SelfTimeline
+---------------------
+
+.. py:class:: SelfTimeline
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.usertweet.SelfTimeline`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet | SelfThread]
+
+            List of User Tweets
+
+        .. py:attribute:: timeline_type
+            :type: str
+
+            Type of Timeline
+
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
+
+TweetComments
+---------------------
+
+.. py:class:: TweetComments
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.usertweet.TweetComments`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[ConversationThread]
+
+            List of Tweet ConversationThreads
+
+        .. py:attribute:: tweet_id
+            :type: str
+
+            ID of Tweet
+
+        .. py:attribute:: get_hidden
+            :type: bool
+
+            Got hidden comments or not
 
 Search
 ---------------------
@@ -95,30 +183,15 @@ Reference `Search`_.
 
     .. py:data:: Attributes:
 
-        .. py:attribute:: tweets
-            :type: list[Tweet]
+        .. py:attribute:: results
+            :type: list[Tweet | SelfThread | User | List]
 
-            List of User Tweets if filter isn't User Only
-
-        .. py:attribute:: users
-            :type: list
-
-            List of User Tweets if filter is User Only
+            List of Results
 
         .. py:attribute:: keyword
             :type: str
 
             keyword which is begin searched
-
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
 
         .. py:attribute:: filter
             :type: str | None
@@ -142,22 +215,23 @@ Reference `Search`_.
             .. py:data:: Return
                 :type: None
 
-        .. py:method:: get_next_page()
+TopicTweets
+---------------------
 
-            Get next page of tweets if available
+.. py:class:: TopicTweets
 
-            .. py:data:: Return
-                :type: list[Tweet]
+    Bases : `BaseGeneratorClass`
 
+    .. note:: **This Object is JSON Serializable and Iterable**
 
-        .. py:method:: __repr__()
+    :reference: `tweety.types.topic.TopicTweets`
 
-            Developer Representation of the Object
+    .. py:data:: Attributes:
 
-            .. py:data:: Return
-                :type: str
+        .. py:attribute:: tweets
+            :type: list[Tweet]
 
-                :value: ``Search(keyword={keyword}, count={number_of_results}, filter={any_filter_which_is_used})``
+            List of Tweets
 
 TweetLikes
 ---------------------
@@ -177,40 +251,10 @@ TweetLikes
 
             List of Users
 
-
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
         .. py:attribute:: user_id
             :type: int
 
             User ID of the user in question
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :return: ``TweetLikes(tweet_id={id_of_tweet}, count={number_of_results})``
 
 TweetRetweets
 ---------------------
@@ -230,40 +274,11 @@ TweetRetweets
 
             List of Users
 
-
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
         .. py:attribute:: user_id
             :type: int
 
             User ID of the user in question
 
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :return: ``TweetRetweets(tweet_id={id_of_tweet}, count={number_of_results})``
 
 Mention
 ---------------------
@@ -283,39 +298,10 @@ Mention
 
             List of User Tweets
 
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
         .. py:attribute:: user_id
             :type: int
 
             User ID of the user in question
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :return: ``Mention(user_id={user_id}, count={number_of_results})``
 
 
 Bookmarks
@@ -336,39 +322,10 @@ Bookmarks
 
             List of User Tweets
 
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
         .. py:attribute:: user_id
             :type: int
 
             User ID of the user in question
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :return: ``Bookmarks(user_id={user_id}, count={number_of_results})``
 
 CommunityTweets
 ---------------------
@@ -384,19 +341,9 @@ CommunityTweets
     .. py:data:: Attributes:
 
         .. py:attribute:: tweets
-            :type: list[Tweet]
+            :type: list[Tweet | SelfThread]
 
             List of  Tweets
-
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
 
         .. py:attribute:: filter
             :type: str | None
@@ -419,23 +366,6 @@ CommunityTweets
 
             .. py:data:: Return
                 :type: None
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``CommunityTweets(id={id_of_community}, count={number_of_results})``
 
 CommunityMembers
 ---------------------
@@ -455,54 +385,10 @@ CommunityMembers
 
             List of User
 
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
         .. py:attribute:: filter
             :type: str | None
 
             Any Filter which is begin applied
-
-    .. py:data:: Methods:
-
-        .. py:method:: to_xlsx(filename=None)
-
-            Export the User Tweets to Excel
-
-            .. py:data:: Arguments:
-
-                .. py:data:: filename (optional)
-                    :type: str
-                    :value: None
-
-                    Filename of Excel Workbook
-
-            .. py:data:: Return
-                :type: None
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``CommunityMembers(id={id_of_community}, count={number_of_results})``
 
 Lists
 ---------------------
@@ -522,25 +408,6 @@ Lists
 
             List of Twitter List
 
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
 ListMembers
 ---------------------
 
@@ -559,33 +426,6 @@ ListMembers
 
             Users of Twitter List
 
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``ListMembers(id={id_of_list}, count={total_results})``
 
 ListTweets
 ---------------------
@@ -601,37 +441,9 @@ ListTweets
     .. py:data:: Attributes:
 
         .. py:attribute:: tweets
-            :type: list[Tweet]
+            :type: list[Tweet | SelfThread]
 
             Tweets of the List
-
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``ListTweets(id={id_of_list}, count={total_results})``
 
 UserFollowers
 ---------------------
@@ -651,25 +463,6 @@ UserFollowers
 
             Users List
 
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
 UserFollowings
 ---------------------
 
@@ -688,24 +481,41 @@ UserFollowings
 
             Users List
 
-        .. py:attribute:: cursor
-            :type: str
+MutualFollowers
+---------------------
 
-            Cursor for next page
+.. py:class:: MutualFollowers
 
-        .. py:attribute:: is_next_page
-            :type: bool
+    Bases : `BaseGeneratorClass`
 
-            Is next page of tweets available
+    .. note:: **This Object is JSON Serializable and Iterable**
 
-    .. py:data:: Methods:
+    :reference: `tweety.types.follow.MutualFollowers`
 
-        .. py:method:: get_next_page()
+    .. py:data:: Attributes:
 
-            Get next page of tweets if available
+        .. py:attribute:: users
+            :type: list[User]
 
-            .. py:data:: Return
-                :type: list[Tweet]
+            Users List
+
+BlockedUsers
+---------------------
+
+.. py:class:: BlockedUsers
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.follow.BlockedUsers`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            Users List
 
 TweetNotifications
 ---------------------
@@ -724,35 +534,6 @@ TweetNotifications
             :type: list[Tweet]
 
             List of tweets
-
-        .. py:attribute:: cursor
-            :type: str
-
-            Cursor for next page
-
-        .. py:attribute:: is_next_page
-            :type: bool
-
-            Is next page of tweets available
-
-    .. py:data:: Methods:
-
-        .. py:method:: get_next_page()
-
-            Get next page of tweets if available
-
-            .. py:data:: Return
-                :type: list[Tweet]
-
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``TweetNotifications(user_id={id_of_user}, count={number_of_results})``
 
 Inbox
 ---------------------
@@ -799,16 +580,6 @@ Inbox
                 :type: Conversation | None
 
 
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :return: ``Inbox(user_id={user_id}, count={number_of_results})``
-
-
 SelfThread
 ---------------------
 
@@ -838,14 +609,6 @@ SelfThread
 
             Try getting all the tweets of the thread (by default Twitter returns only 3 Tweets from Thread)
 
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :return: ``SelfThread(tweets=number_of_tweets_in_threads)``
 
 ConversationThread
 ---------------------
@@ -875,15 +638,6 @@ ConversationThread
         .. py:method:: expand()
 
             Try getting all the tweets of the thread (by default Twitter returns only 2 Tweets from Thread)
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :return: ``ConversationThread(tweets=number_of_tweets_in_threads)``
 
 
 Tweet
@@ -1009,6 +763,41 @@ Tweet
 
             Source of Tweet
 
+        .. py:attribute:: has_moderated_replies
+            :type: bool
+
+            Are replies on this Tweet moderated
+
+        .. py:attribute:: is_liked
+            :type: bool
+
+            is this tweet liked by authenticated user
+
+        .. py:attribute:: is_retweeted
+            :type: bool
+
+            is this tweet retweeted by authenticated user
+
+        .. py:attribute:: can_reply
+            :type: bool
+
+            can authenticated user reply to this Tweet
+
+        .. py:attribute:: broadcast
+            :type: Broadcast | None
+
+            Broadcast
+
+        .. py:attribute:: edit_control
+            :type: EditControl | None
+
+            Edit Control of the Tweet
+
+        .. py:attribute:: has_newer_version
+            :type: bool
+
+            Do this Tweet was edited and has newer version
+
         .. py:attribute:: audio_space_id
             :type: str
 
@@ -1035,17 +824,17 @@ Tweet
             Users mentioned in the Tweet
 
         .. py:attribute:: urls
-            :type: list[str]
+            :type: list[URL]
 
             URLs mentioned in the Tweet
 
         .. py:attribute:: hashtags
-            :type: list[str]
+            :type: list[Hashtag]
 
             Hashtags mentioned in the Tweet
 
         .. py:attribute:: symbols
-            :type: list[str]
+            :type: list[Symbol]
 
             Symbols mentioned in the Tweet
 
@@ -1072,6 +861,7 @@ Tweet
     .. py:data:: Methods:
 
         .. py:method:: get_comments(pages=1, wait_time=2, cursor=None)
+        .. py:method:: iter_comments(pages=1, wait_time=2, cursor=None)
 
             Get the comments / replies posted in response to this tweet
 
@@ -1098,39 +888,44 @@ Tweet
             .. py:data:: Return
                 :type: list[Tweet]
 
-        .. py:method:: iter_comments(pages=1, wait_time=2, cursor=None)
-
-            Generator method to get the comments / replies posted in response to this tweet
-
-            .. py:data:: Arguments:
-
-                .. py:data:: pages (optional)
-                    :type: int
-                    :value: 1
-
-                    How many pages to get
-
-                .. py:data:: wait_time (optional)
-                    :type: int
-                    :value: 2
-
-                    Number of seconds to wait between multiple requests
-
-                .. py:data:: cursor (optional)
-                    :type: str
-                    :value: None
-
-                    Pagination cursor to get the comments from that cursor up-to
-
-            .. py:data:: Return
-                :type:  Generator : (`Tweet` , list[`Tweet`])
-
         .. py:method:: like()
 
             Like the Tweet
 
             .. py:data:: Return
                 :type: Bool
+
+        .. py:method:: unlike()
+
+            Un-Like the Tweet
+
+            .. py:data:: Return
+                :type: Bool
+
+        .. py:method:: translate()
+
+            Translate the Tweet
+
+            .. py:data:: Return
+                :type: TweetTranslate
+
+        .. py:method:: delete()
+
+            Delete the Tweet
+
+            .. py:data:: Return
+                :type: Bool
+
+        .. py:method:: download_all_media(progress_callback: Callable[[str, int, int], None] = None)
+
+            Download All Media from Tweet
+
+            .. py:data:: progress_callback (optional)
+                :type: Callable[[str, int, int], None]
+                :value: None
+
+                Callback function which will called while downloading to track the progress.
+                [filename, total_size_in_bytes, downloaded_in_bytes]
 
         .. py:method:: retweet()
 
@@ -1145,15 +940,6 @@ Tweet
 
             .. py:data:: Return
                 :type: Tweet
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Tweet(id=id_of_tweet, author=author_of_tweet, created_on=tweet_creation_date, threads=number_of_threads)``
 
 Media
 ---------------------
@@ -1192,7 +978,7 @@ Media
         .. py:attribute:: type
             :type: str
 
-            Type of Media (`video` | `image`)
+            Type of Media (`video` | `photo`)
 
         .. py:attribute:: url
             :type: str
@@ -1208,6 +994,11 @@ Media
             :type: dict
 
             Stats of the media , usually `viewCount`
+
+        .. py:attribute:: source_user
+            :type: User | None
+
+            Source from where the Media was posted
 
     .. py:data:: Methods:
 
@@ -1233,15 +1024,12 @@ Media
             .. py:data:: Return
                 :type: filename | None
 
-        .. py:method:: __repr__()
+        .. py:method:: best_stream()
 
-            Developer Representation of the Object
+            Get Best available Media/Stream
 
             .. py:data:: Return
-                :type: str
-
-                :value: ``Media(id=id_of_media, type=type_of_media)``
-
+                :type: Media | Stream | None
 
 Stream
 ---------------------
@@ -1311,15 +1099,6 @@ Stream
             .. py:data:: Return
                 :type: filename | None
 
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Stream(content_type=content_type_of_stream, length=length_of_stream_in_millis, bitrate=bitrate_of_media_audio, res=resolution_of_media)``
-
 ShortUser
 ---------------------
 
@@ -1353,17 +1132,6 @@ ShortUser
 
             Username of the User
 
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``ShortUser(id=id_of_the_user, name=name_of_the_user)``
-
 Trends
 ---------------------
 
@@ -1391,17 +1159,6 @@ Trends
             :type: int
 
             Number of Tweets this trend has till now
-
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Trends(name=name_of_the_trend)``
 
 Card
 ---------------------
@@ -1451,17 +1208,6 @@ Card
 
             Users Referred in the Pool
 
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Card(id=rest_id_of_card, choices=list_of_choices, end_time=end_time_of_card, duration=duration_of_card)``
-
 
 Choice
 ---------------------
@@ -1500,17 +1246,6 @@ Choice
             :type: str
 
             Number of the votes this `value` has
-
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Choice(name=name_of_choice, value=value_of_choice, counts=number_of_votes_this_choice_has)``
 
 Place
 ---------------------
@@ -1560,18 +1295,6 @@ Place
 
             Coordinates of the place
 
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Place(id=id_of_place, name=name_of_place, country=country_of_place, coordinates=coordinates_of_place)``
-
-
 Coordinates
 ---------------------
 
@@ -1594,17 +1317,6 @@ Coordinates
             :type: float
 
             Longitude Value of the place
-
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Coordinates(latitude=latitude, longitude=longitude)``
 
 User
 ---------------------
@@ -1653,6 +1365,11 @@ User
             :type: bool
 
             Can the authenticated user send dm to this user
+
+        .. py:attribute:: is_blocked
+            :type: bool
+
+            Is the user blocked by authenticated user
 
         .. py:attribute:: entities
             :type: dict | None
@@ -1797,16 +1514,6 @@ User
                 :type: bool
 
 
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``User(id=rest_id_of_user, name=name_of_the_user, username=username_of_the_user, followers=number_of_followers_of_user, verified=is_user_verified)``
-
-
 Conversation
 ---------------------
 
@@ -1824,6 +1531,11 @@ Conversation
             :type: int
 
             Id of the conversation
+
+        .. py:attribute:: name
+            :type: str
+
+            Name of conversation
 
         .. py:attribute:: low_quality
             :type: bool
@@ -1855,6 +1567,11 @@ Conversation
 
             Is this conversation trusted by the user
 
+        .. py:attribute:: is_group
+            :type: bool
+
+            Is this conversation a Group or Not
+
         .. py:attribute:: type
             :type: str
 
@@ -1870,13 +1587,34 @@ Conversation
 
             Messages of the conversation
 
-
-
     .. py:data:: Methods:
 
-        .. py:method:: get_all_messages()
+        .. py:method:: get_all_messages(wait_time: int = 2, cursor: int = 0, till_date: datetime.datetime = None, count: int =None)
+        .. py:method:: iter_all_messages(wait_time: int = 2, cursor: int = 0, till_date: datetime.datetime = None, count: int =None)
 
-            Force get all the messages of the conversation
+            Force get all the messages of the conversation (`iter` for Generator)
+
+            .. py:data:: Arguments:
+
+                .. py:data:: wait_time
+                    :type: int | tuple[int, int]
+
+                    Number of seconds to wait between multiple requests
+
+                .. py:data:: cursor
+                    :type: str
+
+                    Cursor of that specific Page
+
+                .. py:data:: till_date
+                    :type: datetime.datetime
+
+                    Get Messages till that date
+
+                .. py:data:: count
+                    :type: int
+
+                    Get this number of Messages
 
             .. py:data:: Return
                 :type: list[Message]
@@ -1892,17 +1630,13 @@ Conversation
 
                     Content of the message to send
 
+                .. py:data:: file
+                    :type: str | PathLike
+
+                    File to send with message
+
             .. py:data:: Return
                 :type: Message
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Conversation(id=id_of_conversation, muted=is muted, nsfw=is nsfw, participants=number of participants)``
 
 Message
 ---------------------
@@ -1961,17 +1695,6 @@ Message
             :type: Media | None
 
             Media in the message
-
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Message(id=id_of_the_message, conversation_id=id_of_the_conversation, time=time_of_the_message)``
 
 NewMessage
 ---------------------
@@ -2052,15 +1775,6 @@ NewMessage
             .. py:data:: Return
                 :type: Message
 
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Message(id=id_of_the_message, conversation_id=id_of_the_conversation, time=time_of_the_message)``
-
 Community
 ---------------------
 
@@ -2129,17 +1843,80 @@ Community
 
             List of rules of the Community
 
+Symbol
+---------------------
 
-    .. py:data:: Methods:
+.. py:class:: Symbol
 
-        .. py:method:: __repr__()
+    Bases : `dict`
 
-            Developer Representation of the Object
+    .. note:: **This Object is JSON Serializable**
 
-            .. py:data:: Return
-                :type: str
+    :reference: `tweety.types.twDataTypes.Symbol`
 
-                :value: ``Community(id={rest_id_of_user}, name={name_of_the_user}, role={role_of_user}, admin={admin_of_the_community})``
+    .. py:data:: Attributes:
+
+        .. py:attribute:: indices
+            :type: list[int, int]
+
+            The start index of this symbol in the text
+
+        .. py:attribute:: text
+            :type: str
+
+            Actual Symbol
+
+Hashtag
+---------------------
+
+.. py:class:: Hashtag
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.Hashtag`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: indices
+            :type: list[int, int]
+
+            The start index of this hashtag in the text
+
+        .. py:attribute:: text
+            :type: str
+
+            Actual hashtag
+
+URL
+---------------------
+
+.. py:class:: URL
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.URL`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: indices
+            :type: list[int, int]
+
+            The start index of this url in the text
+
+        .. py:attribute:: display_url
+            :type: str
+
+            Twitter Short URL
+
+        .. py:attribute:: expanded_url
+            :type: str
+
+            Actual Url
+
 
 RichText
 ---------------------
@@ -2165,17 +1942,17 @@ RichText
             Text of the tweet
 
         .. py:attribute:: hashtags
-            :type: list[str]
+            :type: list[Hashtag]
 
             List of hashtags in the Tweet
 
         .. py:attribute:: urls
-            :type: list[str]
+            :type: list[URL]
 
             List of URLs in the Tweet
 
         .. py:attribute:: symbols
-            :type: list[str]
+            :type: list[Symbol]
 
              List of Symbols in the Tweet
 
@@ -2202,16 +1979,6 @@ RichText
 
             .. py:data:: Return
                 :type: str
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``RichText(id={rest_id_of_tweet})``
-
 RichTag
 ---------------------
 
@@ -2244,17 +2011,6 @@ RichTag
             :type: list[str]
 
             Type of tags included in the range
-
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``RichTag(from_index={from_index}, to_index={to_index}, types={types})``
 
 Pool
 ---------------------
@@ -2314,17 +2070,6 @@ Pool
 
             Has pool ended or not
 
-    .. py:data:: Methods:
-
-        .. py:method:: __repr__()
-
-            Developer Representation of the Object
-
-            .. py:data:: Return
-                :type: str
-
-                :value: ``Card(id={rest_id_of_poll}, choices={list_of_choices}, end_time={end_time_of_pool}, duration={duration_of_pool} minutes)``
-
 TwList
 ---------------------
 
@@ -2378,14 +2123,183 @@ TwList
 
             Admin of the List
 
+EditControl
+---------------------
 
-    .. py:data:: Methods:
+.. py:class:: EditControl
 
-        .. py:method:: __repr__()
+    Bases : `dict`
 
-            Developer Representation of the Object
+    .. note:: **This Object is JSON Serializable**
 
-            .. py:data:: Return
-                :type: str
+    :reference: `tweety.types.twDataTypes.EditControl`
 
-                :value: ``List(id={id_of_list}, name={name_of_list}, admin={admin_of_list}, subscribers={subscribers_of_list})``
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweet_ids
+            :type: list[str]
+
+            List of Tweet ids
+
+        .. py:attribute:: edits_remaining
+            :type: str
+
+            Number of Edits Remaining for this Tweet
+
+        .. py:attribute:: is_latest
+            :type: bool
+
+            is this the Latest version of Tweet
+
+        .. py:attribute:: latest_tweet_id
+            :type: str
+
+            ID of latest edited Tweet
+
+
+Broadcast
+---------------------
+
+.. py:class:: Broadcast
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.Broadcast`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            ID of Broadcast
+
+        .. py:attribute:: width
+            :type: str
+
+            Width of Broadcast
+
+        .. py:attribute:: title
+            :type: str
+
+            Title of Broadcast
+
+Topic
+---------------------
+
+.. py:class:: Topic
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.Topic`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            ID of Topic
+
+        .. py:attribute:: description
+            :type: str
+
+            description of topic
+
+        .. py:attribute:: name
+            :type: str
+
+            Title of Topic
+
+        .. py:attribute:: is_following
+            :type: bool
+
+            is authenticated user following the topic
+
+TweetTranslate
+---------------------
+
+.. py:class:: TweetTranslate
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.TweetTranslate`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            ID of Tweet
+
+        .. py:attribute:: translation
+            :type: str
+
+            translated tweet of Tweet
+
+        .. py:attribute:: text
+            :type: str
+
+            translated tweet of Tweet
+
+        .. py:attribute:: source_language
+            :type: str
+
+            Source Language of Tweet
+
+        .. py:attribute:: destination_language
+            :type: str
+
+            Tweet translated of this Language
+
+TweetAnalytics
+---------------------
+
+.. py:class:: TweetAnalytics
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.TweetAnalytics`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: expands
+            :type: int
+
+            Number of Expands
+
+        .. py:attribute:: engagements
+            :type: int
+
+            Number of Engagements
+
+        .. py:attribute:: follows
+            :type: int
+
+            Number of Follows
+
+        .. py:attribute:: impressions
+            :type: int
+
+            Number of Impressions
+
+        .. py:attribute:: link_clicks
+            :type: int
+
+            Number of Clicks
+
+        .. py:attribute:: profile_visits
+            :type: int
+
+            Number of Profile Visits
+
+        .. py:attribute:: cost_per_follower
+            :type: int
+
+            Cost Incurred per Follower

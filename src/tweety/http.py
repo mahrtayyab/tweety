@@ -116,8 +116,7 @@ class Request:
             if guest_token:
                 return guest_token[0]
 
-        raise GuestTokenNotFound(None, None, last_response,
-                                 f"Guest Token couldn't be found after {max_retries} retires.")
+        raise GuestTokenNotFound(error_code=last_response, message=f"Guest Token couldn't be found after {max_retries} retires.")
 
     def _init_api(self):
         data = self.__builder.init_api()
@@ -449,6 +448,11 @@ class Request:
 
     def get_topic_landing_page(self, topic_id, cursor=None):
         request_data = self.__builder.get_topic_landing_page(topic_id, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def add_group_member(self, member_ids, conversation_id):
+        request_data = self.__builder.add_member_to_group(member_ids, conversation_id)
         response = self.__get_response__(**request_data)
         return response
 

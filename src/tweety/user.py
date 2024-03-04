@@ -1,10 +1,11 @@
 from typing import Union, Tuple, List
 from .exceptions_ import ListNotFound
-from .types.inbox import Message
-from .utils import create_conversation_id, AuthRequired, find_objects
+from .types.inbox import Message, Conversation
+from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
-                    Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers)
+                    Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers, ShortUser)
+from .filters import SearchFilters
 
 
 @AuthRequired
@@ -85,10 +86,9 @@ class UserMethods:
         :return: .types.likes.TweetLikes
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        likes = TweetLikes(tweet_id, self, pages, wait_time, cursor)
+        likes = TweetLikes(tweetId, self, pages, wait_time, cursor)
         list(likes.generator())
         return likes
 
@@ -108,10 +108,9 @@ class UserMethods:
         :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        likes = TweetLikes(tweet_id, self, pages, wait_time, cursor)
+        likes = TweetLikes(tweetId, self, pages, wait_time, cursor)
 
         return likes.generator()
 
@@ -131,10 +130,9 @@ class UserMethods:
         :return: .types.retweets.TweetRetweets
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        retweets = TweetRetweets(tweet_id, self, pages, wait_time, cursor)
+        retweets = TweetRetweets(tweetId, self, pages, wait_time, cursor)
         list(retweets.generator())
         return retweets
 
@@ -154,12 +152,51 @@ class UserMethods:
         :return: (.types.retweets.TweetRetweets, list[.types.twDataTypes.User])
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        retweets = TweetRetweets(tweet_id, self, pages, wait_time, cursor)
+        retweets = TweetRetweets(tweetId, self, pages, wait_time, cursor)
 
         return retweets.generator()
+
+    def get_tweet_quotes(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Quotes to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.search.Search
+        """
+
+        tweetId = get_tweet_id(tweet_id)
+
+        return self.search(f"quoted_tweet_id:{tweetId}", pages=pages, wait_time=wait_time, cursor=cursor)
+
+    def iter_tweet_quotes(
+            self,
+            tweet_id: Union[str, Tweet],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param tweet_id: Tweet ID or the Tweet Object of which the Quotes to get
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.search.Search, list[.types.twDataTypes.Tweet])
+        """
+
+        tweetId = get_tweet_id(tweet_id)
+
+        return self.iter_search(f"quoted_tweet_id:{tweetId}", pages=pages, wait_time=wait_time, cursor=cursor)
 
     def get_mentions(
             self,
@@ -311,6 +348,24 @@ class UserMethods:
 
         return inbox
 
+    def add_member_to_group(
+            self,
+            members: Union[str, int, list],
+            group_id: Union[str, int, Conversation]
+    ):
+
+        members = [members] if not isinstance(members, list) else members
+        member_ids = []
+        for member in members:
+            if isinstance(member, (User, ShortUser)):
+                member_ids.append(member.id)
+            else:
+                member_ids.append(member)
+
+        group_id = group_id.id if isinstance(group_id, Conversation) else group_id
+
+        return self.request.add_group_member(member_ids, group_id)
+
     def send_message(
             self,
             username: Union[str, int, User],
@@ -372,7 +427,7 @@ class UserMethods:
             files = []
 
         if reply_to and isinstance(reply_to, Tweet):
-            reply_to = reply_to.id
+            reply_to = get_tweet_id(reply_to)
 
         if not reply_to and quote:
             if isinstance(quote, int) or str(quote).isdigit():
@@ -599,10 +654,9 @@ class UserMethods:
         :return: Bool
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.like_tweet(tweet_id)
+        response = self.request.like_tweet(tweetId)
         return True if find_objects(response, "favorite_tweet", "Done") else False
 
     def unlike_tweet(self, tweet_id: Union[str, int, Tweet]):
@@ -612,10 +666,9 @@ class UserMethods:
         :return: Bool
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.unlike_tweet(tweet_id)
+        response = self.request.unlike_tweet(tweetId)
         return True if find_objects(response, "unfavorite_tweet", "Done") else False
 
     def retweet_tweet(self, tweet_id: Union[str, int, Tweet]):
@@ -625,10 +678,9 @@ class UserMethods:
         :return: Bool
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.retweet_tweet(tweet_id)
+        response = self.request.retweet_tweet(tweetId)
         return True if find_objects(response, "rest_id", None) else False
 
     def delete_retweet(self, tweet_id: Union[str, int , Tweet]):
@@ -638,10 +690,9 @@ class UserMethods:
         :return: Bool
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.delete_retweet(tweet_id)
+        response = self.request.delete_retweet(tweetId)
         return True if find_objects(response, "rest_id", None) else False
 
     def follow_user(self, user_id):
@@ -734,10 +785,9 @@ class UserMethods:
         :return: Bool
         """
 
-        if isinstance(tweet_id, Tweet):
-            tweet_id = tweet_id.id
+        tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.delete_tweet(tweet_id)
+        response = self.request.delete_tweet(tweetId)
         return True if response.get('data', {}).get('delete_tweet') else False
 
     def enable_user_notification(self, user_id):
