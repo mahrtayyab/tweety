@@ -31,7 +31,7 @@ from .twDataTypes import (
 )
 from .n_types import UploadedMedia, Proxy, PROXY_TYPE_SOCKS4, PROXY_TYPE_SOCKS5, PROXY_TYPE_HTTP, HOME_TIMELINE_TYPE_FOLLOWING, HOME_TIMELINE_TYPE_FOR_YOU
 from .search import Search, TypeHeadSearch
-from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia
+from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia, UserHighlights, UserLikes
 from .mentions import Mention
 from .inbox import Inbox, SendMessage, Media, Conversation
 from .bookmarks import Bookmarks

@@ -71,6 +71,125 @@ class UserTweets(BaseGeneratorClass):
     def to_xlsx(self, filename=None):
         return Excel(self, filename)
 
+class UserHighlights(BaseGeneratorClass):
+    OBJECTS_TYPES = {
+        "tweet": Tweet,
+        "homeConversation": SelfThread,
+        "profile": SelfThread
+    }
+    _RESULT_ATTR = "tweets"
+
+    def __init__(self, user_id, client, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
+        super().__init__()
+        self.tweets = []
+        self.get_replies = get_replies
+        self.cursor = cursor
+        self.cursor_top = cursor
+        self.is_next_page = True
+        self.client = client
+        self.user_id = user_id
+        self.pages = pages
+        self.wait_time = wait_time
+        self.pinned = None
+
+    def _get_target_object(self, tweet):
+        entry_type = str(tweet['entryId']).split("-")[0]
+        return self.OBJECTS_TYPES.get(entry_type)
+
+    def get_page(self, cursor):
+        _tweets = []
+
+        response = self.client.http.get_highlights(self.user_id, cursor=cursor)
+
+        if not response['data']['user'].get("result"):
+            raise UserNotFound(response=response)
+
+        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+            raise UserProtected(403, "UserUnavailable", response)
+
+        entries = self._get_entries(response)
+
+        for entry in entries:
+            object_type = self._get_target_object(entry)
+
+            try:
+                if object_type is None:
+                    continue
+
+                parsed = object_type(self.client, entry, None)
+                if parsed:
+                    _tweets.append(parsed)
+            except:
+                pass
+
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
+
+        return _tweets, cursor, cursor_top
+
+    def to_xlsx(self, filename=None):
+        return Excel(self, filename)
+
+
+class UserLikes(BaseGeneratorClass):
+    OBJECTS_TYPES = {
+        "tweet": Tweet,
+        "homeConversation": SelfThread,
+        "profile": SelfThread
+    }
+    _RESULT_ATTR = "tweets"
+
+    def __init__(self, user_id, client, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
+        super().__init__()
+        self.tweets = []
+        self.get_replies = get_replies
+        self.cursor = cursor
+        self.cursor_top = cursor
+        self.is_next_page = True
+        self.client = client
+        self.user_id = user_id
+        self.pages = pages
+        self.wait_time = wait_time
+        self.pinned = None
+
+    def _get_target_object(self, tweet):
+        entry_type = str(tweet['entryId']).split("-")[0]
+        return self.OBJECTS_TYPES.get(entry_type)
+
+    def get_page(self, cursor):
+        _tweets = []
+
+        response = self.client.http.get_likes(self.user_id, cursor=cursor)
+
+        if not response['data']['user'].get("result"):
+            raise UserNotFound(response=response)
+
+        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+            raise UserProtected(403, "UserUnavailable", response)
+
+        entries = self._get_entries(response)
+
+        for entry in entries:
+            object_type = self._get_target_object(entry)
+
+            try:
+                if object_type is None:
+                    continue
+
+                parsed = object_type(self.client, entry, None)
+                if parsed:
+                    _tweets.append(parsed)
+            except:
+                pass
+
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
+
+        return _tweets, cursor, cursor_top
+
+    def to_xlsx(self, filename=None):
+        return Excel(self, filename)
+
 
 class UserMedia(BaseGeneratorClass):
     OBJECTS_TYPES = {

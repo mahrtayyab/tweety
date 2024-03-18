@@ -1236,6 +1236,7 @@ class User(_TwType):
         self.media_count = self._get_key("media_count", default=0)
         self.name = self._get_key("name")
         self.normal_followers_count = self._get_key("normal_followers_count", default=0)
+        self.subscriptions_count = self._get_key("creator_subscriptions_count", default=0)
         self.profile_banner_url = self._get_key("profile_banner_url")
         self.profile_image_url_https = self._get_key("profile_image_url_https")
         self.profile_interstitial_type = self._get_key("profile_interstitial_type")

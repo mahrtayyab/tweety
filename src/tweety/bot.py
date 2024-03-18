@@ -3,7 +3,7 @@ from typing import Union
 from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
-                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace)
+                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes)
 from .exceptions_ import *
 from .session import Session
 from .http import Request
@@ -170,6 +170,124 @@ class BotMethods:
         userTweets = UserTweets(user_id, self, pages, replies, wait_time, cursor)
 
         return userTweets.generator()
+
+    def get_user_highlights(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            replies: bool = False,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+         Get the tweets from a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: replies: (`boolean`) get the replied tweets of the user too
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: .types.usertweet.userHighlights
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userHighlights = UserHighlights(user_id, self, pages, replies, wait_time, cursor)
+
+        list(userHighlights.generator())
+
+        return userHighlights
+
+    def iter_user_highlights(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            replies: bool = False,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+
+        """
+         Generator for getting the tweets from a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: replies: (`boolean`) get the replied tweets of the user too
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: (.types.usertweet.UserHighlights, list[.types.twDataTypes.Tweet])
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userHighlights = UserHighlights(user_id, self, pages, replies, wait_time, cursor)
+
+        return userHighlights.generator()
+
+    def get_user_likes(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            replies: bool = False,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+         Get the liked tweets of a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: replies: (`boolean`) get the replied tweets of the user too
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: .types.usertweet.userLikes
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userLikes = UserLikes(user_id, self, pages, replies, wait_time, cursor)
+
+        list(userLikes.generator())
+
+        return userLikes
+
+    def iter_user_likes(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            replies: bool = False,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+
+        """
+         Generator for getting the liked tweets of a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the tweets of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: replies: (`boolean`) get the replied tweets of the user too
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: (.types.usertweet.UserLikes, list[.types.twDataTypes.Tweet])
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        user_id = self._get_user_id(username)
+
+        userLikes = UserLikes(user_id, self, pages, replies, wait_time, cursor)
+
+        return userLikes.generator()
 
     @AuthRequired
     def get_user_media(

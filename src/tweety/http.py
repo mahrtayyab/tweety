@@ -166,6 +166,16 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def get_highlights(self, user_id, cursor=None):
+        request_data = self.__builder.user_highlights(user_id=user_id, cursor=cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_likes(self, user_id, cursor=None):
+        request_data = self.__builder.user_likes(user_id=user_id, cursor=cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
     def get_trends(self):
         response = self.__get_response__(**self.__builder.trends())
         return response
@@ -174,7 +184,7 @@ class Request:
         if keyword.startswith("#"):
             keyword = f"%23{keyword[1:]}"
 
-        keyword = quote(keyword, safe="()%")
+        keyword = quote(keyword, safe='"()%')
         request_data = self.__builder.search(keyword, cursor, filter_)
         response = self.__get_response__(**request_data)
         return response
