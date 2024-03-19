@@ -228,6 +228,14 @@ class Request:
         response = self.__get_response__(**self.__builder.get_bookmarks(cursor))
         return response
 
+    def bookmark_tweet(self, tweet_id):
+        response = self.__get_response__(**self.__builder.bookmark_tweet(tweet_id))
+        return response
+
+    def delete_bookmark_tweet(self, tweet_id):
+        response = self.__get_response__(**self.__builder.delete_tweet_bookmark(tweet_id))
+        return response
+
     def get_inbox(self, user_id, cursor=None):
         request = self.__builder.get_inbox(cursor)
         response = self.__get_response__(**request)

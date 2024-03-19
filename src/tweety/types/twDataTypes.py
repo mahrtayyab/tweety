@@ -1167,7 +1167,7 @@ class Choice(dict):
 class Place(_TwType):
     def __init__(self, client, place_dict, *args, **kwargs):
         self._client = client
-        self._raw = place_dict
+        self._raw = place_dict.get('place') if place_dict.get('place') else place_dict
         self.id = self._raw.get("id")
         self.country = self._raw.get("country")
         self.country_code = self._raw.get("country_code")

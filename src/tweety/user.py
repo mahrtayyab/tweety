@@ -683,7 +683,7 @@ class UserMethods:
         response = self.request.retweet_tweet(tweetId)
         return True if find_objects(response, "rest_id", None) else False
 
-    def delete_retweet(self, tweet_id: Union[str, int , Tweet]):
+    def delete_retweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
@@ -694,6 +694,30 @@ class UserMethods:
 
         response = self.request.delete_retweet(tweetId)
         return True if find_objects(response, "rest_id", None) else False
+
+    def bookmark_tweet(self, tweet_id: Union[str, int, Tweet]):
+        """
+
+        :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to be bookmarked
+        :return: Bool
+        """
+
+        tweetId = get_tweet_id(tweet_id)
+
+        response = self.request.bookmark_tweet(tweetId)
+        return True if find_objects(response, "tweet_bookmark_put", "Done") else False
+
+    def delete_bookmark_tweet(self, tweet_id: Union[str, int, Tweet]):
+        """
+
+        :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet which was bookmarked and have to be removed
+        :return: Bool
+        """
+
+        tweetId = get_tweet_id(tweet_id)
+
+        response = self.request.delete_bookmark_tweet(tweetId)
+        return True if find_objects(response, "tweet_bookmark_delete", "Done") else False
 
     def follow_user(self, user_id):
         """
