@@ -27,7 +27,8 @@ from .twDataTypes import (
     Gif,
     Topic,
     TweetTranslate,
-    TweetAnalytics
+    TweetAnalytics,
+    Place
 )
 from .n_types import UploadedMedia, Proxy, PROXY_TYPE_SOCKS4, PROXY_TYPE_SOCKS5, PROXY_TYPE_HTTP, HOME_TIMELINE_TYPE_FOLLOWING, HOME_TIMELINE_TYPE_FOR_YOU
 from .search import Search, TypeHeadSearch
@@ -43,6 +44,7 @@ from .lists import Lists, ListMembers, ListTweets
 from .follow import UserFollowers, UserFollowings, MutualFollowers, BlockedUsers
 from .gifs import GifSearch
 from .topic import TopicTweets
+from .places import Places
 
 
 

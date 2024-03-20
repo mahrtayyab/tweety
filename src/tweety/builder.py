@@ -41,6 +41,7 @@ class UrlBuilder:
     URL_SEARCH = "https://twitter.com/i/api/graphql/Aj1nGkALq99Xg3XI0OZBtw/SearchTimeline"
     URL_SEARCH_TYPEHEAD = "https://twitter.com/i/api/1.1/search/typeahead.json"
     URL_GIF_SEARCH = "https://twitter.com/i/api/1.1/foundmedia/search.json"
+    URL_PLACE_SEARCH = "https://twitter.com/i/api/1.1/geo/places.json"
     URL_TOPIC_LANDING = "https://twitter.com/i/api/graphql/IY9rfrxdSmamr10ZxvVBxg/TopicLandingPage"
     URL_AUDIO_SPACE_BY_ID = "https://twitter.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
     URL_AUDIO_SPACE_STREAM = "https://twitter.com/i/api/1.1/live_video_stream/status/{}"
@@ -412,11 +413,35 @@ class UrlBuilder:
         return "GET", self._build(self.URL_SEARCH, urlencode(params, safe="()%", quote_via=urllib.parse.quote))
 
     @return_with_headers
+    def search_place(self, lat=None, long=None, search_term=None):
+        params = {
+            'query_type': 'tweet_compose_location'
+        }
+
+        if lat and long:
+            params.update({"lat": lat, "long": long})
+
+        if search_term:
+            params['search_term'] = search_term
+
+        return "GET", self._build(self.URL_PLACE_SEARCH, urlencode(params))
+
+    @return_with_headers
     def search_typehead(self, q, result_type='events,users,topics,lists'):
         params = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_has_nft_avatar': '1',
             'include_ext_is_blue_verified': '1',
             'include_ext_verified_type': '1',
             'include_ext_profile_image_shape': '1',
+            'include_entities': '1',
             'q': str(q),
             'src': 'search_box',
             'result_type': result_type,
@@ -842,7 +867,7 @@ class UrlBuilder:
         return "POST", self.URL_AUSER_DELETE_TWEET, json_data
 
     @return_with_headers
-    def create_tweet(self, text, files, filter_=None, reply_to=None, quote_tweet_url=None, pool=None):
+    def create_tweet(self, text, files, filter_=None, reply_to=None, quote_tweet_url=None, pool=None, geo=None):
         media_entities = utils.create_media_entities(files)
         variables = {
             'tweet_text': text,
@@ -893,6 +918,11 @@ class UrlBuilder:
 
         if pool:
             variables['card_uri'] = pool
+
+        if geo:
+            variables['geo'] = {"place_id": geo}
+
+        print(variables)
 
         json_data = dict(
             variables=variables,

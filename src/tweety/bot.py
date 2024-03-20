@@ -1,9 +1,10 @@
+import traceback
 import warnings
 from typing import Union
 from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
-                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes)
+                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places)
 from .exceptions_ import *
 from .session import Session
 from .http import Request
@@ -58,10 +59,14 @@ class BotMethods:
             users_raw = self.request.get_users_by_rest_id(usernames)
             users = find_objects(users_raw, "users", None, recursive=False, none_value=[])
 
-            parsed_users = [User(self, user) for user in users if user]
-
-            for user in parsed_users:
-                self._cached_users[str(user.username).lower()] = user.id
+            parsed_users = []
+            for user in users:
+                try:
+                    this_user = User(self, user)
+                    parsed_users.append(this_user)
+                    self._cached_users[str(this_user.username).lower()] = this_user.id
+                except Exception as e:
+                    warnings.warn(f"UsersByRestId Error: {str(e)}")
 
             if len(usernames) == 1 and len(parsed_users) > 0:
                 return parsed_users[0]
@@ -837,3 +842,16 @@ class BotMethods:
     def iter_search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
         search = GifSearch(search_term, self, pages, cursor, wait_time)
         return search.generator()
+
+    def search_place(self, lat=None, long=None, search_term=None):
+        """
+        Search Place either using `search_term` , or `latitude` and `longitude`
+
+        :param lat: Latitude of Place
+        :param long: Longitude of Place
+        :param search_term: Search Term of Place
+        :return: .type.places.Places
+        """
+
+        return Places(self, lat, long, search_term)
+

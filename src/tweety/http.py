@@ -194,6 +194,11 @@ class Request:
         response = self.__get_response__(**request)
         return response
 
+    def search_place(self, lat, long, search_term):
+        request = self.__builder.search_place(lat, long, search_term)
+        response = self.__get_response__(**request)
+        return response
+
     def get_tweet_detail(self, tweetId, cursor=None):
         if self.user:
             response = self.__get_response__(**self.__builder.tweet_detail(tweetId, cursor))
@@ -273,12 +278,12 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool):
+    def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool, geo):
         if pool:
             response = self.create_pool(pool)
             pool = response.get('card_uri')
 
-        request_data = self.__builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool)
+        request_data = self.__builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo)
         response = self.__get_response__(**request_data)
         return response
 

@@ -1173,24 +1173,35 @@ class Place(_TwType):
         self.country_code = self._raw.get("country_code")
         self.full_name = self._raw.get("full_name")
         self.name = self._raw.get("name")
+        self.type = self._raw.get("place_type")
+        self.attributes = self._raw.get("attributes")
         self.url = self._raw.get("url")
         self.coordinates = self.parse_coordinates()
+        self.centroid = self._get_centroid()
+
+    def _get_centroid(self):
+        if not self._raw.get('centroid'):
+            return None
+
+        return Coordinates(*self._raw['centroid'])
 
     def parse_coordinates(self):
         results = []
+
         if not self._raw.get("bounding_box"):
             return results
 
         for i in self._raw['bounding_box'].get("coordinates"):
             for p in i:
-                coordinates = [p[1], p[0]]
-                if coordinates not in results:
-                    results.append([coordinates[0], coordinates[1]])
+                coordinates = p[:2]
 
-        return [Coordinates(i[0], i[1]) for i in results]
+                if coordinates not in results:
+                    results.append(coordinates)
+
+        return [Coordinates(*i) for i in results]
 
     def __repr__(self):
-        return f"Place(id={self.id}, name={self.name}, country={self.country, self.country_code}, coordinates={self.coordinates})"
+        return f"Place(id={self.id}, name={self.name}, country={self.country, self.country_code}, full_name={self.full_name})"
 
 
 class Coordinates(dict):
@@ -1221,6 +1232,7 @@ class User(_TwType):
                 raise UserNotFound(response=user_data)
 
         self._original_user = self._user['legacy'] if self._user.get('legacy') else self._user
+        self._social_context = self._user.get('social_context', {})
         self.id = self.rest_id = self.get_id()
         self.created_at = self.date = self.get_created_at()
         self.entities = self._get_key("entities")
@@ -1247,6 +1259,7 @@ class User(_TwType):
         self.verified = self._get_verified()
         self.can_dm = self._get_key("can_dm")
         self.following = self._get_key("following", False)
+        self.followed_by = self._get_key("followed_by", False)
         self.community_role = self._get_key("community_role", None)
         self.notifications_enabled = self.notifications = self._get_key("notifications", False)
         # self.verified_type = self._get_key("verified_type")
@@ -1254,6 +1267,7 @@ class User(_TwType):
         self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
         self.is_blocked = self._get_is_blocked()
+        self.blocked_by = self.has_blocked_me = self._get_blocked_by()
 
     def __eq__(self, other):
         if isinstance(other, (User, ShortUser)):
@@ -1301,6 +1315,9 @@ class User(_TwType):
     def _get_is_blocked(self):
         return self._original_user.get('blocking', False)
 
+    def _get_blocked_by(self):
+        return self._original_user.get('blocked_by', False)
+
     def _get_verified(self):
         verified = self._get_key("verified", False)
         if verified is False:
@@ -1333,6 +1350,9 @@ class User(_TwType):
 
         if self._original_user.get(key):
             keyValue = self._original_user[key]
+
+        if self._social_context.get(key):
+            keyValue = self._social_context[key]
 
         if str(keyValue).isdigit():
             keyValue = int(keyValue)

@@ -4,7 +4,8 @@ from .types.inbox import Message, Conversation
 from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
-                    Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers, ShortUser)
+                    Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
+                    ShortUser, Place)
 from .filters import SearchFilters
 
 
@@ -406,7 +407,8 @@ class UserMethods:
             filter_: str = None,
             reply_to: Union[str, int, Tweet] = None,
             quote: Union[str, int, Tweet] = None,
-            pool: dict = None
+            pool: dict = None,
+            place: Union[str, Place] = None
     ) -> Tweet:
 
         """
@@ -418,6 +420,7 @@ class UserMethods:
         :param filter_: (`str`) Filter to applied for Tweet audience
         :param reply_to: (`str` | `int` | `Tweet`) ID of tweet to reply to
         :param quote: (`str` | `int` | `Tweet`) ID / URL of tweet to be quoted
+        :param place: (`str` `Place`) ID of location you want to add
         :return: Tweet
         """
 
@@ -443,7 +446,10 @@ class UserMethods:
         else:
             quote = None
 
-        response = self.request.create_tweet(text, files, filter_, reply_to, quote, pool)
+        if place and isinstance(place, Place):
+            place = place.id
+
+        response = self.request.create_tweet(text, files, filter_, reply_to, quote, pool, place)
         response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
         return Tweet(self, response, response)
 
