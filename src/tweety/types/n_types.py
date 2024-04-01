@@ -135,6 +135,15 @@ class Cookies:
                 for key, value in true_cookies.items():
                     setattr(self, key.strip(), value.strip())
 
+    def to_dict(self):
+        result = {}
+        for k, v in vars(self).items():
+
+            if not k.startswith("_"):
+                result[k] = v
+
+        return result
+
     def __str__(self):
         string = ""
         for k, v in vars(self).items():

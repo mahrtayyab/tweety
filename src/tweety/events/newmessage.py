@@ -1,6 +1,6 @@
 import threading
 import time
-from ..types.inbox import Inbox
+from ..types.inbox import Inbox, Message
 
 
 class NewMessageUpdate:
@@ -19,10 +19,10 @@ class NewMessageUpdate:
             self.participants = self.conversation.participants
             self.sender = self.message.sender
             self.receiver = self.message.receiver
-            self.text = self.message.text
+            self.text = self.message.text if hasattr(self.message, "text") else None
             self.time = self.message.time
             self.id = self.message.id
-            self.media = self.message.media
+            self.media = self.message.media if hasattr(self.message, "media") else None
 
         def respond(self, text):
             return self.conversation.send_message(text)
@@ -39,9 +39,14 @@ class NewMessageUpdate:
             if new_chats.conversations:
                 for conv in new_chats.conversations:
                     for message in conv.messages:
+                        event = None
+                        if isinstance(message, Message):
+                            if not message.sender or str(message.sender.id) != str(self.request.user.id):
+                                event = self.NewMessage(conv, message)
+                        else:
+                            event = message
 
-                        if str(message.sender.id) != str(self.request.user.id):
-                            event = self.NewMessage(conv, message)
+                        if event:
                             threading.Thread(target=self.callback_func, args=(event,)).start()
 
             time.sleep(5)

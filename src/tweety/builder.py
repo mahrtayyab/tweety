@@ -922,8 +922,6 @@ class UrlBuilder:
         if geo:
             variables['geo'] = {"place_id": geo}
 
-        print(variables)
-
         json_data = dict(
             variables=variables,
             features=features,

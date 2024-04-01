@@ -15,7 +15,7 @@ class UpdateMethods:
 
     def run_until_disconnected(self):
         for event in self._event_builders:
-            threading.Thread(target=event[0], args=(self.request, event[1])).start()
+            threading.Thread(target=event[0], args=(self, event[1])).start()
 
 
 

@@ -153,13 +153,37 @@ class Conversation(dict):
     def _get_key(self, keyName, default=None):
         return self._raw.get(keyName, default)
 
+    def _parse_message(self, entry):
+        if entry.get('message') and str(entry['message']['conversation_id']) == str(self.id):
+            return Message(entry['message'], self._inbox, self._client)
+        elif entry.get('participants_join') and str(entry['participants_join']['conversation_id']) == str(self.id):
+            return MessageParticipantUpdate(
+                'participants_join',
+                entry.get('participants_join'),
+                self._inbox,
+                self._client
+            )
+        elif entry.get('participants_leave') and str(entry['participants_leave']['conversation_id']) == str(self.id):
+            return MessageParticipantUpdate(
+                'participants_leave',
+                entry.get('participants_leave'),
+                self._inbox,
+                self._client
+            )
+        elif entry.get('conversation_name_update') and str(entry['conversation_name_update']['conversation_id']) == str(self.id):
+            return MessageNameUpdate(entry['conversation_name_update'], self._inbox, self._client)
+        elif entry.get('conversation_create') and str(entry['conversation_create']['conversation_id']) == str(self.id):
+            return MessageConversationCreated(entry['conversation_create'], self._inbox, self._client)
+
+        return None
+
     def parse_messages(self):
         messages = []
         if not self._get_all_messages:
             for entry in self._inbox.get('entries', []):
-                if entry.get('message'):
-                    if str(entry['message']['conversation_id']) == str(self.id):
-                        messages.append(Message(entry['message'], self._inbox, self._client))
+                _message = self._parse_message(entry)
+                if _message:
+                    messages.append(_message)
         else:
             messages = self.get_all_messages()
 
@@ -172,9 +196,9 @@ class Conversation(dict):
         conversation_status = response.get('conversation_timeline', {}).get('status', "AT_END")
         cursor = response.get('conversation_timeline', {}).get('min_entry_id', 0)
         for entry in response.get('conversation_timeline', {}).get('entries', []):
-            if entry.get("message"):
-                _message = Message(entry['message'], response['conversation_timeline'], self._client)
+            _message = self._parse_message(entry)
 
+            if _message:
                 if till_date and int(_message.time.timestamp()) <= int(till_date.timestamp()):
                     break
 
@@ -226,6 +250,97 @@ class Conversation(dict):
     def __repr__(self):
         return "Conversation(id={}, muted={}, nsfw={}, participants={})".format(
             self.id, self.muted, self.nsfw, self.participants
+        )
+
+
+class MessageParticipantUpdate(dict):
+    def __init__(self, update_type, update, _inbox, client):
+        super().__init__()
+        self._update_type = update_type
+        self._raw = update
+        self._inbox = _inbox
+        self._client = client
+        self.id = self['id'] = self._raw['id']
+        self.time = self['time'] = parse_time(self._raw.get('time'))
+        self.participants = self['participants'] = self.get_recipients()
+        self.type = self._update_type.replace("participants_", "").upper()
+        self.sender_id = self['sender_id'] = self._raw.get('sender_id')
+        self.sender = self['sender'] = self._get_sender()
+        self.receiver = None
+
+    def _get_sender(self):
+        if self.type != "JOIN":
+            return None
+
+        this_user = self._inbox.get('users', {}).get(str(self.sender_id))
+        if not this_user:
+            return None
+
+        this_user['__typename'] = "User"
+        return User(self._client, this_user)
+
+    def get_recipients(self):
+        participants = []
+        users = self._raw.get('participants', [])
+        for user in users:
+            this_user = self._inbox.get('users', {}).get(str(user['user_id']))
+
+            if this_user:
+                this_user['__typename'] = "User"
+                participants.append(User(self._client, this_user))
+            else:
+                participants.append(str(user['user_id']))
+
+        return participants
+
+    def __repr__(self):
+        return "MessageParticipantUpdate(id={}, type={}, time={}, participants={})".format(
+            self.id, self.type, self.time, self.participants
+        )
+
+
+class MessageNameUpdate(dict):
+    def __init__(self, update, _inbox, client):
+        super().__init__()
+        self._raw = update
+        self._inbox = _inbox
+        self._client = client
+        self.id = self['id'] = self._raw['id']
+        self.time = self['time'] = parse_time(self._raw.get('time'))
+        self.name = self['name'] = self._raw['conversation_name']
+        self.by_user_id = self['by_user_id'] = self._raw.get('by_user_id')
+        self.by_user = self['by_user'] = self._get_by_user()
+        self.receiver = None
+
+    def _get_by_user(self):
+        if not self.by_user_id:
+            return None
+
+        this_user = self._inbox.get('users', {}).get(str(self.by_user_id))
+        if not this_user:
+            return None
+
+        this_user['__typename'] = "User"
+        return User(self._client, this_user)
+
+    def __repr__(self):
+        return "MessageNameUpdate(id={}, time={}, name={}, by_user={})".format(
+            self.id, self.time, self.name, self.by_user
+        )
+
+
+class MessageConversationCreated(dict):
+    def __init__(self, update, _inbox, client):
+        super().__init__()
+        self._raw = update
+        self._inbox = _inbox
+        self._client = client
+        self.id = self['id'] = self._raw['id']
+        self.time = self['time'] = parse_time(self._raw.get('time'))
+
+    def __repr__(self):
+        return "MessageConversationCreated(id={}, time={})".format(
+            self.id, self.time
         )
 
 

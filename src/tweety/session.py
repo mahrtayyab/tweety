@@ -40,6 +40,18 @@ class Session:
             session_data = dict(cookies=str(cookies))
             json.dump(session_data, f, indent=4)
 
+    def cookies_dict(self):
+        result = {}
+        split = str(self.cookies).split(";")
+        for i in split:
+            try:
+                key, value = i.split("=")
+                result[key] = value
+            except:
+                pass
+
+        return result
+
     def __str__(self):
         return self.cookies
 
