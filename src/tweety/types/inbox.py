@@ -111,6 +111,7 @@ class Conversation(dict):
         self._client = client
         self._raw = conversation
         self._get_all_messages = get_all_messages
+        self.admin = None
         self.id = self['id'] = self._get_key("conversation_id")
         self.last_read_event_id = self['last_read_event_id'] = self._get_key("last_read_event_id")
         self.low_quality = self['low_quality'] = self._get_key("low_quality")
@@ -140,13 +141,19 @@ class Conversation(dict):
         users = []
         participants = self._raw['participants']
         for participant in participants:
+            this_user = None
             try:
                 user = self._inbox['users'].get(str(participant['user_id']))
                 if user:
                     user['__typename'] = "User"
-                    users.append(User(self._client, user))
+                    this_user = User(self._client, user)
             except Exception as e:
-                users.append(str(participant['user_id']))
+                this_user = str(participant["user_id"])
+
+            if participant.get("is_admin") is True:
+                self.admin = this_user
+
+            users.append(this_user)
 
         return users
 
