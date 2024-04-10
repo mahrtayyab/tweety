@@ -121,7 +121,7 @@ class Cookies:
                 if isinstance(self._raw_cookies, str):
                     cookie_list = self._raw_cookies.split(";")
                     for cookie in cookie_list:
-                        split_cookie = cookie.strip().split("=")
+                        split_cookie = cookie.strip().split("=", 1)
 
                         if len(split_cookie) >= 2:
                             cookie_key = split_cookie[0]

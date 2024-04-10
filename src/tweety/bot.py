@@ -6,7 +6,7 @@ from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trend
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
                     ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places)
 from .exceptions_ import *
-from .session import Session
+from .session import Session, MemorySession, FileSession
 from .http import Request
 
 
@@ -30,9 +30,15 @@ class BotMethods:
         self._last_json = {}
         self._cached_users = {}
         self._proxy = proxy.get_dict() if isinstance(proxy, Proxy) else proxy
-
         self._event_builders = []
-        self.session = Session(self, session_name) if isinstance(session_name, str) else session_name
+
+        if isinstance(session_name, MemorySession):
+            self.session = session_name(self)
+        elif isinstance(session_name, FileSession):
+            self.session = session_name
+        else:
+            self.session = FileSession(self, session_name)
+
         self.logged_in = False
         self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, **httpx_kwargs)
         self.user = None

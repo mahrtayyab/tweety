@@ -22,7 +22,7 @@ class TwitterError(Exception):
         self.error_name = error_name
         self.response = response
 
-        if not isinstance(self.response, dict) and not self.response.json_() and self.response.text:
+        if self.response is not None and not isinstance(self.response, dict) and not self.response.json_() and self.response.text:
             self.message = self.response.text
         elif str(self.error_code) == "404":
             self.message = "Page not Found. Most likely you need elevated authorization to access this resource"
