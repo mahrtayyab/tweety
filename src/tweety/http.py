@@ -4,22 +4,26 @@ import re
 import warnings
 from typing import Callable
 from urllib.parse import quote
-import httpx as s
+import httpx
 from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
 from .utils import custom_json, GUEST_TOKEN_REGEX
 from .builder import UrlBuilder
 
-s.Response.json_ = custom_json
+httpx.Response.original_json = httpx.Response.json
+httpx.Response.json = custom_json
 
 
 class Request:
     def __init__(self, client, max_retries=10, proxy=None, **kwargs):
+
+        timeout = kwargs.pop("timeout", 60)
+
         self.user = None
         self.username = None
         self._client = client
         self._limits = {}
-        self.__session = s.Client(proxies=proxy, timeout=60, **kwargs)
+        self.__session = httpx.Client(proxies=proxy, timeout=timeout, **kwargs)
         self.__builder = UrlBuilder()
         self.__guest_token = self._get_guest_token(max_retries)
         self.__builder.guest_token = self.__guest_token
@@ -71,11 +75,11 @@ class Request:
         if is_document:
             return response
 
-        response_json = response.json_()  # noqa
+        response_json = response.json()  # noqa
         if ignore_none_data and len(response.text) == 0:
             return None
 
-        if response.text and response.text.lower() == "rate limit exceeded":
+        if (not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
             response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
 
         if not response_json:
@@ -476,6 +480,11 @@ class Request:
 
     def add_group_member(self, member_ids, conversation_id):
         request_data = self.__builder.add_member_to_group(member_ids, conversation_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def pin_tweet(self, tweet_id):
+        request_data = self.__builder.pin_tweet(tweet_id)
         response = self.__get_response__(**request_data)
         return response
 

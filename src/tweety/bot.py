@@ -1,7 +1,7 @@
 import traceback
 import warnings
 from typing import Union
-from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id
+from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
                     ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places)
@@ -837,6 +837,7 @@ class BotMethods:
         """
 
         tweetId = get_tweet_id(tweet_id)
+        language = check_translation_lang(language)
         response = self.http.get_tweet_translation(tweetId, language)
         return TweetTranslate(self, response)
 

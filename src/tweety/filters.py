@@ -37,10 +37,12 @@ class CommunityTweets:
     def Top():
         return "Top"
 
+
 class CommunityMembers:
     @staticmethod
     def Moderators():
         return "Mods"
+
 
 class Language:
     Urdu = URDU = "ur"

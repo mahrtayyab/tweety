@@ -1,5 +1,4 @@
 import getpass
-import traceback
 from http.cookiejar import MozillaCookieJar
 from typing import Union
 from .exceptions_ import InvalidCredentials, DeniedLogin, ActionRequired

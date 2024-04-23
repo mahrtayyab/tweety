@@ -99,6 +99,7 @@ class UrlBuilder:
     # URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/1.1/friends/following/list.json"  # noqa
     URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/graphql/35Y2QFmL84HIisnm-FHAng/FollowersYouKnow"  # noqa
     URL_AUSER_GET_BLOCKED_USERS = "https://twitter.com/i/api/graphql/f87G4V_l5E9rJ-Ylw0D-yQ/BlockedAccountsAll"  # noqa
+    URL_PIN_TWEET = "https://twitter.com/i/api/graphql/VIHsNu89pK-kW35JpHq7Xw/PinTweet"  # noqa
 
     def __init__(self):
         self.cookies = None
@@ -1702,6 +1703,17 @@ class UrlBuilder:
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
         return "GET", self._build(self.URL_TOPIC_LANDING, urlencode(params))
+
+    @return_with_headers
+    def pin_tweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': str(tweet_id),
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_PIN_TWEET, json_data
 
 
 class FlowData:

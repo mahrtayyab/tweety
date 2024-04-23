@@ -1027,6 +1027,19 @@ class UserMethods:
         blocked_users = BlockedUsers(self, pages, wait_time, cursor)
         return blocked_users.generator()
 
+    def pin_tweet(self, tweet_id):
+        """
+            Pin a Tweet
+
+        :param tweet_id: (`str`, `int`, `Tweet`)
+        :return: bool
+        """
+
+        tweetId = get_tweet_id(tweet_id)
+
+        response = self.request.pin_tweet(tweetId)
+        return True if find_objects(response, "message", "post pinned successfully") else False
+
     def _upload_media(self, files, _type="tweet_image"):
         if not isinstance(files, list):
             files = [files]

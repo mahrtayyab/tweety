@@ -22,7 +22,7 @@ class TwitterError(Exception):
         self.error_name = error_name
         self.response = response
 
-        if self.response is not None and not isinstance(self.response, dict) and not self.response.json_() and self.response.text:
+        if self.response is not None and not isinstance(self.response, dict) and not self.response.json() and self.response.text:
             self.message = self.response.text
         elif str(self.error_code) == "404":
             self.message = "Page not Found. Most likely you need elevated authorization to access this resource"
@@ -37,7 +37,7 @@ class UserNotFound(TwitterError):
         message -- explanation of the error
     """
 
-    def __init__(self, error_code=50, error_name="GenericUserNotFound", response=None, message="The User Account wasn't Found", **kw):
+    def __init__(self, error_code=50, error_name="GenericUserNotFound", response=None, message="The User Account wasn't Found or is Protected", **kw):
         super().__init__(error_code, error_name, response, message)
 
 

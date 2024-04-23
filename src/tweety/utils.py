@@ -11,6 +11,7 @@ import uuid
 from dateutil import parser as date_parser
 from urllib.parse import urlparse
 from .exceptions_ import AuthenticationRequired
+from .filters import Language
 
 GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
 MIME_TYPES = {
@@ -76,7 +77,7 @@ def parse_wait_time(wait_time):
 
 def custom_json(self):
     try:
-        return self.json()
+        return self.original_json()
     except:
         return None
 
@@ -221,3 +222,12 @@ def get_tweet_id(tweet_identifier):
         return tweet_identifier.id
     else:
         return urlparse(str(tweet_identifier)).path.split("/")[-1]
+
+
+def check_translation_lang(lang):
+    for k, v in vars(Language).items():
+        if not str(k).startswith("_"):
+            if str(k).lower() == str(lang).lower() or str(v).lower() == str(lang).lower():
+                return v
+
+    raise ValueError(f"Language {lang} is not supported")

@@ -35,6 +35,9 @@ class _TwType(dict):
 
         return super().__new__(cls)
 
+    def get_raw(self):
+        return self._raw
+
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
 
@@ -244,8 +247,7 @@ class Tweet(_TwType):
         return self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
     def _check_if_protected(self):
-
-        is_protected = find_objects(self._raw, "__typename", "TweetUnavailable", recursive=False)
+        is_protected = find_objects(self._raw, "__typename", ["TweetUnavailable", "TweetTombstone"], recursive=False)
 
         if is_protected and is_protected.get('reason') == "Protected":
             raise ProtectedTweet(403, "TweetUnavailable", response=self._raw)
@@ -253,6 +255,12 @@ class Tweet(_TwType):
             raise AuthenticationRequired(401, "NsfwLoggedOut", response=self._raw, message="This Tweet is flagged as NSFW, make sure you are logged-in and brithday is updated in your account.")
         elif is_protected and is_protected.get('reason') == "Suspended":
             raise UserProtected(error_code="UserSuspended", response=self._raw, message="The Author of this Tweet is Suspended")
+        elif is_protected and is_protected.get("tombstone"):
+            error_message = is_protected.get("tombstone", {}).get("text", {}).get("text")
+            if error_message:
+                raise UserProtected(response=self._raw, message=error_message)
+            else:
+                raise UserProtected(response=self._raw)
 
     def _format_tweet(self):
         self._check_if_protected()
