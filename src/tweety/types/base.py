@@ -58,7 +58,8 @@ class BaseGeneratorClass(dict):
         return results
 
     def generator(self):
-        for page in range(1, int(self.pages) + 1):
+        this_page = 0
+        while this_page != int(self.pages):
             results = self.get_next_page()
 
             if len(results) == 0:
@@ -69,8 +70,12 @@ class BaseGeneratorClass(dict):
             if not self.is_next_page:
                 break
 
-            if page != self.pages:
+            this_page += 1
+
+            if this_page != self.pages:
                 time.sleep(parse_wait_time(self.wait_time))
+
+
 
         return self
 

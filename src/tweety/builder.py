@@ -50,7 +50,8 @@ class UrlBuilder:
     URL_TWEET_TRANSLATE = "https://twitter.com/i/api/1.1/strato/column/None/tweetId={},destinationLanguage={},translationSource=Some(Google),feature=None,timeout=None,onlyCached=None/translation/service/translateTweet"
     URL_TWEET_DETAILS_AS_GUEST = "https://api.twitter.com/graphql/5GOHgZe-8U2j5sVHQzEm9A/TweetResultByRestId"
     URL_TWEET_HISTORY = "https://twitter.com/i/api/graphql/MYJ08HcXJuxtXMXWMP-63w/TweetEditHistory"
-    URL_AUSER_INBOX = "https://twitter.com/i/api/1.1/dm/user_updates.json"  # noqa
+    URL_AUSER_INITIAL_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_initial_state.json"  # noqa
+    URL_AUSER_INBOX_UPDATES = "https://twitter.com/i/api/1.1/dm/user_updates.json"  # noqa
     URL_AUSER_TRUSTED_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_timeline/trusted.json"  # noqa
     URL_AUSER_NOTIFICATION_MENTIONS = "https://twitter.com/i/api/2/notifications/mentions.json"  # noqa
     URL_AUSER_SETTINGS = "https://api.twitter.com/1.1/account/settings.json"  # noqa
@@ -622,45 +623,82 @@ class UrlBuilder:
         return "GET", self._build(self.URL_AUSER_NOTIFICATION_MENTIONS, urlencode(params))
 
     @return_with_headers
-    def get_inbox(self, cursor, active_conversation=None):
+    def get_initial_inbox(self):
         params = {
-            'nsfw_filtering_enabled': False,
-            'filter_low_quality': True,
+            'nsfw_filtering_enabled': 'false',
+            'filter_low_quality': 'false',
             'include_quality': 'all',
-            'dm_secret_conversations_enabled': False,
-            'krs_registration_enabled': True,
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'dm_secret_conversations_enabled': 'false',
+            'krs_registration_enabled': 'true',
             'cards_platform': 'Web-12',
             'include_cards': '1',
-            'include_ext_alt_text': True,
-            'include_ext_limited_action_results': True,
-            'include_quote_count': True,
+            'include_ext_alt_text': 'true',
+            'include_ext_limited_action_results': 'true',
+            'include_quote_count': 'true',
             'include_reply_count': '1',
             'tweet_mode': 'extended',
-            'include_ext_views': True,
-            'dm_users': False,
-            'include_groups': True,
-            'include_inbox_timelines': True,
-            'include_ext_media_color': True,
-            'supports_reactions': True,
-            'include_ext_edit_control': True,
-            'include_ext_business_affiliations_label': True,
-            'ext': 'mediaColor,altText,businessAffiliationsLabel,mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
+            'include_ext_views': 'true',
+            'dm_users': 'true',
+            'include_groups': 'true',
+            'include_inbox_timelines': 'true',
+            'include_ext_media_color': 'true',
+            'supports_reactions': 'true',
+            'include_ext_edit_control': 'true',
+            'include_ext_business_affiliations_label': 'true',
+            'ext': 'mediaColor,altText,mediaStats,highlightedLabel,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl,article',
+        }
+
+        return "GET", self._build(self.URL_AUSER_INITIAL_INBOX, urlencode(params))
+
+    @return_with_headers
+    def get_inbox_updates(self, cursor, active_conversation=None):
+        params = {
+            'nsfw_filtering_enabled': 'false',
+            'filter_low_quality': 'false',
+            'include_quality': 'all',
+            'dm_secret_conversations_enabled': 'false',
+            'krs_registration_enabled': 'true',
+            'cards_platform': 'Web-12',
+            'include_cards': '1',
+            'include_ext_alt_text': 'true',
+            'include_ext_limited_action_results': 'true',
+            'include_quote_count': 'true',
+            'include_reply_count': '1',
+            'tweet_mode': 'extended',
+            'include_ext_views': 'true',
+            'dm_users': 'true',
+            'include_groups': 'true',
+            'include_inbox_timelines': 'true',
+            'include_ext_media_color': 'true',
+            'supports_reactions': 'true',
+            'include_ext_edit_control': 'true',
+            'include_ext_business_affiliations_label': 'true',
+            'ext': 'mediaColor,altText,businessAffiliationsLabel,mediaStats,highlightedLabel,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl,article',
+            'cursor': cursor
         }
 
         if active_conversation:
             params['active_conversation_id'] = active_conversation
 
-        if cursor:
-            params['cursor'] = cursor
-
-        return "GET", self._build(self.URL_AUSER_INBOX, urlencode(params))
+        return "GET", self._build(self.URL_AUSER_INBOX_UPDATES, urlencode(params))
 
     @return_with_headers
-    def get_trusted_inbox(self, max_id):
+    def get_trusted_inbox(self, max_id=None):
         params = {
             'filter_low_quality': True,
             'include_quality': 'all',
-            'max_id': max_id,
             'nsfw_filtering_enabled': False,
             'include_profile_interstitial_type': '1',
             'include_blocking': '1',
@@ -685,7 +723,7 @@ class UrlBuilder:
             'include_reply_count': '1',
             'tweet_mode': 'extended',
             'include_ext_views': True,
-            'dm_users': False,
+            'dm_users': True,
             'include_groups': True,
             'include_inbox_timelines': True,
             'include_ext_media_color': True,
@@ -693,6 +731,8 @@ class UrlBuilder:
             'include_ext_edit_control': True,
             'ext': 'mediaColor,altText,mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
         }
+        if max_id:
+            params['max_id'] = max_id
 
         return "GET", self._build(self.URL_AUSER_TRUSTED_INBOX, urlencode(params))
 
@@ -726,7 +766,7 @@ class UrlBuilder:
             'include_reply_count': '1',
             'tweet_mode': 'extended',
             'include_ext_views': True,
-            'dm_users': False,
+            'dm_users': True,
             'include_groups': True,
             'include_inbox_timelines': True,
             'include_ext_media_color': True,

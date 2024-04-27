@@ -10,7 +10,6 @@ from .types.n_types import GenericError
 from .utils import custom_json, GUEST_TOKEN_REGEX
 from .builder import UrlBuilder
 
-httpx.Response.original_json = httpx.Response.json
 httpx.Response.json = custom_json
 
 
@@ -72,6 +71,7 @@ class Request:
 
         response = self.__session.request(**request_data)
         self._update_rate_limit(response, inspect.stack()[1][3])
+
         if is_document:
             return response
 
@@ -245,8 +245,13 @@ class Request:
         response = self.__get_response__(**self.__builder.delete_tweet_bookmark(tweet_id))
         return response
 
-    def get_inbox(self, user_id, cursor=None):
-        request = self.__builder.get_inbox(cursor)
+    def get_initial_inbox(self):
+        request = self.__builder.get_initial_inbox()
+        response = self.__get_response__(**request)
+        return response
+
+    def get_inbox_updates(self, cursor, active_conversation=None):
+        request = self.__builder.get_inbox_updates(cursor, active_conversation)
         response = self.__get_response__(**request)
         return response
 

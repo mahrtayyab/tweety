@@ -333,21 +333,35 @@ class UserMethods:
     def get_inbox(
             self,
             user_id: Union[int, str, User] = None,
-            cursor: str = None
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
     ) -> Inbox:
         """
-        :param user_id : (`str`, `int`, `User`) User id or username of the user whom to get the messages of. Default is ALL
-        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
-                                It is used to get the messages updates
+        :param user_id : (`str`, `int`, `User`) Not Implemented
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :return:
         """
 
-        if user_id:
-            user_id = self._get_user_id(user_id)
-
-        inbox = Inbox(user_id, self, cursor)
-
+        inbox = Inbox(self.user.id, self, pages, wait_time)
+        list(inbox.generator())
         return inbox
+
+    def iter_inbox(
+            self,
+            user_id: Union[int, str, User] = None,
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+    ) -> Inbox:
+        """
+        :param user_id : (`str`, `int`, `User`) Not Implemented
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :return:
+        """
+
+        inbox = Inbox(self.user.id, self, pages, wait_time)
+        return inbox.generator()
 
     def add_member_to_group(
             self,

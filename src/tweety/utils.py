@@ -2,11 +2,13 @@ import base64
 import datetime
 import hashlib
 import inspect
+import json
 import os.path
 import random
 import re
 import string
 import sys
+import traceback
 import uuid
 from dateutil import parser as date_parser
 from urllib.parse import urlparse
@@ -75,9 +77,9 @@ def parse_wait_time(wait_time):
     return int(wait_time)
 
 
-def custom_json(self):
+def custom_json(self, **kwargs):
     try:
-        return self.original_json()
+        return json.loads(self.content, **kwargs)
     except:
         return None
 

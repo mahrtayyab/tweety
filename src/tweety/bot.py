@@ -1,4 +1,3 @@
-import traceback
 import warnings
 from typing import Union
 from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang
@@ -40,6 +39,7 @@ class BotMethods:
             self.session = FileSession(self, session_name)
 
         self.logged_in = False
+        self.is_user_authorized = False
         self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, **httpx_kwargs)
         self.user = None
 

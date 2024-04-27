@@ -4,10 +4,11 @@ from ..types.inbox import Inbox, Message
 
 
 class NewMessageUpdate:
-    def __init__(self, request, callback):
-        self.request = request
+    def __init__(self, client, callback):
+        self.client = client
         self.callback_func = callback
-        self.inbox = Inbox(self.request.user.id, self.request)
+        self.inbox = Inbox(self.client.user.id, self.client, 1)
+        list(self.inbox.generator())
         self.cursor = self.inbox.cursor
         self.wait_for_message()
 
@@ -24,8 +25,8 @@ class NewMessageUpdate:
             self.id = self.message.id
             self.media = self.message.media if hasattr(self.message, "media") else None
 
-        def respond(self, text):
-            return self.conversation.send_message(text)
+        def respond(self, text, file=None):
+            return self.conversation.send_message(text, file)
 
         def __repr__(self):
             return "NewMessage(id={}, sender={}, receiver={}, time={}, text={})".format(
@@ -34,14 +35,13 @@ class NewMessageUpdate:
 
     def wait_for_message(self):
         while True:
-            new_chats = Inbox(None, self.request, cursor=self.cursor)
-            self.cursor = new_chats.cursor
-            if new_chats.conversations:
-                for conv in new_chats.conversations:
+            new_chats = self.inbox.get_new_messages()
+            if new_chats:
+                for conv in new_chats:
                     for message in conv.messages:
                         event = None
                         if isinstance(message, Message):
-                            if not message.sender or str(message.sender.id) != str(self.request.user.id):
+                            if not message.sender or str(message.sender.id) != str(self.client.user.id):
                                 event = self.NewMessage(conv, message)
                         else:
                             event = message

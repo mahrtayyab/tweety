@@ -22,6 +22,7 @@ class AuthMethods:
         self.request.set_user(self.user)
         self.session.set_session_user(self.user)
         self._is_connected = True
+        self.is_user_authorized = True
         return self.user
 
     def start(
