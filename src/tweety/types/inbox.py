@@ -220,7 +220,6 @@ class Conversation(dict):
                 else:
                     this_user = str(participant["user_id"])
             except Exception as e:
-                traceback.print_exc()
                 this_user = str(participant["user_id"])
 
             if participant.get("is_admin") is True:
