@@ -8,7 +8,6 @@ import random
 import re
 import string
 import sys
-import traceback
 import uuid
 from dateutil import parser as date_parser
 from urllib.parse import urlparse
@@ -76,6 +75,13 @@ def parse_wait_time(wait_time):
 
     return int(wait_time)
 
+
+def get_next_index(iterable, current_index, __default__=None):
+    try:
+        _ = iterable[current_index + 1]
+        return current_index + 1
+    except IndexError:
+        return __default__
 
 def custom_json(self, **kwargs):
     try:

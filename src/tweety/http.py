@@ -267,6 +267,23 @@ class Request:
         response = self.__get_response__(**self.__builder.get_conversation_with_messages(conversation_id, max_id))
         return response
 
+    def create_conversation_group(self, participants, first_message):
+        request_data = self.__builder.create_group(participants, first_message)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def update_conversation_name(self, conversation_id, name):
+        request_data = self.__builder.update_conversation_group_name(conversation_id, name)
+        request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
+        response = self.__get_response__(ignore_none_data=True, **request_data)
+        return response
+
+    def update_conversation_avatar(self, conversation_id, avatar_id):
+        request_data = self.__builder.update_conversation_group_avatar(conversation_id, avatar_id)
+        request_data['headers']['Content-Type'] = f"application/x-www-form-urlencoded"
+        response = self.__get_response__(ignore_none_data=True, **request_data)
+        return response
+
     def send_message(self, conversation_id, text, media_id):
         request_data = self.__builder.send_message(conversation_id, text, media_id)
         response = self.__get_response__(**request_data)

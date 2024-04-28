@@ -53,6 +53,9 @@ class UrlBuilder:
     URL_AUSER_INITIAL_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_initial_state.json"  # noqa
     URL_AUSER_INBOX_UPDATES = "https://twitter.com/i/api/1.1/dm/user_updates.json"  # noqa
     URL_AUSER_TRUSTED_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_timeline/trusted.json"  # noqa
+    URL_AUSER_UNTRUSTED_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_timeline/untrusted.json"  # noqa
+    URL_AUSER_UPDATE_GROUP_NAME = "https://twitter.com/i/api/1.1/dm/conversation/{}/update_name.json"  # noqa
+    URL_AUSER_UPDATE_GROUP_AVATAR = "https://twitter.com/i/api/1.1/dm/conversation/{}/update_avatar.json"  # noqa
     URL_AUSER_NOTIFICATION_MENTIONS = "https://twitter.com/i/api/2/notifications/mentions.json"  # noqa
     URL_AUSER_SETTINGS = "https://api.twitter.com/1.1/account/settings.json"  # noqa
     URL_AUSER_ADD_GROUP_MEMBER = "https://twitter.com/i/api/graphql/oBwyQ0_xVbAQ8FAyG0pCRA/AddParticipantsMutation"  # noqa
@@ -721,6 +724,7 @@ class UrlBuilder:
             'include_ext_limited_action_results': True,
             'include_quote_count': True,
             'include_reply_count': '1',
+            'count': 100,
             'tweet_mode': 'extended',
             'include_ext_views': True,
             'dm_users': True,
@@ -775,7 +779,7 @@ class UrlBuilder:
             'ext': 'mediaColor,altText,mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
         }
 
-        return "GET", self._build(self.URL_AUSER_TRUSTED_INBOX, urlencode(params))
+        return "GET", self._build(self.URL_AUSER_UNTRUSTED_INBOX, urlencode(params))
 
     @return_with_headers
     def get_conversation_with_messages(self, conversation_id, max_id=None):
@@ -858,6 +862,45 @@ class UrlBuilder:
                   'fieldToggles': str(json.dumps(fieldToggles))}
 
         return "GET", self._build(self.URL_AUSER_BOOKMARK, urlencode(params))
+
+    @return_with_headers
+    def create_group(self, participants, first_message):
+        params = {
+            'ext': 'mediaColor,altText,mediaStats,highlightedLabel,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl,article',
+            'include_ext_alt_text': 'true',
+            'include_ext_limited_action_results': 'true',
+            'include_reply_count': '1',
+            'tweet_mode': 'extended',
+            'include_ext_views': 'true',
+            'include_groups': 'true',
+            'include_inbox_timelines': 'true',
+            'include_ext_media_color': 'true',
+            'supports_reactions': 'true',
+        }
+
+        json_data = {
+            'recipient_ids': participants,
+            'request_id': utils.create_request_id(),
+            'text': first_message,
+            'cards_platform': 'Web-12',
+            'include_cards': 1,
+            'include_quote_count': True,
+            'dm_users': False,
+        }
+
+        return "POST", self._build(self.URL_AUSER_SEND_MESSAGE, urlencode(params)), json_data
+
+    @return_with_headers
+    def update_conversation_group_name(self, conversation_id, name):
+        data = {'name': name}
+        url = self.URL_AUSER_UPDATE_GROUP_NAME.format(conversation_id)
+        return "POST", url, None, data
+
+    @return_with_headers
+    def update_conversation_group_avatar(self, conversation_id, avatar_id):
+        data = {'avatar_id': avatar_id}
+        url = self.URL_AUSER_UPDATE_GROUP_AVATAR.format(conversation_id)
+        return "POST", url, None, data
 
     @return_with_headers
     def send_message(self, conversation_id, text, media_id=None):

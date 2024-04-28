@@ -5,7 +5,7 @@ from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
                     Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
-                    ShortUser, Place)
+                    ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED)
 from .filters import SearchFilters
 
 
@@ -335,15 +335,17 @@ class UserMethods:
             user_id: Union[int, str, User] = None,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
+            page_types: Union[str, List[str]] = INBOX_PAGE_TYPE_TRUSTED
     ) -> Inbox:
         """
         :param user_id : (`str`, `int`, `User`) Not Implemented
         :param pages: (`int`) The number of pages to get
         :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param page_types: list[`str`] Which Type of Conversation to Get | INBOX_PAGE_TYPE_TRUSTED, INBOX_PAGE_TYPE_UNTRUSTED
         :return:
         """
 
-        inbox = Inbox(self.user.id, self, pages, wait_time)
+        inbox = Inbox(self.user.id, self, pages, wait_time, page_types)
         list(inbox.generator())
         return inbox
 
@@ -352,15 +354,17 @@ class UserMethods:
             user_id: Union[int, str, User] = None,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
+            page_types: Union[str, List[str]] = INBOX_PAGE_TYPE_TRUSTED
     ) -> Inbox:
         """
         :param user_id : (`str`, `int`, `User`) Not Implemented
         :param pages: (`int`) The number of pages to get
         :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param page_types: list[`str`] Which Type of Conversation to Get | INBOX_PAGE_TYPE_TRUSTED, INBOX_PAGE_TYPE_UNTRUSTED
         :return:
         """
 
-        inbox = Inbox(self.user.id, self, pages, wait_time)
+        inbox = Inbox(self.user.id, self, pages, wait_time, page_types)
         return inbox.generator()
 
     def add_member_to_group(
@@ -380,6 +384,80 @@ class UserMethods:
         group_id = group_id.id if isinstance(group_id, Conversation) else group_id
 
         return self.request.add_group_member(member_ids, group_id)
+
+    def create_conversation_group(
+            self,
+            participants: List[Union[str, int, User, ShortUser]],
+            first_message: str,
+            name: str = None
+    ):
+        """
+        Create a Conversation Group
+
+        :param participants: IDs of all the participants you want to add
+        :param first_message: First message you want to in the group (Yes it is Required)
+        :param name: Name of the group you want to set
+        :return: .types.inbox.Conversation
+        """
+
+        participants_id = []
+        for participant in participants:
+            try:
+                user_id = self._get_user_id(participant)
+                participants_id.append(str(user_id))
+            except:
+                pass
+
+        participants_id = ",".join(participants_id)
+        response = self.request.create_conversation_group(participants_id, first_message)
+        new_conversation = list(response["conversations"].values())[0]
+        conversation = Conversation(new_conversation, response, self)
+
+        if name:
+            self.update_conversation_group_name(conversation, name)
+            conversation.name = name
+
+        return conversation
+
+    def update_conversation_group_name(
+            self,
+            conversation_id: Union[str, int, Conversation],
+            name: str
+    ):
+        """
+        Update the name of Conversation Group
+
+        :param conversation_id: ID of the Group
+        :param name: New Name of the Group
+        :return:
+        """
+
+        if isinstance(conversation_id, Conversation):
+            conversation_id = conversation_id.id
+
+        self.request.update_conversation_name(conversation_id, name)
+        return True
+
+    def update_conversation_group_avatar(
+            self,
+            conversation_id: Union[str, int, Conversation],
+            file: Union[str, UploadedMedia]
+    ):
+        """
+        Update the Avatar/Profile Image of Conversation Group
+
+        :param conversation_id: ID of the Group
+        :param file: New Name of the Group
+        :return:
+        """
+
+        if isinstance(conversation_id, Conversation):
+            conversation_id = conversation_id.id
+
+        file = self._upload_media(file)[0].media_id
+
+        self.request.update_conversation_avatar(conversation_id, file)
+        return True
 
     def send_message(
             self,
@@ -428,7 +506,7 @@ class UserMethods:
         """
         Create a Tweet
 
-        :param pool: Pool you want to include in the tweet
+        :param pool: (`dict`) Pool you want to include in the tweet
         :param text: (`str`) Text content of Tweet
         :param files: (`list[Union[str, UploadedMedia, tuple[str, str]]]`) Files to be sent with Tweet (max 4)
         :param filter_: (`str`) Filter to applied for Tweet audience

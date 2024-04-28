@@ -30,7 +30,18 @@ from .twDataTypes import (
     TweetAnalytics,
     Place
 )
-from .n_types import UploadedMedia, Proxy, PROXY_TYPE_SOCKS4, PROXY_TYPE_SOCKS5, PROXY_TYPE_HTTP, HOME_TIMELINE_TYPE_FOLLOWING, HOME_TIMELINE_TYPE_FOR_YOU
+from .n_types import (
+    UploadedMedia,
+    Proxy,
+    PROXY_TYPE_SOCKS4,
+    PROXY_TYPE_SOCKS5,
+    PROXY_TYPE_HTTP,
+    HOME_TIMELINE_TYPE_FOLLOWING,
+    HOME_TIMELINE_TYPE_FOR_YOU,
+    INBOX_PAGE_TYPES,
+    INBOX_PAGE_TYPE_TRUSTED,
+    INBOX_PAGE_TYPE_UNTRUSTED
+)
 from .search import Search, TypeHeadSearch
 from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia, UserHighlights, UserLikes
 from .mentions import Mention

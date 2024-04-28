@@ -1,20 +1,24 @@
 import re
 import threading
 import time
-import traceback
-from . import User, Media, URL, Hashtag, ShortUser, Symbol
-from ..utils import parse_time, parse_wait_time
+import warnings
+from . import User, Media, URL, Hashtag, ShortUser, Symbol, INBOX_PAGE_TYPES, INBOX_PAGE_TYPE_UNTRUSTED, INBOX_PAGE_TYPE_TRUSTED
+from ..utils import parse_time, parse_wait_time, get_next_index
+from ..exceptions_ import TwitterError
 
 
 class Inbox(dict):
     HAS_MORE_STATUS = "HAS_MORE"
     AT_END_STATUS = "AT_END"
 
-    def __init__(self, user_id, client, pages, wait_time=2):
+    def __init__(self, user_id, client, pages, wait_time=2, page_types=INBOX_PAGE_TYPES):
+        _page_types = [page_types] if not isinstance(page_types, list) else page_types
         super().__init__()
         self._client = client
         self._got_initial = False
         self._inbox_timelines = {}
+        self._retries = 2
+        self._types = [i for i in _page_types if i in INBOX_PAGE_TYPES]
         self.pages = pages
         self.wait_time = wait_time
         self.conversations = []
@@ -49,7 +53,7 @@ class Inbox(dict):
         self._parse_messages(this_page)
         return this_page, _initial_inbox
 
-    def get_page(self, min_entry_id=None, page_type="trusted"):
+    def get_page(self, min_entry_id=None, page_type=INBOX_PAGE_TYPE_TRUSTED):
         if not self._got_initial:
             if not self.cursor:
                 response = self._client.http.get_initial_inbox()
@@ -68,18 +72,27 @@ class Inbox(dict):
             self._got_initial = True
             return page, self.cursor, None
         else:
-            if page_type not in ("trusted", "untrusted"):
-                page_type = "trusted"
+            if page_type not in INBOX_PAGE_TYPES:
+                page_type = INBOX_PAGE_TYPE_TRUSTED
 
             if not min_entry_id:
                 raise ValueError("'min_entry_id' is required after initial request.")
 
-            if page_type == "untrusted":
-                response = self._client.http.get_untrusted_inbox(min_entry_id)
-            else:
-                response = self._client.http.get_trusted_inbox(min_entry_id)
+            response = None
 
-            page, inbox = self._parse_response(response)
+            for _ in range(self._retries):
+                try:
+                    if page_type == INBOX_PAGE_TYPE_UNTRUSTED:
+                        response = self._client.http.get_untrusted_inbox(min_entry_id)
+                    else:
+                        response = self._client.http.get_trusted_inbox(min_entry_id)
+                except TwitterError as inbox_fetch_error:
+                    pass
+
+            if response:
+                page, inbox = self._parse_response(response)
+            else:
+                page, inbox = [], {}
 
             return page, inbox.get('min_entry_id', 0), inbox.get('status', self.AT_END_STATUS)
 
@@ -99,18 +112,20 @@ class Inbox(dict):
 
         return page
 
-    def get_next_page(self):
+    def get_next_page(self, page_type=None):
         if not self._got_initial:
             page, cursor, _ = self.get_page()
             self.cursor = self['cursor'] = cursor
             return page
         else:
-            page_type = "trusted"
+            if not page_type or page_type not in INBOX_PAGE_TYPES:
+                page_type = INBOX_PAGE_TYPE_TRUSTED
 
             if self._inbox_timelines[page_type]['status'] == self.AT_END_STATUS:
-                page_type = "untrusted"
+                page_type = INBOX_PAGE_TYPE_UNTRUSTED
 
             page_attrs = self._inbox_timelines.get(page_type, {})
+
             min_entry_id = page_attrs.get('min_entry_id', 0)
             status = page_attrs.get('status', self.AT_END_STATUS)
 
@@ -124,15 +139,23 @@ class Inbox(dict):
 
     def generator(self):
         this_page = 0
+        page_type_index = 0
+        page_type = self._types[page_type_index]
+
         while this_page != int(self.pages):
-            results = self.get_next_page()
+            results = self.get_next_page(page_type)
 
             if len(results) == 0:
-                break
+                page_type_index = get_next_index(self._types, page_type_index)
+
+                if not page_type_index:
+                    break
+
+                page_type = self._types[page_type_index]
 
             yield self, results
-
             this_page += 1
+
             if this_page != self.pages:
                 time.sleep(parse_wait_time(self.wait_time))
 
@@ -190,6 +213,9 @@ class Conversation(dict):
         self.muted = self['muted'] = self._get_key("muted")
         self.notifications_disabled = self['notifications_disabled'] = self._get_key("notifications_disabled")
         self.nsfw = self['nsfw'] = self._get_key("nsfw")
+        self.avatar_url = self['avatar_image_https'] = self._get_key("avatar_image_https")  # only for Group
+        self.created_at = self['create_time'] = parse_time(self._get_key("create_time"))  # only for Group
+        self.created_by_user_id = self['created_by_user_id'] = self._get_key("created_by_user_id")  # only for Group
         self.read_only = self['read_only'] = self._get_key("read_only")
         self.trusted = self['trusted'] = self._get_key("trusted")
         self.type = self['type'] = self._get_key("type")
@@ -262,6 +288,8 @@ class Conversation(dict):
             return MessageNameUpdate(entry['conversation_name_update'], self._inbox, self._client)
         elif entry.get('conversation_create') and str(entry['conversation_create']['conversation_id']) == str(self.id):
             return MessageConversationCreated(entry['conversation_create'], self._inbox, self._client)
+        elif entry.get('conversation_avatar_update') and str(entry['conversation_avatar_update']['conversation_id']) == str(self.id):
+            return MessageConversationAvatarUpdate(entry["conversation_avatar_update"], self._inbox, self._client)
 
         return None
 
@@ -429,6 +457,24 @@ class MessageConversationCreated(dict):
     def __repr__(self):
         return "MessageConversationCreated(id={}, time={})".format(
             self.id, self.time
+        )
+
+
+class MessageConversationAvatarUpdate(dict):
+    def __init__(self, update, _inbox, client):
+        super().__init__()
+        self._raw = update
+        self._inbox = _inbox
+        self._client = client
+        self.by_user_id = self["by_user_id"] = self._raw.get("by_user_id")
+        self.id = self['id'] = self._raw['id']
+        self.time = self['time'] = parse_time(self._raw.get('time'))
+        self.conversation_id = self["conversation_id"] = self._raw.get("conversation_id")
+        self.avatar_url = self["avatar_url"] = self._raw.get("conversation_avatar_image_https")
+
+    def __repr__(self):
+        return "MessageConversationAvatarUpdate(id={}, by_user_id={})".format(
+            self.id, self.by_user_id
         )
 
 
