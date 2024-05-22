@@ -1,6 +1,7 @@
 import warnings
 from typing import Union
-from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang
+from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang, \
+    is_tweety_protected
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
                     ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places)
@@ -816,7 +817,12 @@ class BotMethods:
                 raise InvalidTweetIdentifier(response=response)
 
             for entry in entries['entries']:
-                if str(entry['entryId']).split("-")[0] == "tweet":
+
+                if is_tweety_protected(entry) and entry['entryId'].split("-")[1] != tweetId:
+                    # ignore these protected tweets that are not what we are looking for
+                    # otherwise it will throw exception
+                    pass
+                elif str(entry['entryId']).split("-")[0] == "tweet":
                     tweet = Tweet(self, entry, response)
 
                     if str(tweet.id) == str(tweetId):

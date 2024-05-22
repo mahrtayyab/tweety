@@ -232,6 +232,10 @@ def get_tweet_id(tweet_identifier):
         return urlparse(str(tweet_identifier)).path.split("/")[-1]
 
 
+def is_tweety_protected(raw):
+    return find_objects(raw, "__typename", ["TweetUnavailable", "TweetTombstone"], recursive=False)
+
+
 def check_translation_lang(lang):
     for k, v in vars(Language).items():
         if not str(k).startswith("_"):
