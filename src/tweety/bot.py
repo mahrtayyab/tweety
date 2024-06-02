@@ -1,11 +1,12 @@
 import warnings
 from typing import Union
-from .utils import find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang, \
-    is_tweety_protected
+from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang,
+                    is_tweet_protected)
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
-                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places)
-from .exceptions_ import *
+                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places,
+                    UserSubscribers)
+from .exceptions import *
 from .session import Session, MemorySession, FileSession
 from .http import Request
 
@@ -113,7 +114,12 @@ class BotMethods:
         elif self._cached_users.get(username.lower()):
             user_id = self._cached_users[username.lower()]
         else:
-            user = get_user_from_typehead(username, self.typehead_user_search(username))
+            user = None
+            try:
+                user = get_user_from_typehead(username, self.typehead_user_search(username))
+            except AuthenticationRequired:
+                # We can only get user using `get_user_info` when unauthenticated
+                pass
 
             if not user:
                 user = self.get_user_info(username)
@@ -730,6 +736,69 @@ class BotMethods:
         return userFollowings.generator()
 
     @AuthRequired
+    def get_user_subscribers(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ) -> UserFollowings:
+        """
+         Get the Subscribers of a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the followings of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: .types.follow.UserSubscribers
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        if not username:
+            username = self.me.username
+
+        user_id = self._get_user_id(username)
+
+        userSubscribers = UserSubscribers(user_id, self, pages, wait_time, cursor)
+
+        list(userSubscribers.generator())
+
+        return userSubscribers
+
+    @AuthRequired
+    def iter_user_subscribers(
+            self,
+            username: Union[str, int, User],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+
+        """
+         Generator for getting the Subscribers from a user
+
+        :param: username: (`str` | `int` | `User`) username of the user whom to get the followings of
+        :param: pages: (`int`) number of pages to be scraped
+        :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param: cursor: Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+
+        :return: (.types.follow.UserSubscribers, list[.types.twDataTypes.User])
+        """
+        if wait_time is None:
+            wait_time = 0
+
+        if not username:
+            username = self.me.username
+
+        user_id = self._get_user_id(username)
+
+        userSubscribers = UserSubscribers(user_id, self, pages, wait_time, cursor)
+
+        return userSubscribers.generator()
+
+    @AuthRequired
     def get_tweet_comments(
             self,
             tweet_id: Union[str, Tweet],
@@ -817,19 +886,17 @@ class BotMethods:
                 raise InvalidTweetIdentifier(response=response)
 
             for entry in entries['entries']:
-
-                if is_tweety_protected(entry) and entry['entryId'].split("-")[1] != tweetId:
+                if str(entry['entryId']).split("-")[0] == "tweet":
                     # ignore these protected tweets that are not what we are looking for
                     # otherwise it will throw exception
-                    pass
-                elif str(entry['entryId']).split("-")[0] == "tweet":
-                    tweet = Tweet(self, entry, response)
+                    if not (is_tweet_protected(entry) and str(entry['entryId'].split("-")[1]) != str(tweetId)):
+                        tweet = Tweet(self, entry, response)
 
-                    if str(tweet.id) == str(tweetId):
-                        tweet.threads.extend(_tweet_before)
-                        return tweet
-                    else:
-                        _tweet_before.append(tweet)
+                        if str(tweet.id) == str(tweetId):
+                            tweet.threads.extend(_tweet_before)
+                            return tweet
+                        else:
+                            _tweet_before.append(tweet)
 
         raise InvalidTweetIdentifier(response=response)
 

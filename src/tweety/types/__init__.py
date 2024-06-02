@@ -32,15 +32,7 @@ from .twDataTypes import (
 )
 from .n_types import (
     UploadedMedia,
-    Proxy,
-    PROXY_TYPE_SOCKS4,
-    PROXY_TYPE_SOCKS5,
-    PROXY_TYPE_HTTP,
-    HOME_TIMELINE_TYPE_FOLLOWING,
-    HOME_TIMELINE_TYPE_FOR_YOU,
-    INBOX_PAGE_TYPES,
-    INBOX_PAGE_TYPE_TRUSTED,
-    INBOX_PAGE_TYPE_UNTRUSTED
+    Proxy
 )
 from .search import Search, TypeHeadSearch
 from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia, UserHighlights, UserLikes
@@ -52,10 +44,23 @@ from .retweets import TweetRetweets
 from .community import CommunityTweets, CommunityMembers
 from .notification import TweetNotifications
 from .lists import Lists, ListMembers, ListTweets
-from .follow import UserFollowers, UserFollowings, MutualFollowers, BlockedUsers
+from .follow import UserFollowers, UserFollowings, MutualFollowers, BlockedUsers, UserSubscribers
 from .gifs import GifSearch
 from .topic import TopicTweets
 from .places import Places
+from ..constants import (
+    PROXY_TYPE_SOCKS4,
+    PROXY_TYPE_SOCKS5,
+    PROXY_TYPE_HTTP,
+    HOME_TIMELINE_TYPE_FOLLOWING,
+    HOME_TIMELINE_TYPE_FOR_YOU,
+    INBOX_PAGE_TYPES,
+    INBOX_PAGE_TYPE_TRUSTED,
+    INBOX_PAGE_TYPE_UNTRUSTED,
+    MEDIA_TYPE_GIF,
+    MEDIA_TYPE_IMAGE,
+    MEDIA_TYPE_VIDEO
+)
 
 
 

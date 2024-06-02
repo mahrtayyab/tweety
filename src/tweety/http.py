@@ -5,7 +5,7 @@ import warnings
 from typing import Callable
 from urllib.parse import quote
 import httpx
-from .exceptions_ import GuestTokenNotFound, UnknownError, UserNotFound, InvalidCredentials
+from .exceptions import GuestTokenNotFound, TwitterError, UserNotFound, InvalidCredentials
 from .types.n_types import GenericError
 from .utils import custom_json, GUEST_TOKEN_REGEX
 from .builder import UrlBuilder
@@ -83,7 +83,7 @@ class Request:
             response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
 
         if not response_json:
-            raise UnknownError(
+            raise TwitterError(
                 error_code=response.status_code,
                 error_name="Server Error",
                 response=response,
@@ -437,6 +437,11 @@ class Request:
 
     def get_user_followings(self, user_id, cursor=None):
         request_data = self.__builder.get_user_followings(user_id, cursor)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_user_subscribers(self, user_id, cursor=None):
+        request_data = self.__builder.get_user_subscribers(user_id, cursor)
         response = self.__get_response__(**request_data)
         return response
 

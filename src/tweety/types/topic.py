@@ -1,5 +1,5 @@
 from .base import BaseGeneratorClass
-from . import Topic, Tweet
+from .twDataTypes import Topic, Tweet
 
 
 class TopicTweets(BaseGeneratorClass):

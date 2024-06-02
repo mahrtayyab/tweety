@@ -1,6 +1,4 @@
-import traceback
-
-from . import SelfThread, Tweet, Excel, User
+from .twDataTypes import SelfThread, Tweet, Excel, User
 from .base import BaseGeneratorClass
 from ..utils import find_objects
 

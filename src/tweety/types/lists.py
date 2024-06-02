@@ -1,4 +1,4 @@
-from . import User, List, Tweet, SelfThread
+from .twDataTypes import User, List, Tweet, SelfThread
 from .base import BaseGeneratorClass
 from ..utils import find_objects
 

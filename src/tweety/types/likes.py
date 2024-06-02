@@ -1,5 +1,3 @@
-import traceback
-
 from .base import BaseGeneratorClass
 from .twDataTypes import User
 

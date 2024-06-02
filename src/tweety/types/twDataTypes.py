@@ -5,7 +5,8 @@ from typing import Callable, Union
 from dateutil import parser
 import openpyxl
 import dateutil
-from ..exceptions_ import UserNotFound, UserProtected, ProtectedTweet
+from ..constants import MEDIA_TYPE_VIDEO, MEDIA_TYPE_GIF, MEDIA_TYPE_IMAGE
+from ..exceptions import UserNotFound, UserProtected, ProtectedTweet
 from ..utils import *
 
 
@@ -95,7 +96,7 @@ class Excel:
             self.worksheet.cell(row=1, column=index).value = value
 
     def _write_tweet(self, tweet):
-        self.worksheet[f'A{self.max_row + 1}'] = tweet.date
+        self.worksheet[f'A{self.max_row + 1}'] = tweet.date.replace(tzinfo=None)
         self.worksheet[f'B{self.max_row + 1}'] = tweet.author.name
         self.worksheet[f'C{self.max_row + 1}'] = tweet.id
         self.worksheet[f'D{self.max_row + 1}'] = tweet.text
@@ -105,15 +106,11 @@ class Excel:
         self.worksheet[f'H{self.max_row + 1}'] = tweet.likes
         self.worksheet[f'I{self.max_row + 1}'] = tweet.retweet_counts
         self.worksheet[f'J{self.max_row + 1}'] = tweet.source
-        self.worksheet[f'K{self.max_row + 1}'] = ",".join(
-            [media.expanded_url for media in tweet.media]) if tweet.media else ""
-        self.worksheet[f'L{self.max_row + 1}'] = ",".join(
-            [user_mention.screen_name for user_mention in tweet.user_mentions]) if tweet.user_mentions else ""
-        self.worksheet[f'M{self.max_row + 1}'] = ",".join(
-            [url['expanded_url'] for url in tweet.urls]) if tweet.urls else ""
-        self.worksheet[f'N{self.max_row + 1}'] = ",".join(
-            [hashtag['text'] for hashtag in tweet.hashtags]) if tweet.hashtags else ""
-        self.worksheet[f'O{self.max_row + 1}'] = ",".join([symbol for symbol in tweet.symbols]) if tweet.symbols else ""
+        self.worksheet[f'K{self.max_row + 1}'] = iterable_to_string(tweet.media, ",", "direct_url")
+        self.worksheet[f'L{self.max_row + 1}'] = iterable_to_string(tweet.user_mentions, ",", "screen_name")
+        self.worksheet[f'M{self.max_row + 1}'] = iterable_to_string(tweet.urls, ",", "expanded_url")
+        self.worksheet[f'N{self.max_row + 1}'] = iterable_to_string(tweet.hashtags, ",", "text")
+        self.worksheet[f'O{self.max_row + 1}'] = iterable_to_string(tweet.symbols, ",", "text")
         self.max_row += 1
 
     def _write_data(self):
@@ -128,7 +125,7 @@ class Excel:
             self.filename = f"tweets-{self.author}.xlsx"
 
         try:
-            self.workbook.remove("sheet")
+            self.workbook.remove(self.workbook["Sheet"])
         except ValueError:
             pass
 
@@ -247,7 +244,7 @@ class Tweet(_TwType):
         return self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
     def _check_if_protected(self):
-        is_protected = is_tweety_protected(self._raw)
+        is_protected = is_tweet_protected(self._raw)
 
         if is_protected and is_protected.get('reason') == "Protected":
             raise ProtectedTweet(403, "TweetUnavailable", response=self._raw)
@@ -838,7 +835,7 @@ class Media(_TwType):
         self.source_user = self._get_source_user()
         self.streams = []
 
-        if self.type == "video" or self.type == "animated_gif":
+        if self.type in (MEDIA_TYPE_VIDEO, MEDIA_TYPE_GIF):
             self._parse_video_streams()
 
     def __eq__(self, other):
@@ -855,7 +852,7 @@ class Media(_TwType):
 
     def _get_file_format(self):
         filename = os.path.basename(self.media_url_https).split("?")[0]
-        return filename.split(".")[-1] if self.type == "photo" else "mp4"
+        return filename.split(".")[-1] if self.type == MEDIA_TYPE_IMAGE else "mp4"
 
     def _parse_video_streams(self):
         videoDict = self._raw.get("video_info")
@@ -868,9 +865,9 @@ class Media(_TwType):
                 self.streams.append(Stream(self._client, i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio")))
 
     def best_stream(self):
-        if self.type == "photo":
+        if self.type == MEDIA_TYPE_IMAGE:
             return self
-        elif self.type == "video":
+        elif self.type == MEDIA_TYPE_VIDEO:
             _res = [eval(stream.res) for stream in self.streams if stream.res]
             max_res = max(_res)
             for stream in self.streams:
@@ -878,7 +875,7 @@ class Media(_TwType):
                     file_format = stream.content_type.split("/")[-1]
                     if not file_format == "x-mpegURL":
                         return stream
-        elif self.type == "animated_gif":
+        elif self.type == MEDIA_TYPE_GIF:
             for stream in self.streams:
                 file_format = stream.content_type.split("/")[-1]
                 if not file_format == "x-mpegURL":

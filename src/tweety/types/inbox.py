@@ -1,10 +1,9 @@
 import re
-import threading
 import time
-import warnings
-from . import User, Media, URL, Hashtag, ShortUser, Symbol, INBOX_PAGE_TYPES, INBOX_PAGE_TYPE_UNTRUSTED, INBOX_PAGE_TYPE_TRUSTED
+from .twDataTypes import User, Media, URL, Hashtag, ShortUser, Symbol
+from ..constants import INBOX_PAGE_TYPES, INBOX_PAGE_TYPE_UNTRUSTED, INBOX_PAGE_TYPE_TRUSTED
 from ..utils import parse_time, parse_wait_time, get_next_index
-from ..exceptions_ import TwitterError
+from ..exceptions import TwitterError
 
 
 class Inbox(dict):
@@ -12,7 +11,7 @@ class Inbox(dict):
     AT_END_STATUS = "AT_END"
 
     def __init__(self, user_id, client, pages, wait_time=2, page_types=INBOX_PAGE_TYPES):
-        _page_types = [page_types] if not isinstance(page_types, list) else page_types
+        _page_types = [page_types] if not isinstance(page_types, (list, tuple)) else page_types
         super().__init__()
         self._client = client
         self._got_initial = False

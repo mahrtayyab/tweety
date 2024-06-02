@@ -1,4 +1,4 @@
-__version__ = "1.1.5"
+__version__ = "1.1.6"
 __author__ = "mahrtayyab"
 
 from .bot import BotMethods
@@ -11,6 +11,5 @@ class Twitter(
     UserMethods, BotMethods, UpdateMethods, AuthMethods
 ):
     pass
-
 
 

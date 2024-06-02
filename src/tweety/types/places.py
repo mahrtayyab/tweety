@@ -1,4 +1,4 @@
-from . import Place
+from .twDataTypes import Place
 
 
 class Places(dict):

@@ -1,12 +1,11 @@
 from typing import Union, Tuple, List
-from .exceptions_ import ListNotFound
+from .exceptions import ListNotFound
 from .types.inbox import Message, Conversation
 from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
                     Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
                     ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED)
-from .filters import SearchFilters
 
 
 @AuthRequired

@@ -1,4 +1,4 @@
-from . import Gif
+from .twDataTypes import Gif
 from .base import BaseGeneratorClass
 
 

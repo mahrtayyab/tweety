@@ -1,5 +1,3 @@
-import traceback
-
 from . import Tweet, Excel, User, List
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread

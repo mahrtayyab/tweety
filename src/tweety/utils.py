@@ -9,9 +9,10 @@ import re
 import string
 import sys
 import uuid
+from typing import Union
 from dateutil import parser as date_parser
 from urllib.parse import urlparse
-from .exceptions_ import AuthenticationRequired
+from .exceptions import AuthenticationRequired
 from .filters import Language
 
 GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
@@ -71,6 +72,11 @@ def parse_wait_time(wait_time):
         return 0
 
     if isinstance(wait_time, (tuple, list)):
+
+        if len(wait_time) == 1:
+            return int(wait_time[0])
+
+        wait_time = [int(i) for i in wait_time[:2]]
         return random.randint(*wait_time)
 
     return int(wait_time)
@@ -82,6 +88,7 @@ def get_next_index(iterable, current_index, __default__=None):
         return current_index + 1
     except IndexError:
         return __default__
+
 
 def custom_json(self, **kwargs):
     try:
@@ -109,7 +116,7 @@ def create_query_id():
 
 
 def check_if_file_is_image(file):
-    if not os.path.exists(file) and not str(file).startswith("https://"):
+    if not str(file).startswith("https://") and not os.path.exists(file):
         raise ValueError("Path {} doesn't exists".format(file))
 
     file = file.split("?")[0]
@@ -232,7 +239,7 @@ def get_tweet_id(tweet_identifier):
         return urlparse(str(tweet_identifier)).path.split("/")[-1]
 
 
-def is_tweety_protected(raw):
+def is_tweet_protected(raw):
     return find_objects(raw, "__typename", ["TweetUnavailable", "TweetTombstone"], recursive=False)
 
 
@@ -243,3 +250,14 @@ def check_translation_lang(lang):
                 return v
 
     raise ValueError(f"Language {lang} is not supported")
+
+
+def iterable_to_string(__iterable__: Union[list, tuple], __delimiter__: str = ",", __attr__: str = None):
+    if not isinstance(__iterable__, (list, tuple)) or len(__iterable__) == 0:
+        return ""
+
+    if __attr__:
+        __iterable__ = [str(getattr(i, __attr__)) for i in __iterable__]
+
+    return __delimiter__.join(__iterable__)
+

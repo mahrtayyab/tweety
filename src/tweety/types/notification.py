@@ -1,5 +1,5 @@
 from .base import BaseGeneratorClass
-from . import *
+from .twDataTypes import Tweet
 
 
 class TweetNotifications(BaseGeneratorClass):

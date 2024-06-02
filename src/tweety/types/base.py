@@ -1,8 +1,6 @@
 import time
-
 from tweety.types import ShortUser
-
-from . import User, Tweet
+from .twDataTypes import User, Tweet
 from ..utils import find_objects, parse_wait_time
 
 
@@ -73,7 +71,9 @@ class BaseGeneratorClass(dict):
             this_page += 1
 
             if this_page != self.pages:
-                time.sleep(parse_wait_time(self.wait_time))
+                this_wait_time = parse_wait_time(self.wait_time)
+                print(this_wait_time)
+                time.sleep(this_wait_time)
 
 
 

@@ -3,18 +3,10 @@ import os
 import time
 from http.cookiejar import MozillaCookieJar
 from httpx._content import encode_multipart_data
+from .. import constants
 from . import Gif
 from ..utils import calculate_md5, get_random_string, check_if_file_is_image
-from ..exceptions_ import *
-
-PROXY_TYPE_SOCKS4 = SOCKS4 = 1
-PROXY_TYPE_SOCKS5 = SOCKS5 = 2
-PROXY_TYPE_HTTP = HTTP = 3
-HOME_TIMELINE_TYPE_FOR_YOU = "HomeTimeline"
-HOME_TIMELINE_TYPE_FOLLOWING = "HomeLatestTimeline"
-INBOX_PAGE_TYPE_TRUSTED = "trusted"
-INBOX_PAGE_TYPE_UNTRUSTED = "untrusted"
-INBOX_PAGE_TYPES = (INBOX_PAGE_TYPE_TRUSTED, INBOX_PAGE_TYPE_UNTRUSTED)
+from ..exceptions import *
 
 
 class Proxy:
@@ -40,13 +32,13 @@ class Proxy:
 
     def __parse__(self):
         proxy_url = self.__proxy_url__()
-        if self.proxy_type == HTTP:
+        if self.proxy_type == constants.HTTP:
             http_url = "http://{}".format(proxy_url)
             return dict.fromkeys(['http://', 'https://'], http_url)
-        elif self.proxy_type == SOCKS4:
+        elif self.proxy_type == constants.SOCKS4:
             socks_url = "socks4://{}".format(proxy_url)
             return dict.fromkeys(['http://', 'https://'], socks_url)
-        elif self.proxy_type == SOCKS5:
+        elif self.proxy_type == constants.SOCKS5:
             socks_url = "socks5://{}".format(proxy_url)
             return dict.fromkeys(['http://', 'https://'], socks_url)
 
@@ -66,6 +58,7 @@ class GenericError:
         220: InvalidCredentials,
         214: InvalidBroadcast,
         366: InvalidTweetIdentifier,
+        326: LockedAccount
     }
 
     def __init__(self, response, error_code, message=None):

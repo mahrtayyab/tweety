@@ -1,6 +1,5 @@
-from .twDataTypes import SelfThread, ConversationThread
-from ..exceptions_ import UserProtected, UserNotFound
-from . import Tweet, Excel
+from .twDataTypes import SelfThread, ConversationThread, Tweet, Excel
+from ..exceptions import UserProtected, UserNotFound
 from .base import BaseGeneratorClass, find_objects
 
 

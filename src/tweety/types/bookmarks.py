@@ -1,4 +1,4 @@
-from . import Tweet, Excel
+from .twDataTypes import Tweet, Excel
 from .base import BaseGeneratorClass
 
 
