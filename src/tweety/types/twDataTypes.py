@@ -247,7 +247,7 @@ class Tweet(_TwType):
         return self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
     def _check_if_protected(self):
-        is_protected = find_objects(self._raw, "__typename", ["TweetUnavailable", "TweetTombstone"], recursive=False)
+        is_protected = is_tweety_protected(self._raw)
 
         if is_protected and is_protected.get('reason') == "Protected":
             raise ProtectedTweet(403, "TweetUnavailable", response=self._raw)
