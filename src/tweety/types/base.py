@@ -72,10 +72,7 @@ class BaseGeneratorClass(dict):
 
             if this_page != self.pages:
                 this_wait_time = parse_wait_time(self.wait_time)
-                print(this_wait_time)
                 time.sleep(this_wait_time)
-
-
 
         return self
 

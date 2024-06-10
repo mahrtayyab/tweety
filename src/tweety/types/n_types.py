@@ -51,14 +51,16 @@ class Proxy:
 class GenericError:
     EXCEPTIONS = {
         32: InvalidCredentials,
-        144: InvalidTweetIdentifier,
+        37: SuspendedAccount,
+        64: SuspendedAccount,
         88: RateLimitReached,
-        477: RateLimitReached,
-        399: InvalidCredentials,
-        220: InvalidCredentials,
+        144: InvalidTweetIdentifier,
         214: InvalidBroadcast,
+        220: InvalidCredentials,
+        326: LockedAccount,
         366: InvalidTweetIdentifier,
-        326: LockedAccount
+        399: InvalidCredentials,
+        477: RateLimitReached
     }
 
     def __init__(self, response, error_code, message=None):

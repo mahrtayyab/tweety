@@ -304,12 +304,17 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
-    def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool, geo):
+    def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed):
         if pool:
             response = self.create_pool(pool)
             pool = response.get('card_uri')
 
-        request_data = self.__builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo)
+        request_data = self.__builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def schedule_tweet(self, date, text, files, filter_, reply_to, geo):
+        request_data = self.__builder.schedule_tweet(date, text, files, filter_, reply_to, geo)
         response = self.__get_response__(**request_data)
         return response
 
@@ -383,6 +388,11 @@ class Request:
 
     def delete_retweet(self, tweet_id):
         request_data = self.__builder.delete_retweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def get_user_communities(self, user_id):
+        request_data = self.__builder.get_user_communities(user_id)
         response = self.__get_response__(**request_data)
         return response
 
@@ -515,14 +525,24 @@ class Request:
         response = self.__get_response__(**request_data)
         return response
 
+    def get_scheduled_tweets(self):
+        request_data = self.__builder.get_scheduled_tweet()
+        response = self.__get_response__(**request_data)
+        return response
+
+    def delete_scheduled_tweet(self, tweet_id):
+        request_data = self.__builder.delete_scheduled_tweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
     def download_media(self, media_url, filename: str = None,
                        progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
         headers = self.__builder._get_headers()
         oldReferer = headers.get('Referer')
 
-        if media_url.startswith("https://ton.twitter.com"):
-            headers['Referer'] = "https://twitter.com/"
+        if media_url.startswith("https://ton.twitter.com") or media_url.startswith("https://ton.x.com"):
+            headers['Referer'] = "https://x.com/"
             self.__session.header = headers
 
         with self.__session.stream('GET', media_url, follow_redirects=True, headers=headers, timeout=600) as response:

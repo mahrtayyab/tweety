@@ -1,4 +1,4 @@
-from .twDataTypes import SelfThread, ConversationThread, Tweet, Excel
+from .twDataTypes import SelfThread, ConversationThread, Tweet, Excel, ScheduledTweet
 from ..exceptions import UserProtected, UserNotFound
 from .base import BaseGeneratorClass, find_objects
 
@@ -399,4 +399,40 @@ class TweetHistory(BaseGeneratorClass):
         return "TweetHistory(tweets={}, author={})".format(
             len(self.tweets), self.tweets[0].author
         )
+
+
+class ScheduledTweets(dict):
+    def __init__(self, client):
+        super().__init__()
+        self._client = client
+        self.tweets = []
+        self.get_page()
+
+    def get_page(self):
+        res = self._client.http.get_scheduled_tweets()
+        tweets_list = find_objects(res, "scheduled_tweet_list", value=None, none_value=[])
+
+        for tweet in tweets_list:
+            try:
+                self.tweets.append(ScheduledTweet(self._client, tweet))
+            except:
+                pass
+
+        self["tweets"] = self.tweets
+
+    def __getitem__(self, index):
+        if isinstance(index, str):
+            return getattr(self, index)
+
+        return self.tweets[index]
+
+    def __iter__(self):
+        for __tweet in self.tweets:
+            yield __tweet
+
+    def __len__(self):
+        return len(self.tweets)
+
+    def __repr__(self):
+        return "ScheduledTweets(tweets={})".format(len(self.tweets))
 

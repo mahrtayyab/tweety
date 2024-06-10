@@ -205,13 +205,25 @@ class ProtectedTweet(TwitterError):
 
 class LockedAccount(TwitterError):
     """
-        Exception Raised when Twitter Account is locked at most likely require to pass captcha to unlock
+        Exception Raised when Twitter Account is locked and most likely requires captcha test to unlock
 
         Attributes:
             message -- explanation of the error
     """
 
     def __init__(self, error_code, error_name, response, message="Your Account is Locked", **kw):
+        super().__init__(error_code, error_name, response, message)
+
+
+class SuspendedAccount(TwitterError):
+    """
+        Exception Raised when Twitter Account is Suspended
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code, error_name, response, message="Your Account is Suspended", **kw):
         super().__init__(error_code, error_name, response, message)
 
 

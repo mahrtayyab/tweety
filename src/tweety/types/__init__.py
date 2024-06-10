@@ -28,20 +28,21 @@ from .twDataTypes import (
     Topic,
     TweetTranslate,
     TweetAnalytics,
-    Place
+    Place,
+    ScheduledTweet
 )
 from .n_types import (
     UploadedMedia,
     Proxy
 )
 from .search import Search, TypeHeadSearch
-from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia, UserHighlights, UserLikes
+from .usertweet import UserTweets, SelfTimeline, TweetComments, TweetHistory, UserMedia, UserHighlights, UserLikes, ScheduledTweets
 from .mentions import Mention
 from .inbox import Inbox, SendMessage, Media, Conversation
 from .bookmarks import Bookmarks
 from .likes import TweetLikes
 from .retweets import TweetRetweets
-from .community import CommunityTweets, CommunityMembers
+from .community import CommunityTweets, CommunityMembers, UserCommunities
 from .notification import TweetNotifications
 from .lists import Lists, ListMembers, ListTweets
 from .follow import UserFollowers, UserFollowings, MutualFollowers, BlockedUsers, UserSubscribers

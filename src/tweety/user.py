@@ -1,10 +1,11 @@
+import datetime
 from typing import Union, Tuple, List
 from .exceptions import ListNotFound
 from .types.inbox import Message, Conversation
 from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
-                    Topic, TopicTweets, MutualFollowers, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
+                    Topic, TopicTweets, MutualFollowers, ScheduledTweets, ScheduledTweet, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
                     ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED)
 
 
@@ -22,6 +23,27 @@ class UserMethods:
     @property
     def rate_limits(self):
         return self.request._limits
+
+    def get_scheduled_tweets(self):
+        """
+        Get Tweets scheduled by authenticated user
+        :return: .types.usertweet.ScheduledTweets
+        """
+        return ScheduledTweets(self)
+
+    def delete_scheduled_tweet(self, tweet_id):
+        """
+        Delete a Scheduled Tweet
+
+        :param tweet_id: Tweet ID of the Tweet
+        :return: bool
+        """
+
+        if isinstance(tweet_id, ScheduledTweet):
+            tweet_id = tweet_id.id
+
+        res = self.request.delete_scheduled_tweet(tweet_id)
+        return True if find_objects(res, "scheduledtweet_delete", "Done") else False
 
     def get_home_timeline(
             self,
@@ -493,13 +515,14 @@ class UserMethods:
 
     def create_tweet(
             self,
-            text: str,
+            text: str = "",
             files: List[Union[str, UploadedMedia, Tuple[str, str]]] = None,
             filter_: str = None,
             reply_to: Union[str, int, Tweet] = None,
             quote: Union[str, int, Tweet] = None,
             pool: dict = None,
-            place: Union[str, Place] = None
+            place: Union[str, Place] = None,
+            batch_compose: bool = False
     ) -> Tweet:
 
         """
@@ -512,8 +535,12 @@ class UserMethods:
         :param reply_to: (`str` | `int` | `Tweet`) ID of tweet to reply to
         :param quote: (`str` | `int` | `Tweet`) ID / URL of tweet to be quoted
         :param place: (`str` `Place`) ID of location you want to add
+        :param batch_compose: (`bool`) Is this tweet part of thread or not
         :return: Tweet
         """
+
+        if not files and not text.strip():
+            raise ValueError("'files' and 'text' argument both can't be None")
 
         if files:
             files = self._upload_media(files)
@@ -540,9 +567,51 @@ class UserMethods:
         if place and isinstance(place, Place):
             place = place.id
 
-        response = self.request.create_tweet(text, files, filter_, reply_to, quote, pool, place)
+        response = self.request.create_tweet(text, files, filter_, reply_to, quote, pool, place, batch_compose)
         response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
         return Tweet(self, response, response)
+
+    def schedule_tweet(
+            self,
+            date: datetime.datetime,
+            text: str = "",
+            files: List[Union[str, UploadedMedia, Tuple[str, str]]] = None,
+            filter_: str = None,
+            reply_to: Union[str, int, Tweet] = None,
+            place: Union[str, Place] = None,
+    ):
+        """
+        Schedule a Tweet at specific Time
+        :param date: Date and Time at which to execute the Tweet Creation
+        :param text: (`str`) Text content of Tweet
+        :param files: (`list[Union[str, UploadedMedia, tuple[str, str]]]`) Files to be sent with Tweet (max 4)
+        :param filter_: (`str`) Filter to applied for Tweet audience
+        :param reply_to: (`str` | `int` | `Tweet`) ID of tweet to reply to
+        :param place: (`str` `Place`) ID of location you want to add
+        :return: `ID of the Scheduled Tweet`
+        """
+        if not files and not text.strip():
+            raise ValueError("'files' and 'text' argument both can't be None")
+
+        if files:
+            files = self._upload_media(files)
+        else:
+            files = []
+
+        if reply_to and isinstance(reply_to, Tweet):
+            reply_to = get_tweet_id(reply_to)
+
+        if place and isinstance(place, Place):
+            place = place.id
+
+        if isinstance(date, datetime.datetime):
+            date = int(date.timestamp())
+        elif isinstance(date, (float, str)):
+            date = int(date)
+
+        response = self.request.schedule_tweet(date, text, files, filter_, reply_to, place)
+        rest_id = find_objects(response, "rest_id", None)
+        return rest_id
 
     def iter_lists(
             self,

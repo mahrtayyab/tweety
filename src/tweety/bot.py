@@ -5,7 +5,7 @@ from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_twee
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
                     ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places,
-                    UserSubscribers)
+                    UserSubscribers, UserCommunities)
 from .exceptions import *
 from .session import Session, MemorySession, FileSession
 from .http import Request
@@ -107,6 +107,9 @@ class BotMethods:
         return self._get_user_id(username)
 
     def _get_user_id(self, username):
+        if not username:
+            username = self.me
+
         if isinstance(username, (User, ShortUser)):
             user_id = username.id
         elif isinstance(username, int) or (isinstance(username, str) and str(username).isdigit()):
@@ -482,6 +485,21 @@ class BotMethods:
         return Community(self, response)
 
     @AuthRequired
+    def get_user_communities(self, user_id=None):
+        """
+        Get Communities of a specific user is member of
+
+        :param user_id: User Id of the User whom to get communities of
+        :return:.types.community.UserCommunities
+        """
+
+        user_id = self.get_user_id(user_id)
+
+        userCommunities = UserCommunities(self, user_id)
+        list(userCommunities.generator())
+        return userCommunities
+
+    @AuthRequired
     def iter_community_tweets(
             self,
             community_id: Union[str, int, Community],
@@ -742,7 +760,7 @@ class BotMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ) -> UserFollowings:
+    ) -> UserSubscribers:
         """
          Get the Subscribers of a user
 

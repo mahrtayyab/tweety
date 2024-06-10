@@ -1,6 +1,51 @@
-from .twDataTypes import SelfThread, Tweet, Excel, User
+from .twDataTypes import SelfThread, Tweet, Excel, User, Community
 from .base import BaseGeneratorClass
 from ..utils import find_objects
+
+
+class UserCommunities(BaseGeneratorClass):
+    OBJECTS_TYPES = {
+        "community": Community
+    }
+    _RESULT_ATTR = "communities"
+
+    def __init__(self, client, user_id):
+        super().__init__()
+        self.communities = []
+        self.cursor = None
+        self.is_next_page = True
+        self.client = client
+        self.user_id = user_id
+        self.pages = 1
+        self.wait_time = None
+
+    @staticmethod
+    def _get_users(response):
+        all_users = find_objects(response, "__typename", "User", none_value=[])
+        return all_users
+
+    def get_page(self, cursor=None):
+        _communities = []
+        response = self.client.http.get_user_communities(self.user_id)
+        entries = self._get_entries(response)
+
+        for entry in entries:
+            try:
+                parsed = Community(self.client, entry, None)
+                if parsed:
+                    _communities.append(parsed)
+            except:
+                pass
+
+        cursor = find_objects(response, "next_cursor", value=None)
+        cursor_top = self._get_cursor_(response, "Top")
+
+        return _communities, cursor, cursor_top
+
+    def __repr__(self):
+        return "UserCommunities(user_id={}, count={})".format(
+            self.user_id, self.__len__()
+        )
 
 
 class CommunityTweets(BaseGeneratorClass):

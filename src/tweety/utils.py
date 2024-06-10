@@ -58,7 +58,7 @@ def replace_between_indexes(original_string, from_index, to_index, replacement_t
 
 
 def decodeBase64(encoded_string):
-    return str(base64.b64decode(bytes(encoded_string, "utf-8")))[2:-1]
+    return base64.b64decode(encoded_string).decode("utf-8")
 
 
 def bar_progress(filename, total, current, width=80):

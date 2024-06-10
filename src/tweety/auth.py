@@ -123,9 +123,10 @@ class AuthMethods:
         return self.connect()
 
     def load_auth_token(self, auth_token):
-        URL = "https://twitter.com/i/api/1.1/account/update_profile.json"
+        URL = "https://x.com/i/api/1.1/account/update_profile.json"
         temp_cookie = {"auth_token": auth_token}
-        res = self.request.session.post(URL, cookies=temp_cookie)
+        temp_headers = {'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'}
+        res = self.request.session.post(URL, cookies=temp_cookie, headers=temp_headers)
         ct0 = res.cookies.get('ct0')
 
         if not ct0:

@@ -1594,7 +1594,6 @@ class TweetTranslate(_TwType):
 
 class TweetAnalytics(_TwType):
     def __init__(self, client, analytics):
-        print(analytics)
         self._raw = analytics
         self._client = client
         self._tweet = find_objects(self._raw, "__typename", "Tweet", none_value={})
@@ -1614,4 +1613,102 @@ class TweetAnalytics(_TwType):
         return "TweetAnalytics(expands={}, engagements={}, follows={}, impressions={}, link_clicks={}, profile_visits={})".format(
             self.expands, self.engagements, self.follows, self.impressions, self.link_clicks, self.profile_visits
         )
+
+class ApiImage(_TwType):
+    def __init__(self, client, media, media_key):
+        self._raw = media
+        self._client = client
+        self.key = media_key
+        self.url = self._raw.get("original_img_url")
+        self.width = self._raw.get("original_img_width")
+        self.height = self._raw.get("original_img_height")
+        self.alt_text = self._raw.get("alt_text")
+
+    def __repr__(self):
+        return "ApiImage(key={}, width={}, height={}, alt_text={})".format(
+            self.key, self.width, self.height, self.alt_text
+        )
+
+
+class ApiVideoVariant(_TwType):
+    def __init__(self, client, variant):
+        self._client = client
+        self._raw = variant
+        self.content_type = self._raw.get("content_type")
+        self.bit_rate = self._raw.get("bit_rate")
+        self.url = self._raw.get("url")
+
+    def __repr__(self):
+        return "ApiVideoVariant(content_type={}, bit_rate={})".format(
+            self.content_type, self.bit_rate
+        )
+
+
+class ApiGif(_TwType):
+    def __init__(self, client, media, media_key):
+        self._raw = media
+        self._client = client
+        self._aspect_ratio = self._raw.get("aspect_ratio", {})
+        self.key = media_key
+        self.preview_image = ApiImage(self._client, self._raw.get("preview_image"), None)
+        self.alt_text = self._raw.get("alt_text")
+        self.variants = [ApiVideoVariant(self._client, i) for i in self._raw.get("variants", [])]
+
+    def __repr__(self):
+        return "ApiGif(key={}, variants={})".format(
+            self.key, self.variants
+        )
+
+
+class ApiVideo(_TwType):
+    def __init__(self, client, media, media_key):
+        self._raw = media
+        self._client = client
+        self._aspect_ratio = self._raw.get("aspect_ratio", {})
+        self.key = media_key
+        self.duration_ms = self._raw.get("duration_millis")
+        self.alt_text = self._raw.get("alt_text")
+        self.preview_image = ApiImage(self._client, self._raw.get("preview_image"), None)
+        self.aspect_ratio = f"{self._aspect_ratio.get('numerator')}/{self._aspect_ratio.get('denominator')}"
+        self.variants = [ApiVideoVariant(self._client, i) for i in self._raw.get("variants", [])]
+
+    def __repr__(self):
+        return "ApiVideo(key={}, duration_ms={}, aspect_ratio={}, variants={})".format(
+            self.key, self.duration_ms, self.aspect_ratio, self.variants
+        )
+
+class ScheduledTweet(_TwType):
+    def __init__(self, client, tweet):
+        self._raw = tweet
+        self._client = client
+        self._info = find_objects(self._raw, "scheduling_info", None, none_value={})
+        self._create_request = find_objects(self._raw, "tweet_create_request", None, none_value={})
+        self._media_entities = find_objects(self._raw, "media_entities", None, none_value=[])
+        self.id = self._raw.get("rest_id")
+        self.execute_at = self.date = parse_time(self._info.get("execute_at"))
+        self.state = self._info.get("state")
+        self.text = self._create_request.get("status")
+        self.reply_to_tweet_id = self._create_request.get("in_reply_to_status_id")
+        self.media = self._parse_media()
+
+    def _parse_media(self):
+        medias = []
+        for entity in self._media_entities:
+            media_typename = entity.get("media_info", {}).get("__typename", "")
+            if media_typename == "ApiImage":
+                medias.append(ApiImage(self._client, entity["media_info"], entity["media_key"]))
+            elif media_typename == "ApiVideo":
+                medias.append(ApiVideo(self._client, entity["media_info"], entity["media_key"]))
+            elif media_typename == "ApiGif":
+                medias.append(ApiGif(self._client, entity["media_info"], entity["media_key"]))
+        return medias
+
+    def delete(self):
+        return self._client.delete_scheduled_tweet(self.id)
+
+    def __repr__(self):
+        return "ScheduledTweet(id={}, date={}, text={}, media={})".format(
+            self.id, self.date, self.text, self.media
+        )
+
 

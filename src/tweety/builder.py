@@ -27,84 +27,87 @@ def return_with_headers(func):
 
 
 class UrlBuilder:
-    URL_GUEST_TOKEN = "https://api.twitter.com/1.1/guest/activate.json"
-    URL_HOME_PAGE = "https://twitter.com/"
-    URL_API_INIT = "https://twitter.com/i/api/1.1/branch/init.json"
-    URL_USER_BY_SCREEN_NAME = "https://twitter.com/i/api/graphql/oUZZZ8Oddwxs8Cd3iW3UEA/UserByScreenName"
-    URL_USER_BY_USER_IDS = "https://twitter.com/i/api/graphql/itEhGywpgX9b3GJCzOtSrA/UsersByRestIds"
-    URL_USER_TWEETS = "https://twitter.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
-    URL_USER_MEDIAS = "https://twitter.com/i/api/graphql/cEjpJXA15Ok78yO4TUQPeQ/UserMedia"
-    URL_USER_HIGHLIGHTS = "https://twitter.com/i/api/graphql/eOTTj_P8aj8rRzED2BzzLQ/UserHighlightsTweets"
-    URL_USER_LIKES = "https://twitter.com/i/api/graphql/B8I_QCljDBVfin21TTWMqA/Likes"
-    URL_USER_TWEETS_WITH_REPLIES = "https://twitter.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
-    URL_TRENDS = "https://twitter.com/i/api/2/guide.json"
-    URL_SEARCH = "https://twitter.com/i/api/graphql/Aj1nGkALq99Xg3XI0OZBtw/SearchTimeline"
-    URL_SEARCH_TYPEHEAD = "https://twitter.com/i/api/1.1/search/typeahead.json"
-    URL_GIF_SEARCH = "https://twitter.com/i/api/1.1/foundmedia/search.json"
-    URL_PLACE_SEARCH = "https://twitter.com/i/api/1.1/geo/places.json"
-    URL_TOPIC_LANDING = "https://twitter.com/i/api/graphql/IY9rfrxdSmamr10ZxvVBxg/TopicLandingPage"
-    URL_AUDIO_SPACE_BY_ID = "https://twitter.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
-    URL_AUDIO_SPACE_STREAM = "https://twitter.com/i/api/1.1/live_video_stream/status/{}"
-    URL_TWEET_DETAILS = "https://twitter.com/i/api/graphql/3XDB26fBve-MmjHaWTUZxA/TweetDetail"
-    URL_TWEET_ANALYTICS = "https://twitter.com/i/api/graphql/vnwexpl0q33_Bky-SROVww/TweetActivityQuery"
-    URL_TWEET_TRANSLATE = "https://twitter.com/i/api/1.1/strato/column/None/tweetId={},destinationLanguage={},translationSource=Some(Google),feature=None,timeout=None,onlyCached=None/translation/service/translateTweet"
-    URL_TWEET_DETAILS_AS_GUEST = "https://api.twitter.com/graphql/5GOHgZe-8U2j5sVHQzEm9A/TweetResultByRestId"
-    URL_TWEET_HISTORY = "https://twitter.com/i/api/graphql/MYJ08HcXJuxtXMXWMP-63w/TweetEditHistory"
-    URL_AUSER_INITIAL_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_initial_state.json"  # noqa
-    URL_AUSER_INBOX_UPDATES = "https://twitter.com/i/api/1.1/dm/user_updates.json"  # noqa
-    URL_AUSER_TRUSTED_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_timeline/trusted.json"  # noqa
-    URL_AUSER_UNTRUSTED_INBOX = "https://twitter.com/i/api/1.1/dm/inbox_timeline/untrusted.json"  # noqa
-    URL_AUSER_UPDATE_GROUP_NAME = "https://twitter.com/i/api/1.1/dm/conversation/{}/update_name.json"  # noqa
-    URL_AUSER_UPDATE_GROUP_AVATAR = "https://twitter.com/i/api/1.1/dm/conversation/{}/update_avatar.json"  # noqa
-    URL_AUSER_NOTIFICATION_MENTIONS = "https://twitter.com/i/api/2/notifications/mentions.json"  # noqa
-    URL_AUSER_SETTINGS = "https://api.twitter.com/1.1/account/settings.json"  # noqa
-    URL_AUSER_ADD_GROUP_MEMBER = "https://twitter.com/i/api/graphql/oBwyQ0_xVbAQ8FAyG0pCRA/AddParticipantsMutation"  # noqa
-    URL_AUSER_SEND_MESSAGE = "https://twitter.com/i/api/1.1/dm/new2.json"  # noqa
-    URL_AUSER_CONVERSATION = "https://twitter.com/i/api/1.1/dm/conversation/{}.json"  # noqa
-    URL_AUSER_CREATE_TWEET = "https://twitter.com/i/api/graphql/tTsjMKyhajZvK4q76mpIBg/CreateTweet"  # noqa
-    URL_AUSER_DELETE_TWEET = "https://twitter.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet"  # noqa
-    URL_AUSER_CREATE_POOL = "https://caps.twitter.com/v2/cards/create.json"  # noqa
-    URL_AUSER_VOTE_POOL = "https://caps.twitter.com/v2/capi/passthrough/1"  # noqa
-    URL_AUSER_CREATE_TWEET_SCHEDULE = "https://twitter.com/i/api/graphql/LCVzRQGxOaGnOnYH01NQXg/CreateScheduledTweet"  # noqa
-    URL_AUSER_CREATE_MEDIA = "https://upload.twitter.com/i/media/upload.json"  # noqa
-    URL_AUSER_CREATE_MEDIA_METADATA = "https://twitter.com/i/api/1.1/media/metadata/create.json"  # noqa
-    URL_AUSER_BOOKMARK = "https://twitter.com/i/api/graphql/bN6kl72VsPDRIGxDIhVu7A/Bookmarks"  # noqa
-    URL_AUSER_HOME_TIMELINE = "https://twitter.com/i/api/graphql/W4Tpu1uueTGK53paUgxF0Q/HomeTimeline"  # noqa
-    URL_AUSER_HOME_TIMELINE_LATEST = "https://twitter.com/i/api/graphql/IjTuxEFmAb6DvzycVz4fHg/HomeLatestTimeline"  # noqa
-    URL_AUSER_TWEET_FAVOURITERS = "https://twitter.com/i/api/graphql/yoghorQ6KbhB1qpXefXuLQ/Favoriters"  # noqa
-    URL_AUSER_TWEET_RETWEETERS = "https://twitter.com/i/api/graphql/_nBuZh82i3A0Ohkjw4FqCg/Retweeters"  # noqa
-    URL_AUSER_LIKE_TWEET = "https://twitter.com/i/api/graphql/lI07N6Otwv1PhnEgXILM7A/FavoriteTweet"  # noqa
-    URL_AUSER_UNLIKE_TWEET = "https://twitter.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet"  # noqa
-    URL_AUSER_BOOKMARK_TWEET = "https://twitter.com/i/api/graphql/aoDbu3RHznuiSkQ9aNM67Q/CreateBookmark"  # noqa
-    URL_AUSER_BOOKMARK_DELETE_TWEET = "https://twitter.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark"  # noqa
-    URL_AUSER_POST_TWEET_RETWEET = "https://twitter.com/i/api/graphql/ojPdsZsimiJrUGLR1sjUtA/CreateRetweet"  # noqa
-    URL_AUSER_DELETE_TWEET_RETWEET = "https://twitter.com/i/api/graphql/iQtK4dl5hBmXewYZuEOKVw/DeleteRetweet"  # noqa
-    URL_AUSER_CREATE_FRIEND = "https://twitter.com/i/api/1.1/friendships/create.json"  # noqa
-    URL_AUSER_DESTROY_FRIEND = "https://twitter.com/i/api/1.1/friendships/destroy.json"  # noqa
-    URL_AUSER_BLOCK_FRIEND = "https://twitter.com/i/api/1.1/blocks/create.json"  # noqa
-    URL_AUSER_UNBLOCK_FRIEND = "https://twitter.com/i/api/1.1/blocks/destroy.json"  # noqa
-    URL_AUSER_GET_COMMUNITY = "https://twitter.com/i/api/graphql/wYwM9x1NTCQKPx50Ih35Tg/CommunitiesFetchOneQuery"  # noqa
-    URL_AUSER_GET_COMMUNITY_TWEETS = "https://twitter.com/i/api/graphql/X3ziwTzWWeaFPsesEwWY-A/CommunityTweetsTimeline"  # noqa
-    URL_AUSER_GET_COMMUNITY_TWEETS_TOP = "https://twitter.com/i/api/graphql/UwEaY0_gBZFCQq-gEnArjg/CommunityTweetsRankedTimeline"  # noqa
-    URL_AUSER_GET_COMMUNITY_MEMBERS = "https://twitter.com/i/api/graphql/uDM1rSTpOPMuhBCf2mun9Q/membersSliceTimeline_Query"  # noqa
-    URL_AUSER_GET_COMMUNITY_MEMBERS_MODERATOR = "https://twitter.com/i/api/graphql/DB68-nKYyzPN8tXKr5xZng/moderatorsSliceTimeline_Query"  # noqa
-    URL_AUSER_GET_NOTIFICATION_USER_FOLLOWED = "https://twitter.com/i/api/2/notifications/device_follow.json"  # noqa
-    URL_AUSER_UPDATE_FRIENDSHIP = "https://twitter.com/i/api/1.1/friendships/update.json"  # noqa
-    URL_AUSER_GET_LISTS = "https://twitter.com/i/api/graphql/xoietOOE63W0cH9LFt4yRA/ListsManagementPageTimeline"  # noqa
-    URL_AUSER_GET_LIST = "https://twitter.com/i/api/graphql/zNcfphEciDXgu0vdIMhSaA/ListByRestId"  # noqa
-    URL_AUSER_GET_LIST_MEMBER = "https://twitter.com/i/api/graphql/WWxrex_8HmKW2dzlPnwtTg/ListMembers"  # noqa
-    URL_AUSER_GET_LIST_TWEETS = "https://twitter.com/i/api/graphql/TXyJ3x6-VnEbkV09UzebUQ/ListLatestTweetsTimeline"  # noqa
-    URL_AUSER_ADD_LIST_MEMBER = "https://twitter.com/i/api/graphql/sw71TVciw1b2nRwV6eDZNA/ListAddMember"  # noqa
-    URL_AUSER_DELETE_LIST_MEMBER = "https://twitter.com/i/api/graphql/kHdBGndqf_JX3ef1T1931A/ListRemoveMember"  # noqa
-    URL_AUSER_CREATE_LIST = "https://twitter.com/i/api/graphql/nHFMQuE4PMED1R0JTN4d-Q/CreateList"  # noqa
-    URL_AUSER_DELETE_LIST = "https://twitter.com/i/api/graphql/UnN9Th1BDbeLjpgjGSpL3Q/DeleteList"  # noqa
-    URL_AUSER_GET_USER_FOLLOWERS = "https://twitter.com/i/api/graphql/ihMPm0x-pC35X86L_nUp_Q/Followers"  # noqa
-    URL_AUSER_GET_USER_FOLLOWINGS = "https://twitter.com/i/api/graphql/bX-gXhcglOa--1gzgDlb8A/Following"  # noqa
-    URL_AUSER_GET_USER_SUBSCRIBERS = "https://twitter.com/i/api/graphql/NHT8e7FjnCS3TP0QfP_OUQ/UserCreatorSubscriptions"  # noqa
-    # URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/1.1/friends/following/list.json"  # noqa
-    URL_AUSER_GET_MUTUAL_FRIENDS = "https://twitter.com/i/api/graphql/35Y2QFmL84HIisnm-FHAng/FollowersYouKnow"  # noqa
-    URL_AUSER_GET_BLOCKED_USERS = "https://twitter.com/i/api/graphql/f87G4V_l5E9rJ-Ylw0D-yQ/BlockedAccountsAll"  # noqa
-    URL_PIN_TWEET = "https://twitter.com/i/api/graphql/VIHsNu89pK-kW35JpHq7Xw/PinTweet"  # noqa
+    URL_GUEST_TOKEN = "https://api.x.com/1.1/guest/activate.json"
+    URL_HOME_PAGE = "https://x.com/"
+    URL_API_INIT = "https://x.com/i/api/1.1/branch/init.json"
+    URL_USER_BY_SCREEN_NAME = "https://x.com/i/api/graphql/qW5u-DAuXpMEG0zA1F7UGQ/UserByScreenName"
+    URL_USER_BY_USER_IDS = "https://x.com/i/api/graphql/9UCmrCOmAn6TYy_Y13cSjA/UsersByRestIds"
+    URL_USER_TWEETS = "https://x.com/i/api/graphql/WzJjibAcDa-oCjCcLOotcg/UserTweets"
+    URL_USER_MEDIAS = "https://x.com/i/api/graphql/cEjpJXA15Ok78yO4TUQPeQ/UserMedia"
+    URL_USER_HIGHLIGHTS = "https://x.com/i/api/graphql/eOTTj_P8aj8rRzED2BzzLQ/UserHighlightsTweets"
+    URL_USER_LIKES = "https://x.com/i/api/graphql/B8I_QCljDBVfin21TTWMqA/Likes"
+    URL_USER_TWEETS_WITH_REPLIES = "https://x.com/i/api/graphql/1-5o8Qhfc2kWlu_2rWNcug/UserTweetsAndReplies"
+    URL_TRENDS = "https://x.com/i/api/2/guide.json"
+    URL_SEARCH = "https://x.com/i/api/graphql/TQmyZ_haUqANuyBcFBLkUw/SearchTimeline"
+    URL_SEARCH_TYPEHEAD = "https://x.com/i/api/1.1/search/typeahead.json"
+    URL_GIF_SEARCH = "https://x.com/i/api/1.1/foundmedia/search.json"
+    URL_PLACE_SEARCH = "https://x.com/i/api/1.1/geo/places.json"
+    URL_TOPIC_LANDING = "https://x.com/i/api/graphql/IY9rfrxdSmamr10ZxvVBxg/TopicLandingPage"
+    URL_AUDIO_SPACE_BY_ID = "https://x.com/i/api/graphql/gpc0LEdR6URXZ7HOo42_bQ/AudioSpaceById"
+    URL_AUDIO_SPACE_STREAM = "https://x.com/i/api/1.1/live_video_stream/status/{}"
+    URL_TWEET_DETAILS = "https://x.com/i/api/graphql/VwKJcAd7zqlBOitPLUrB8A/TweetDetail"
+    URL_TWEET_ANALYTICS = "https://x.com/i/api/graphql/vnwexpl0q33_Bky-SROVww/TweetActivityQuery"
+    URL_TWEET_TRANSLATE = "https://x.com/i/api/1.1/strato/column/None/tweetId={},destinationLanguage={},translationSource=Some(Google),feature=None,timeout=None,onlyCached=None/translation/service/translateTweet"
+    URL_TWEET_DETAILS_AS_GUEST = "https://api.x.com/graphql/Xl5pC_lBk_gcO2ItU39DQw/TweetResultByRestId"
+    URL_TWEET_HISTORY = "https://x.com/i/api/graphql/MYJ08HcXJuxtXMXWMP-63w/TweetEditHistory"
+    URL_AUSER_INITIAL_INBOX = "https://x.com/i/api/1.1/dm/inbox_initial_state.json"  # noqa
+    URL_AUSER_INBOX_UPDATES = "https://x.com/i/api/1.1/dm/user_updates.json"  # noqa
+    URL_AUSER_TRUSTED_INBOX = "https://x.com/i/api/1.1/dm/inbox_timeline/trusted.json"  # noqa
+    URL_AUSER_UNTRUSTED_INBOX = "https://x.com/i/api/1.1/dm/inbox_timeline/untrusted.json"  # noqa
+    URL_AUSER_UPDATE_GROUP_NAME = "https://x.com/i/api/1.1/dm/conversation/{}/update_name.json"  # noqa
+    URL_AUSER_UPDATE_GROUP_AVATAR = "https://x.com/i/api/1.1/dm/conversation/{}/update_avatar.json"  # noqa
+    URL_AUSER_NOTIFICATION_MENTIONS = "https://x.com/i/api/2/notifications/mentions.json"  # noqa
+    URL_AUSER_SETTINGS = "https://api.x.com/1.1/account/settings.json"  # noqa
+    URL_AUSER_ADD_GROUP_MEMBER = "https://x.com/i/api/graphql/oBwyQ0_xVbAQ8FAyG0pCRA/AddParticipantsMutation"  # noqa
+    URL_AUSER_SEND_MESSAGE = "https://x.com/i/api/1.1/dm/new2.json"  # noqa
+    URL_AUSER_CONVERSATION = "https://x.com/i/api/1.1/dm/conversation/{}.json"  # noqa
+    URL_AUSER_CREATE_TWEET = "https://x.com/i/api/graphql/oB-5XsHNAbjvARJEc8CZFw/CreateTweet"  # noqa
+    URL_AUSER_DELETE_TWEET = "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet"  # noqa
+    URL_AUSER_CREATE_POOL = "https://caps.x.com/v2/cards/create.json"  # noqa
+    URL_AUSER_VOTE_POOL = "https://caps.x.com/v2/capi/passthrough/1"  # noqa
+    URL_AUSER_CREATE_TWEET_SCHEDULE = "https://x.com/i/api/graphql/LCVzRQGxOaGnOnYH01NQXg/CreateScheduledTweet"  # noqa
+    URL_AUSER_CREATE_MEDIA = "https://upload.x.com/i/media/upload.json"  # noqa
+    URL_AUSER_CREATE_MEDIA_METADATA = "https://x.com/i/api/1.1/media/metadata/create.json"  # noqa
+    URL_AUSER_BOOKMARK = "https://x.com/i/api/graphql/bN6kl72VsPDRIGxDIhVu7A/Bookmarks"  # noqa
+    URL_AUSER_HOME_TIMELINE = "https://x.com/i/api/graphql/1u0Wlkw6Ru1NwBUD-pDiww/HomeTimeline"  # noqa
+    URL_AUSER_HOME_TIMELINE_LATEST = "https://x.com/i/api/graphql/9EwYy8pLBOSFlEoSP2STiQ/HomeLatestTimeline"  # noqa
+    URL_AUSER_TWEET_FAVOURITERS = "https://x.com/i/api/graphql/yoghorQ6KbhB1qpXefXuLQ/Favoriters"  # noqa
+    URL_AUSER_TWEET_RETWEETERS = "https://x.com/i/api/graphql/_nBuZh82i3A0Ohkjw4FqCg/Retweeters"  # noqa
+    URL_AUSER_LIKE_TWEET = "https://x.com/i/api/graphql/lI07N6Otwv1PhnEgXILM7A/FavoriteTweet"  # noqa
+    URL_AUSER_UNLIKE_TWEET = "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet"  # noqa
+    URL_AUSER_BOOKMARK_TWEET = "https://x.com/i/api/graphql/aoDbu3RHznuiSkQ9aNM67Q/CreateBookmark"  # noqa
+    URL_AUSER_BOOKMARK_DELETE_TWEET = "https://x.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark"  # noqa
+    URL_AUSER_POST_TWEET_RETWEET = "https://x.com/i/api/graphql/ojPdsZsimiJrUGLR1sjUtA/CreateRetweet"  # noqa
+    URL_AUSER_DELETE_TWEET_RETWEET = "https://x.com/i/api/graphql/iQtK4dl5hBmXewYZuEOKVw/DeleteRetweet"  # noqa
+    URL_AUSER_CREATE_FRIEND = "https://x.com/i/api/1.1/friendships/create.json"  # noqa
+    URL_AUSER_DESTROY_FRIEND = "https://x.com/i/api/1.1/friendships/destroy.json"  # noqa
+    URL_AUSER_BLOCK_FRIEND = "https://x.com/i/api/1.1/blocks/create.json"  # noqa
+    URL_AUSER_UNBLOCK_FRIEND = "https://x.com/i/api/1.1/blocks/destroy.json"  # noqa
+    URL_AUSER_GET_COMMUNITIES = "https://x.com/i/api/graphql/VwuY9V1tDSzglyc9HsC8dw/CommunitiesMembershipsTimeline"
+    URL_AUSER_GET_COMMUNITY = "https://x.com/i/api/graphql/wYwM9x1NTCQKPx50Ih35Tg/CommunitiesFetchOneQuery"  # noqa
+    URL_AUSER_GET_COMMUNITY_TWEETS = "https://x.com/i/api/graphql/X3ziwTzWWeaFPsesEwWY-A/CommunityTweetsTimeline"  # noqa
+    URL_AUSER_GET_COMMUNITY_TWEETS_TOP = "https://x.com/i/api/graphql/UwEaY0_gBZFCQq-gEnArjg/CommunityTweetsRankedTimeline"  # noqa
+    URL_AUSER_GET_COMMUNITY_MEMBERS = "https://x.com/i/api/graphql/uDM1rSTpOPMuhBCf2mun9Q/membersSliceTimeline_Query"  # noqa
+    URL_AUSER_GET_COMMUNITY_MEMBERS_MODERATOR = "https://x.com/i/api/graphql/DB68-nKYyzPN8tXKr5xZng/moderatorsSliceTimeline_Query"  # noqa
+    URL_AUSER_GET_NOTIFICATION_USER_FOLLOWED = "https://x.com/i/api/2/notifications/device_follow.json"  # noqa
+    URL_AUSER_UPDATE_FRIENDSHIP = "https://x.com/i/api/1.1/friendships/update.json"  # noqa
+    URL_AUSER_GET_LISTS = "https://x.com/i/api/graphql/xoietOOE63W0cH9LFt4yRA/ListsManagementPageTimeline"  # noqa
+    URL_AUSER_GET_LIST = "https://x.com/i/api/graphql/zNcfphEciDXgu0vdIMhSaA/ListByRestId"  # noqa
+    URL_AUSER_GET_LIST_MEMBER = "https://x.com/i/api/graphql/WWxrex_8HmKW2dzlPnwtTg/ListMembers"  # noqa
+    URL_AUSER_GET_LIST_TWEETS = "https://x.com/i/api/graphql/TXyJ3x6-VnEbkV09UzebUQ/ListLatestTweetsTimeline"  # noqa
+    URL_AUSER_ADD_LIST_MEMBER = "https://x.com/i/api/graphql/sw71TVciw1b2nRwV6eDZNA/ListAddMember"  # noqa
+    URL_AUSER_DELETE_LIST_MEMBER = "https://x.com/i/api/graphql/kHdBGndqf_JX3ef1T1931A/ListRemoveMember"  # noqa
+    URL_AUSER_CREATE_LIST = "https://x.com/i/api/graphql/nHFMQuE4PMED1R0JTN4d-Q/CreateList"  # noqa
+    URL_AUSER_DELETE_LIST = "https://x.com/i/api/graphql/UnN9Th1BDbeLjpgjGSpL3Q/DeleteList"  # noqa
+    URL_AUSER_GET_USER_FOLLOWERS = "https://x.com/i/api/graphql/ihMPm0x-pC35X86L_nUp_Q/Followers"  # noqa
+    URL_AUSER_GET_USER_FOLLOWINGS = "https://x.com/i/api/graphql/bX-gXhcglOa--1gzgDlb8A/Following"  # noqa
+    URL_AUSER_GET_USER_SUBSCRIBERS = "https://x.com/i/api/graphql/NHT8e7FjnCS3TP0QfP_OUQ/UserCreatorSubscriptions"  # noqa
+    # URL_AUSER_GET_MUTUAL_FRIENDS = "https://x.com/i/api/1.1/friends/following/list.json"  # noqa
+    URL_AUSER_GET_MUTUAL_FRIENDS = "https://x.com/i/api/graphql/35Y2QFmL84HIisnm-FHAng/FollowersYouKnow"  # noqa
+    URL_AUSER_GET_BLOCKED_USERS = "https://x.com/i/api/graphql/f87G4V_l5E9rJ-Ylw0D-yQ/BlockedAccountsAll"  # noqa
+    URL_PIN_TWEET = "https://x.com/i/api/graphql/VIHsNu89pK-kW35JpHq7Xw/PinTweet"  # noqa
+    URL_GET_SCHEDULED_TWEETS = "https://x.com/i/api/graphql/ITtjAzvlZni2wWXwf295Qg/FetchScheduledTweets"
+    URL_DELETE_SCHEDULED_TWEETS = "https://x.com/i/api/graphql/CTOVqej0JBXAZSwkp1US0g/DeleteScheduledTweet"
 
     def __init__(self):
         self.cookies = None
@@ -128,12 +131,12 @@ class UrlBuilder:
 
     def _get_headers(self):
         headers = {
-            # 'Authority': 'twitter.com',
+            # 'Authority': 'x.com',
             'Accept': '*/*',
             'Accept-Language': 'en-PK,en;q=0.9',
             'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Referer': 'https://twitter.com/',
+            'Referer': 'https://x.com/',
             'Sec-Ch-Ua': '"Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"',
             'Sec-Ch-Ua-Mobile': '?0',
             'Sec-Ch-Ua-Platform': f'"{random.choice(REQUEST_PLATFORMS)}"',
@@ -189,12 +192,20 @@ class UrlBuilder:
     @return_with_headers
     def user_by_screen_name(self, username):
         variables = {"screen_name": str(username), "withSafetyModeUserFields": True}
-        features = {"hidden_profile_likes_enabled": False, "responsive_web_graphql_exclude_directive_enabled": True,
-                    "verified_phone_label_enabled": False,
-                    "subscriptions_verification_info_verified_since_enabled": True,
-                    "highlights_tweets_tab_ui_enabled": True, "creator_subscriptions_tweet_preview_api_enabled": True,
-                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                    "responsive_web_graphql_timeline_navigation_enabled": True}
+        features = {
+            "hidden_profile_likes_enabled": False,
+            "hidden_profile_subscriptions_enabled": False,
+            "subscriptions_verification_info_is_identity_verified_enabled": True,
+            "rweb_tipjar_consumption_enabled": True,
+            "responsive_web_twitter_article_notes_tab_enabled": True,
+            "responsive_web_graphql_exclude_directive_enabled": True,
+            "verified_phone_label_enabled": True,
+            "subscriptions_verification_info_verified_since_enabled": True,
+            "highlights_tweets_tab_ui_enabled": True,
+            "creator_subscriptions_tweet_preview_api_enabled": True,
+            "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+            "responsive_web_graphql_timeline_navigation_enabled": True
+        }
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
@@ -205,7 +216,7 @@ class UrlBuilder:
         variables = {"userIds": user_ids}
         features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
                     "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                    "responsive_web_graphql_timeline_navigation_enabled": True}
+                    "responsive_web_graphql_timeline_navigation_enabled": True, "rweb_tipjar_consumption_enabled": True}
 
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
@@ -296,7 +307,7 @@ class UrlBuilder:
         if not replies:
             variables = {"userId": str(user_id), "count": 20, "includePromotedContent": True,
                          "withQuickPromoteEligibilityTweetFields": True, "withVoice": True, "withV2Timeline": True}
-            features = {"rweb_lists_timeline_redesign_enabled": True,
+            features = {"rweb_tipjar_consumption_enabled": True, "rweb_lists_timeline_redesign_enabled": True,
                         "blue_business_profile_image_shape_enabled": True,
                         "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
                         "creator_subscriptions_tweet_preview_api_enabled": False,
@@ -313,12 +324,12 @@ class UrlBuilder:
                         "longform_notetweets_rich_text_read_enabled": True,
                         "longform_notetweets_inline_media_enabled": False,
                         "responsive_web_enhance_cards_enabled": False}
-            fieldToggles = {"withArticleRichContentState": False}
+            fieldToggles = {"withArticleRichContentState": True, "withGrokAnalyze": True, "withAuxiliaryUserLabels": True, "withArticlePlainText": True}
             url = self.URL_USER_TWEETS
         else:
             variables = {"userId": str(user_id), "count": 20, "includePromotedContent": True, "withCommunity": True,
                          "withVoice": True, "withV2Timeline": True}
-            features = {"rweb_lists_timeline_redesign_enabled": True,
+            features = {"rweb_tipjar_consumption_enabled": True, "rweb_lists_timeline_redesign_enabled": True,
                         "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
                         "creator_subscriptions_tweet_preview_api_enabled": True,
                         "responsive_web_graphql_timeline_navigation_enabled": True,
@@ -334,7 +345,7 @@ class UrlBuilder:
                         "longform_notetweets_inline_media_enabled": True,
                         "responsive_web_media_download_video_enabled": False,
                         "responsive_web_enhance_cards_enabled": False}
-            fieldToggles = {"withAuxiliaryUserLabels": False, "withArticleRichContentState": False}
+            fieldToggles = {"withArticleRichContentState": True, "withGrokAnalyze": True, "withAuxiliaryUserLabels": True, "withArticlePlainText": True}
             url = self.URL_USER_TWEETS_WITH_REPLIES
 
         if cursor:
@@ -390,7 +401,9 @@ class UrlBuilder:
     def search(self, keyword, cursor, filter_):
         keyword = str(keyword)
         variables = {"rawQuery": keyword, "count": 20, "querySource": "typed_query", "product": "Top"}
-        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
+        features = {"creator_subscriptions_quote_tweet_preview_enabled": True, "articles_preview_enabled": True,
+                    "communities_web_enable_tweet_community_results_fetch": True,
+                    "rweb_tipjar_consumption_enabled": True, "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
                     "responsive_web_home_pinned_timelines_enabled": True,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
                     "responsive_web_graphql_timeline_navigation_enabled": True,
@@ -461,7 +474,12 @@ class UrlBuilder:
                      "withQuickPromoteEligibilityTweetFields": True, "withBirdwatchNotes": True, "withVoice": True,
                      "withV2Timeline": True}
 
-        features = {"rweb_lists_timeline_redesign_enabled": True,
+        features = {"c9s_tweet_anatomy_moderator_badge_enabled": True,
+                    "creator_subscriptions_quote_tweet_preview_enabled": True,
+                    "articles_preview_enabled": True,
+                    "communities_web_enable_tweet_community_results_fetch": True,
+                    "rweb_video_timestamps_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "rweb_lists_timeline_redesign_enabled": True,
                     "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": False,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
                     "responsive_web_graphql_timeline_navigation_enabled": True,
@@ -498,6 +516,11 @@ class UrlBuilder:
                      "includePromotedContent": True, "withVoice": False}
 
         features = {
+            "rweb_video_timestamps_enabled": True,
+            "articles_preview_enabled": True,
+            "creator_subscriptions_quote_tweet_preview_enabled": True,
+            "rweb_tipjar_consumption_enabled": True,
+            "communities_web_enable_tweet_community_results_fetch": True,
             "creator_subscriptions_tweet_preview_api_enabled": True,
             "c9s_tweet_anatomy_moderator_badge_enabled": True,
             "tweetypie_unmention_optimization_enabled": True,
@@ -514,7 +537,7 @@ class UrlBuilder:
             "longform_notetweets_rich_text_read_enabled": True,
             "longform_notetweets_inline_media_enabled": True,
             "responsive_web_graphql_exclude_directive_enabled": True,
-            "verified_phone_label_enabled": False,
+            "verified_phone_label_enabled": True,
             "responsive_web_media_download_video_enabled": False,
             "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
             "responsive_web_graphql_timeline_navigation_enabled": True,
@@ -952,7 +975,17 @@ class UrlBuilder:
         return "POST", self.URL_AUSER_DELETE_TWEET, json_data
 
     @return_with_headers
-    def create_tweet(self, text, files, filter_=None, reply_to=None, quote_tweet_url=None, pool=None, geo=None):
+    def create_tweet(
+            self,
+            text,
+            files,
+            filter_=None,
+            reply_to=None,
+            quote_tweet_url=None,
+            pool=None,
+            geo=None,
+            batch_compose=False
+    ):
         media_entities = utils.create_media_entities(files)
         variables = {
             'tweet_text': text,
@@ -965,6 +998,12 @@ class UrlBuilder:
         }
 
         features = {
+            "articles_preview_enabled": True,
+            "rweb_tipjar_consumption_enabled": True,
+            "rweb_video_timestamps_enabled": True,
+            "creator_subscriptions_quote_tweet_preview_enabled": True,
+            "c9s_tweet_anatomy_moderator_badge_enabled": True,
+            "communities_web_enable_tweet_community_results_fetch": True,
             'tweetypie_unmention_optimization_enabled': True,
             'responsive_web_edit_tweet_api_enabled': True,
             'graphql_is_translatable_rweb_tweet_is_translatable_enabled': True,
@@ -998,6 +1037,9 @@ class UrlBuilder:
         elif quote_tweet_url:
             variables['attachment_url'] = quote_tweet_url
 
+        if batch_compose:
+            variables['batch_compose'] = 'BatchFirst' if not reply_to else 'BatchSubsequent'
+
         if filter_:
             variables['conversation_control'] = {"mode": filter_}
 
@@ -1015,6 +1057,48 @@ class UrlBuilder:
         )
 
         return "POST", self.URL_AUSER_CREATE_TWEET, json_data
+
+    @return_with_headers
+    def schedule_tweet(
+            self,
+            date,
+            text,
+            files,
+            filter_=None,
+            reply_to=None,
+            geo=None
+    ):
+        media_ids = []
+
+        if files:
+            files = [files] if isinstance(files, list) else files
+            media_ids = [i["media_id"] for i in utils.create_media_entities(files)]
+
+        variables = {
+            'post_tweet_request': {
+                'auto_populate_reply_metadata': False,
+                'status': text,
+                'exclude_reply_user_ids': [],
+                'media_ids': media_ids,
+            },
+            'execute_at': date,
+        }
+
+        if reply_to:
+            variables["post_tweet_request"]["in_reply_to_status_id"] = reply_to
+
+        if filter_:
+            variables['conversation_control'] = {"mode": filter_}
+
+        if geo:
+            variables['geo'] = {"place_id": geo}
+
+        json_data = {
+            'variables': variables,
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_AUSER_CREATE_TWEET_SCHEDULE, json_data
 
     @return_with_headers
     def poll_vote(self, poll_id, poll_name, tweet_id, choice):
@@ -1118,6 +1202,10 @@ class UrlBuilder:
             'seenTweetIds': [],
         }
         features = {
+            "creator_subscriptions_quote_tweet_preview_enabled" : True,
+            "articles_preview_enabled": True,
+            "rweb_tipjar_consumption_enabled": True,
+            "communities_web_enable_tweet_community_results_fetch": True,
             'rweb_lists_timeline_redesign_enabled': True,
             'responsive_web_graphql_exclude_directive_enabled': True,
             'verified_phone_label_enabled': False,
@@ -1238,7 +1326,7 @@ class UrlBuilder:
         params = {
             'client': 'web',
             'use_syndication_guest_id': 'false',
-            'cookie_set_host': 'twitter.com',
+            'cookie_set_host': 'x.com',
         }
 
         return "GET", self._build(self.URL_AUDIO_SPACE_STREAM.format(media_key), urlencode(params))
@@ -1473,6 +1561,29 @@ class UrlBuilder:
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
         return "GET", self._build(self.URL_AUSER_GET_USER_SUBSCRIBERS, urlencode(params))
 
+    @return_with_headers
+    def get_user_communities(self, user_id):
+        variables = {"userId": str(user_id), "withCommunity": True}
+        features = {"rweb_tipjar_consumption_enabled": True, "responsive_web_graphql_exclude_directive_enabled": True,
+                    "verified_phone_label_enabled": False, "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
+                    "communities_web_enable_tweet_community_results_fetch": True,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True, "articles_preview_enabled": True,
+                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": True,
+                    "tweet_awards_web_tipping_enabled": False,
+                    "creator_subscriptions_quote_tweet_preview_enabled": False,
+                    "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True, "responsive_web_enhance_cards_enabled": False}
+
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+
+        return "GET", self._build(self.URL_AUSER_GET_COMMUNITIES, urlencode(params))
     @return_with_headers
     def get_community(self, community_id):
         variables = {"communityId": community_id, "withDmMuting": False, "withSafetyModeUserFields": False}
@@ -1827,6 +1938,20 @@ class UrlBuilder:
         }
 
         return "POST", self.URL_PIN_TWEET, json_data
+
+    @return_with_headers
+    def get_scheduled_tweet(self):
+        params = {'variables': str(json.dumps({"ascending": True}))}
+        return "GET", self._build(self.URL_GET_SCHEDULED_TWEETS, urlencode(params))
+
+    @return_with_headers
+    def delete_scheduled_tweet(self, tweet_id):
+        json_data = {
+            'variables': {'scheduled_tweet_id': str(tweet_id)},
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_DELETE_SCHEDULED_TWEETS, json_data
 
 
 class FlowData:
