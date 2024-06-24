@@ -2,14 +2,6 @@
 Reverse Engineered Twitter Frontend API.
 
 [![Downloads](https://static.pepy.tech/personalized-badge/tweety-ns?period=total&units=international_system&left_color=orange&right_color=blue&left_text=Downloads)](https://pepy.tech/project/tweety-ns)
-## Prerequisites
-
-Before you begin, ensure you have met the following requirements:
-
-* Internet Connection
-* Python 3.6+
-* httpx 
-* openpyxl
 
 ## Installation: 
 ```bash
@@ -39,5 +31,5 @@ pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade
 
 > [!IMPORTANT] 
 > Even Twitter Web Client has a lot of rate limits now, Abusing tweety can lead to `read_only` Twitter account.
-
+Do check [FAQs](https://github.com/mahrtayyab/tweety/wiki/FAQs)
 Full Documentation and Changelogs are [here](https://mahrtayyab.github.io/tweety_docs/)
