@@ -31,5 +31,7 @@ pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade
 
 > [!IMPORTANT] 
 > Even Twitter Web Client has a lot of rate limits now, Abusing tweety can lead to `read_only` Twitter account.
+
 Do check [FAQs](https://github.com/mahrtayyab/tweety/wiki/FAQs)
+
 Full Documentation and Changelogs are [here](https://mahrtayyab.github.io/tweety_docs/)
