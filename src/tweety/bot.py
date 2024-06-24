@@ -1,5 +1,5 @@
 import warnings
-from typing import Union
+from typing import Union, Type
 from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang,
                     is_tweet_protected)
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
@@ -9,17 +9,21 @@ from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trend
 from .exceptions import *
 from .session import Session, MemorySession, FileSession
 from .http import Request
+from .captcha.base import BaseCaptchaSolver
 
 
 class BotMethods:
-    LOGIN_URL = "https://api.twitter.com/1.1/onboarding/task.json?flow_name=login"
+    LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json?flow_name=login"
 
-    def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None, **httpx_kwargs):
+    def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None, captcha_solver: Type[BaseCaptchaSolver] = None, **httpx_kwargs):
         """
         Constructor of the Twitter Public class
 
         :param: session_name: (`str`, `Session`) This is the name of the session which will be saved and can be loaded later
         :param: proxy: (`dict` or `Proxy`) Provide the proxy you want to use while making a request
+        :param: captcha_solver: (`BaseCaptchaSolver`) Provide the instance of captcha solver class
+                                which has two mandatory methods named `unlock`, `__call__`.
+                                - both mandatory methods should accept at least one argument
         """
 
         self._login_url = self.LOGIN_URL
@@ -32,6 +36,7 @@ class BotMethods:
         self._cached_users = {}
         self._proxy = proxy.get_dict() if isinstance(proxy, Proxy) else proxy
         self._event_builders = []
+        self._captcha_solver = None
 
         if isinstance(session_name, MemorySession):
             self.session = session_name(self)
@@ -40,9 +45,17 @@ class BotMethods:
         else:
             self.session = FileSession(self, session_name)
 
+        if captcha_solver:
+            if not hasattr(captcha_solver, "unlock"):
+                raise AttributeError("captcha_solver instance '{}' doesn't have 'unlock' method".format(type(captcha_solver)))
+            elif "__call__" not in dir(captcha_solver):
+                raise AttributeError("captcha_solver instance '{}' doesn't have '__call__' method".format(type(captcha_solver)))
+
+            self._captcha_solver = captcha_solver(self)
+
         self.logged_in = False
         self.is_user_authorized = False
-        self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, **httpx_kwargs)
+        self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, captcha_solver=captcha_solver, **httpx_kwargs)
         self.user = None
 
     def get_user_info(self, username: Union[str, int, list] = None):
@@ -120,9 +133,10 @@ class BotMethods:
             user = None
             try:
                 user = get_user_from_typehead(username, self.typehead_user_search(username))
-            except AuthenticationRequired:
-                # We can only get user using `get_user_info` when unauthenticated
-                pass
+            except TwitterError as e:
+                if str(e.__class__.__name__) == "AuthenticationRequired" or "[34]" in str(e):
+                    # We can only get user using `get_user_info` when unauthenticated or if user is not suspended
+                    pass
 
             if not user:
                 user = self.get_user_info(username)
@@ -152,8 +166,6 @@ class BotMethods:
 
         :return: .types.usertweet.UserTweets
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -183,8 +195,6 @@ class BotMethods:
 
         :return: (.types.usertweet.UserTweets, list[.types.twDataTypes.Tweet])
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -211,8 +221,6 @@ class BotMethods:
 
         :return: .types.usertweet.userHighlights
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -242,8 +250,6 @@ class BotMethods:
 
         :return: (.types.usertweet.UserHighlights, list[.types.twDataTypes.Tweet])
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -270,8 +276,6 @@ class BotMethods:
 
         :return: .types.usertweet.userLikes
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -301,8 +305,6 @@ class BotMethods:
 
         :return: (.types.usertweet.UserLikes, list[.types.twDataTypes.Tweet])
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -328,8 +330,6 @@ class BotMethods:
 
         :return: .types.usertweet.UserMedia
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -358,8 +358,6 @@ class BotMethods:
 
         :return: (.types.usertweet.UserMedia, list[.types.twDataTypes.Tweet])
         """
-        if wait_time is None:
-            wait_time = 0
 
         user_id = self._get_user_id(username)
 
@@ -408,12 +406,8 @@ class BotMethods:
         )
         :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
-
-
         :return: .types.search.Search
         """
-        if wait_time is None:
-            wait_time = 0
 
         search = Search(keyword, self, pages, filter_, wait_time, cursor)
 
@@ -444,8 +438,6 @@ class BotMethods:
 
         :return: (.types.search.Search, list[.types.twDataTypes.Tweet])
         """
-        if wait_time is None:
-            wait_time = 0
 
         search = Search(keyword, self, pages, filter_, wait_time, cursor)
 
@@ -466,7 +458,7 @@ class BotMethods:
         if isinstance(space_id, Tweet):
             space_id = space_id.audio_space_id
 
-        space = self.http.get_audio_space(space_id)
+        space = self.request.get_audio_space(space_id)
 
         if not find_objects(space, "metadata", None):
             raise AudioSpaceNotFound(404, "BadRequest", response=space)
@@ -481,7 +473,7 @@ class BotMethods:
         :return:
         """
 
-        response = self.http.get_community(community_id)
+        response = self.request.get_community(community_id)
         return Community(self, response)
 
     @AuthRequired
@@ -520,8 +512,6 @@ class BotMethods:
 
         :return: (.types.community.CommunityTweets, list[.types.twDataTypes.Tweet])
         """
-        if wait_time is None:
-            wait_time = 0
 
         if isinstance(community_id, Community):
             community_id = community_id.id
@@ -551,8 +541,6 @@ class BotMethods:
 
         :return: .types.community.CommunityTweets
         """
-        if wait_time is None:
-            wait_time = 0
 
         if isinstance(community_id, Community):
             community_id = community_id.id
@@ -584,9 +572,6 @@ class BotMethods:
         :return: .types.community.CommunityMembers
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         if isinstance(community_id, Community):
             community_id = community_id.id
 
@@ -617,9 +602,6 @@ class BotMethods:
         :return: (.types.community.CommunityMembers, [.types.twDataTypes.User])
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         if isinstance(community_id, Community):
             community_id = community_id.id
 
@@ -645,11 +627,6 @@ class BotMethods:
 
         :return: .types.follow.UserFollowers
         """
-        if wait_time is None:
-            wait_time = 0
-
-        if not username:
-            username = self.me.username
 
         user_id = self._get_user_id(username)
 
@@ -678,11 +655,6 @@ class BotMethods:
 
         :return: (.types.follow.UserFollowers, list[.types.twDataTypes.User])
         """
-        if wait_time is None:
-            wait_time = 0
-
-        if not username:
-            username = self.me.username
 
         user_id = self._get_user_id(username)
 
@@ -708,11 +680,6 @@ class BotMethods:
 
         :return: .types.follow.UserFollowings
         """
-        if wait_time is None:
-            wait_time = 0
-
-        if not username:
-            username = self.me.username
 
         user_id = self._get_user_id(username)
 
@@ -741,11 +708,6 @@ class BotMethods:
 
         :return: (.types.follow.UserFollowings, list[.types.twDataTypes.User])
         """
-        if wait_time is None:
-            wait_time = 0
-
-        if not username:
-            username = self.me.username
 
         user_id = self._get_user_id(username)
 
@@ -771,11 +733,6 @@ class BotMethods:
 
         :return: .types.follow.UserSubscribers
         """
-        if wait_time is None:
-            wait_time = 0
-
-        if not username:
-            username = self.me.username
 
         user_id = self._get_user_id(username)
 
@@ -804,11 +761,6 @@ class BotMethods:
 
         :return: (.types.follow.UserSubscribers, list[.types.twDataTypes.User])
         """
-        if wait_time is None:
-            wait_time = 0
-
-        if not username:
-            username = self.me.username
 
         user_id = self._get_user_id(username)
 
@@ -929,7 +881,7 @@ class BotMethods:
 
         tweetId = get_tweet_id(tweet_id)
         language = check_translation_lang(language)
-        response = self.http.get_tweet_translation(tweetId, language)
+        response = self.request.get_tweet_translation(tweetId, language)
         return TweetTranslate(self, response)
 
     def search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):

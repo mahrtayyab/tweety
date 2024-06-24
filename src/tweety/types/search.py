@@ -1,11 +1,15 @@
 from . import Tweet, Excel, User, List
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread
+from ..utils import find_objects
+from ..filters import SearchFilters
+
 
 
 class Search(BaseGeneratorClass):
     OBJECTS_TYPES = {
         "tweet": Tweet,
+        "search": Tweet,
         "homeConversation": SelfThread,
         "profile": SelfThread,
         "user": User,
@@ -35,12 +39,13 @@ class Search(BaseGeneratorClass):
         response = self.client.http.perform_search(self.keyword, cursor, self.filter)
         entries = self._get_entries(response)
 
-        if self.filter == "Lists":
+        if self.filter == SearchFilters.Lists:
             entries = self._get_list_entries(entries)
+        elif self.filter == SearchFilters.Media:
+            entries = self._get_grid_entries(entries)
 
         for entry in entries:
             object_type = self._get_target_object(entry)
-
             try:
                 if object_type is None:
                     continue
@@ -56,9 +61,18 @@ class Search(BaseGeneratorClass):
 
         return thisObjects, cursor, cursor_top
 
-    def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+    def _get_target_object(self, obj):
+        entry_type = str(obj['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
+
+    @staticmethod
+    def _get_grid_entries(entries):
+        results = []
+        for entry in entries:
+            obj = find_objects(entry, "displayType", "VerticalGrid", none_value={}, recursive=False)
+            if obj:
+                results.extend(obj.get("items", []))
+        return results
 
     @staticmethod
     def _get_list_entries(entries):

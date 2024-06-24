@@ -200,8 +200,11 @@ class Tweet(_TwType):
         return self._client.delete_tweet(self.id)
 
     def download_all_media(self, progress_callback=None):
+        filenames = []
         for media in self.media:
-            media.download(progress_callback=progress_callback)
+            filenames.append(media.download(progress_callback=progress_callback))
+
+        return filenames
 
     def get_threads(self):
         _threads = []
@@ -274,6 +277,7 @@ class Tweet(_TwType):
         self.is_retweet = self._is_retweet()
         self.retweeted_tweet = self._get_retweeted_tweet()
         self.rich_text = self._get_rich_text()
+        self.article = self._get_article()
         self.text = self.tweet_body = self._get_tweet_text()
         self.is_quoted = self._is_quoted()
         self.quoted_tweet = self._get_quoted_tweet()
@@ -311,6 +315,15 @@ class Tweet(_TwType):
         self.is_retweeted = self._get_is_retweeted()
         self.can_reply = self._get_conversation_control()
         self.comments = []
+
+    def _get_article(self):
+        article_raw = self._tweet.get("article")
+        if not article_raw:
+            return None
+
+        article_raw = article_raw.get("article_results", {}).get("result")
+        return Article(self._client, article_raw)
+
 
     def _get_conversation_control(self):
         if not self._original_tweet.get('conversation_control') or self.author == self._client.me:
@@ -541,6 +554,9 @@ class Tweet(_TwType):
 
         if self.rich_text:
             return self.rich_text.text
+
+        if self.article:
+            return self.article.text
 
         if self._original_tweet.get('full_text'):
             return html.unescape(self._original_tweet['full_text'])
@@ -1614,15 +1630,29 @@ class TweetAnalytics(_TwType):
             self.expands, self.engagements, self.follows, self.impressions, self.link_clicks, self.profile_visits
         )
 
-class ApiImage(_TwType):
+
+class ApiMedia:
+    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+        url = self.best_stream().url
+
+        if not url:
+            raise ValueError("No Media Download URL found")
+
+        return self._client.http.download_media(url, filename, progress_callback)
+
+
+class ApiImage(_TwType, ApiMedia):
     def __init__(self, client, media, media_key):
         self._raw = media
         self._client = client
         self.key = media_key
-        self.url = self._raw.get("original_img_url")
+        self.url = self.direct_url = self._raw.get("original_img_url")
         self.width = self._raw.get("original_img_width")
         self.height = self._raw.get("original_img_height")
         self.alt_text = self._raw.get("alt_text")
+
+    def best_stream(self):
+        return self
 
     def __repr__(self):
         return "ApiImage(key={}, width={}, height={}, alt_text={})".format(
@@ -1636,7 +1666,7 @@ class ApiVideoVariant(_TwType):
         self._raw = variant
         self.content_type = self._raw.get("content_type")
         self.bit_rate = self._raw.get("bit_rate")
-        self.url = self._raw.get("url")
+        self.url = self.direct_url = self._raw.get("url")
 
     def __repr__(self):
         return "ApiVideoVariant(content_type={}, bit_rate={})".format(
@@ -1644,7 +1674,7 @@ class ApiVideoVariant(_TwType):
         )
 
 
-class ApiGif(_TwType):
+class ApiGif(_TwType, ApiMedia):
     def __init__(self, client, media, media_key):
         self._raw = media
         self._client = client
@@ -1654,13 +1684,22 @@ class ApiGif(_TwType):
         self.alt_text = self._raw.get("alt_text")
         self.variants = [ApiVideoVariant(self._client, i) for i in self._raw.get("variants", [])]
 
+    def best_stream(self):
+        bit_rates = [int(getattr(i, "bit_rate", 0)) for i in self.variants]
+        max_bit_rate = max(bit_rates)
+        for variant in self.variants:
+            if int(getattr(variant, "bit_rate", 0)) == max_bit_rate:
+                return variant
+
+        return None
+
     def __repr__(self):
         return "ApiGif(key={}, variants={})".format(
             self.key, self.variants
         )
 
 
-class ApiVideo(_TwType):
+class ApiVideo(_TwType, ApiMedia):
     def __init__(self, client, media, media_key):
         self._raw = media
         self._client = client
@@ -1672,10 +1711,20 @@ class ApiVideo(_TwType):
         self.aspect_ratio = f"{self._aspect_ratio.get('numerator')}/{self._aspect_ratio.get('denominator')}"
         self.variants = [ApiVideoVariant(self._client, i) for i in self._raw.get("variants", [])]
 
+    def best_stream(self):
+        bit_rates = [int(getattr(i, "bit_rate", 0)) for i in self.variants]
+        max_bit_rate = max(bit_rates)
+        for variant in self.variants:
+            if int(getattr(variant, "bit_rate", 0)) == max_bit_rate:
+                return variant
+
+        return None
+
     def __repr__(self):
         return "ApiVideo(key={}, duration_ms={}, aspect_ratio={}, variants={})".format(
             self.key, self.duration_ms, self.aspect_ratio, self.variants
         )
+
 
 class ScheduledTweet(_TwType):
     def __init__(self, client, tweet):
@@ -1712,3 +1761,38 @@ class ScheduledTweet(_TwType):
         )
 
 
+class Article(_TwType):
+    def __init__(self, client, article):
+        self._raw = article
+        self._client = client
+        self._metadata = self._raw.get("metadata", {})
+        self._lifecycle = self._raw.get("lifecycle_state", {})
+        self.id = self._raw.get("rest_id")
+        self.created_at = self.date = parse_time(self._metadata.get("first_published_at_secs"))
+        self.edited_at = parse_time(self._lifecycle.get("modified_at_secs"))
+        self.title = self._raw.get("title")
+        self.preview_text = self._raw.get("preview_text")
+        self.cover_media = self._get_media_entity(self._raw.get("cover_media"))
+        self.text = self._raw.get("plain_text")
+        self.media = [self._get_media_entity(i) for i in self._raw.get("media_entities", [])]
+
+    def _get_media_entity(self, media):
+        if not media:
+            return None
+
+        parsed_media = None
+        _entity_media = media
+        media_typename = _entity_media.get("media_info", {}).get("__typename", "")
+        if media_typename == "ApiImage":
+            parsed_media = ApiImage(self._client, _entity_media["media_info"], _entity_media["media_key"])
+        elif media_typename == "ApiVideo":
+            parsed_media = ApiVideo(self._client, _entity_media["media_info"], _entity_media["media_key"])
+        elif media_typename == "ApiGif":
+            parsed_media = ApiGif(self._client, _entity_media["media_info"], _entity_media["media_key"])
+
+        return parsed_media
+
+    def __repr__(self):
+        return "Article(id={}, date={}, title={})".format(
+            self.id, self.date, self.title
+        )

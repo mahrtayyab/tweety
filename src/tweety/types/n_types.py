@@ -51,9 +51,10 @@ class Proxy:
 class GenericError:
     EXCEPTIONS = {
         32: InvalidCredentials,
-        37: SuspendedAccount,
+        # 37: SuspendedAccount,
         64: SuspendedAccount,
         88: RateLimitReached,
+        141: SuspendedAccount,
         144: InvalidTweetIdentifier,
         214: InvalidBroadcast,
         220: InvalidCredentials,
@@ -211,6 +212,7 @@ class UploadedMedia:
             for segment_index in range(segments):
                 boundary = self._create_boundary()
                 headers, multipart = encode_multipart_data({}, {"media": ('blob', f.read(self.FILE_CHUNK_SIZE), "application/octet-stream")}, boundary)
+                headers.update({"X-Media-Type": self.mime_type})
                 self._client.http.upload_media_append(media_id, multipart, headers, segment_index)
 
     def set_metadata(self):
@@ -231,6 +233,15 @@ class UploadedMedia:
             if processing_info.get('state') in ('pending', 'in_progress') and 'error' not in processing_info:
                 time.sleep(processing_info['check_after_secs'])
                 response = self._client.http.upload_media_status(self.media_id)
+            elif processing_info.get("error"):
+                error = processing_info["error"]
+                code, name, message = error.get("code", 1), error.get("name", ""), error.get("message", "")
+                raise TwitterError(
+                    error_code=code,
+                    error_name=name,
+                    response=response,
+                    message=message
+                )
             else:
                 return
 

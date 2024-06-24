@@ -1,10 +1,11 @@
 import getpass
 from http.cookiejar import MozillaCookieJar
 from typing import Union
-from .exceptions import InvalidCredentials, DeniedLogin, ActionRequired
+from .exceptions import InvalidCredentials, DeniedLogin, ActionRequired, ArkoseLoginRequired
 from .builder import FlowData
 from .types.n_types import Cookies
-from .utils import find_objects
+from .utils import find_objects, get_url_parts
+from . import constants
 
 
 class AuthMethods:
@@ -17,7 +18,8 @@ class AuthMethods:
         if not self.session.logged_in:
             return
 
-        self.request.set_cookies(str(self.session))
+        self.request.cookies = self.session.cookies_dict()
+        self.request.verify_cookies()
         self.user = self.get_user_info(self.request.username)
         self.request.set_user(self.user)
         self.session.set_session_user(self.user)
@@ -49,7 +51,7 @@ class AuthMethods:
             try:
                 return self.connect()
             except InvalidCredentials:
-                self.request.set_cookies("", False)
+                self.request.cookies = None
                 pass
 
         username = input('Please enter the Username: ') if not username else username
@@ -98,6 +100,7 @@ class AuthMethods:
         self._username = username
         self._password = password
         self._extra = extra
+        self._captcha_token = None
 
         if not self._login_flow:
             self._login_flow = FlowData()
@@ -125,7 +128,7 @@ class AuthMethods:
     def load_auth_token(self, auth_token):
         URL = "https://x.com/i/api/1.1/account/update_profile.json"
         temp_cookie = {"auth_token": auth_token}
-        temp_headers = {'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'}
+        temp_headers = {'authorization': constants.DEFAULT_BEARER_TOKEN}
         res = self.request.session.post(URL, cookies=temp_cookie, headers=temp_headers)
         ct0 = res.cookies.get('ct0')
 
@@ -155,13 +158,21 @@ class AuthMethods:
         _username, _password, _extra = self._username, self._password, self._extra
 
         while not self.logged_in:
-            _login_payload = self._login_flow.get(self._login_flow_state, json_=self._last_json, username=_username, password=_password, extra=_extra)
+            _login_payload = self._login_flow.get(
+                self._login_flow_state,
+                json_=self._last_json,
+                username=_username,
+                password=_password,
+                extra=_extra,
+                captcha_token=self._captcha_token
+            )
+
             response = self.request.login(self._login_url, _payload=_login_payload)
 
             self._last_json = response.json()
 
             if response.cookies.get("att"):
-                self.request.add_header("Att", response.cookies.get("att"))
+                self.request.headers = {"att": response.cookies.get("att")}
 
             if self._last_json.get('status') != "success":
                 raise DeniedLogin(response=response, message=response.text)
@@ -174,12 +185,20 @@ class AuthMethods:
                 message = self._get_action_text(self._last_json)
                 raise ActionRequired(0, "ActionRequired", response, message)
 
+            if subtask == "ArkoseLogin":
+                if self._captcha_solver is None:
+                    raise ArkoseLoginRequired(response=response)
+
+                token = self.request.solve_captcha(websiteUrl="https://iframe.arkoselabs.com")
+                # token = self.request.solve_captcha(websiteUrl="https://twitter.com/i/flow/login", blob_data=data[0])
+                self._captcha_token = token
+
             if subtask == "DenyLoginSubtask":
                 reason = self._get_action_text(self._last_json)
                 raise DeniedLogin(response=response, message=reason)
 
             if subtask == "LoginSuccessSubtask":
-                self.request.remove_header("Att")
+                self.request.remove_header("att")
                 self.logged_in = True
                 self.cookies = Cookies(dict(response.cookies))
                 self.session.save_session(self.cookies)

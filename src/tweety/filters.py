@@ -1,95 +1,90 @@
 
+class _CallableString(str):
+    """
+
+    For backward compatibility where user can still call the attributes as method
+
+    """
+    def __init__(self, __value__):
+        super().__init__()
+
+    def __call__(self, *args, **kwargs):
+        return self
+
+
 class SearchFilters:
     """
     This class can be used to filter the search results
     """
-    @staticmethod
-    def Users():
-        return "People"
-
-    @staticmethod
-    def Latest():
-        return "Latest"
-
-    @staticmethod
-    def Media():
-        return "Media"
-
-    @staticmethod
-    def Lists():
-        return "Lists"
+    Users = _CallableString("People")
+    Latest = _CallableString("Latest")
+    Media = _CallableString("Media")
+    Lists = _CallableString("Lists")
 
 
 class TweetConversationFilters:
     """
     This class can be used to filter the audience of posted Tweet
     """
-    @staticmethod
-    def PeopleYouMention():
-        return "ByInvitation"
 
-    @staticmethod
-    def PeopleYouFollow():
-        return "Community"
+    PeopleYouMention = _CallableString("ByInvitation")
+    PeopleYouFollow = _CallableString("Community")
+
 
 class CommunityTweets:
-    @staticmethod
-    def Top():
-        return "Top"
+    Top = _CallableString("Top")
 
 
 class CommunityMembers:
-    @staticmethod
-    def Moderators():
-        return "Mods"
+    Moderators = _CallableString("Mods")
 
 
 class Language:
-    Urdu = URDU = "ur"
-    Russian = RUSSIAN = "ru"
-    Danish = DANISH = "da"
-    Filipino = FILIPINO = "fil"
-    Irish = IRISH = "ga"
-    TraditionalChinese = TRADITIONAL_CHINESE = "zh-tw"
-    Hungarian = HUNGARIAN = "hu"
-    Spanish = SPANISH = "es"
-    Arabic_Feminine = ARABIC_FEMININE = "ar-x-fm"
-    Croatian = CROATIAN = "hr"
-    French = FRENCH = "fr"
-    Kannada = KANNADA = "kn"
-    Italian = ITALIAN = "it"
-    Marathi = MARATHI = "mr"
-    Japanese = JAPANESE = "ja"
-    Indonesian = INDONESIAN = "id"
-    Gujarati = GUJARATI = "gu"
-    Romanian = ROMANIAN = "ro"
-    Turkish = TURKISH = "tr"
-    Basque = BASQUE = "eu"
-    Swedish = SWEDISH = "sv"
-    Tamil = TAMIL = "ta"
-    Thai = THAI = "th"
-    Ukrainian = UKRAINIAN = "uk"
-    Bangla = BANGLA = "bn"
-    German = GERMAN = "de"
-    Vietnamese = VIETNAMESE = "vi"
-    Catalan = CATALAN = "ca"
-    Arabic = ARABIC = "ar"
-    Dutch = DUTCH = "nl"
-    SimplifiedChinese = SIMPLIFIED_CHINESE = "zh-cn"
-    Slovak = SLOVAK = "sk"
-    Czech = CZECH = "cs"
-    Greek = GREEK = "el"
-    Finnish = FINNISH = "fi"
-    English = ENGLISH = "en"
-    Norwegian = NORWEGIAN = "no"
-    Polish = POLISH = "pl"
-    Portuguese = PORTUGUESE = "pt"
-    Persian = PERSIAN = "fa"
-    Galician = GALICIAN = "gl"
-    Korean = KOREAN = "ko"
-    Serbian = SERBIAN = "sr"
-    BritishEnglish = BRITISH_ENGLISH = "en-gb"
-    Hindi = HINDI = "hi"
-    Hebrew = HEBREW = "he"
-    Malay = MALAY = "msa"
-    Bulgarian = BULGARIAN = "bg"
+    Urdu = URDU = _CallableString("ur")
+    Russian = RUSSIAN = _CallableString("ru")
+    Danish = DANISH = _CallableString("da")
+    Filipino = FILIPINO = _CallableString("fil")
+    Irish = IRISH = _CallableString("ga")
+    TraditionalChinese = TRADITIONAL_CHINESE = _CallableString("zh-tw")
+    Hungarian = HUNGARIAN = _CallableString("hu")
+    Spanish = SPANISH = _CallableString("es")
+    Arabic_Feminine = ARABIC_FEMININE = _CallableString("ar-x-fm")
+    Croatian = CROATIAN = _CallableString("hr")
+    French = FRENCH = _CallableString("fr")
+    Kannada = KANNADA = _CallableString("kn")
+    Italian = ITALIAN = _CallableString("it")
+    Marathi = MARATHI = _CallableString("mr")
+    Japanese = JAPANESE = _CallableString("ja")
+    Indonesian = INDONESIAN = _CallableString("id")
+    Gujarati = GUJARATI = _CallableString("gu")
+    Romanian = ROMANIAN = _CallableString("ro")
+    Turkish = TURKISH = _CallableString("tr")
+    Basque = BASQUE = _CallableString("eu")
+    Swedish = SWEDISH = _CallableString("sv")
+    Tamil = TAMIL = _CallableString("ta")
+    Thai = THAI = _CallableString("th")
+    Ukrainian = UKRAINIAN = _CallableString("uk")
+    Bangla = BANGLA = _CallableString("bn")
+    German = GERMAN = _CallableString("de")
+    Vietnamese = VIETNAMESE = _CallableString("vi")
+    Catalan = CATALAN = _CallableString("ca")
+    Arabic = ARABIC = _CallableString("ar")
+    Dutch = DUTCH = _CallableString("nl")
+    SimplifiedChinese = SIMPLIFIED_CHINESE = _CallableString("zh-cn")
+    Slovak = SLOVAK = _CallableString("sk")
+    Czech = CZECH = _CallableString("cs")
+    Greek = GREEK = _CallableString("el")
+    Finnish = FINNISH = _CallableString("fi")
+    English = ENGLISH = _CallableString("en")
+    Norwegian = NORWEGIAN = _CallableString("no")
+    Polish = POLISH = _CallableString("pl")
+    Portuguese = PORTUGUESE = _CallableString("pt")
+    Persian = PERSIAN = _CallableString("fa")
+    Galician = GALICIAN = _CallableString("gl")
+    Korean = KOREAN = _CallableString("ko")
+    Serbian = SERBIAN = _CallableString("sr")
+    BritishEnglish = BRITISH_ENGLISH = _CallableString("en-gb")
+    Hindi = HINDI = _CallableString("hi")
+    Hebrew = HEBREW = _CallableString("he")
+    Malay = MALAY = _CallableString("msa")
+    Bulgarian = BULGARIAN = _CallableString("bg")

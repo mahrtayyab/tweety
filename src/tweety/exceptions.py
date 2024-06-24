@@ -23,7 +23,7 @@ class TwitterError(Exception):
         self.response = response
 
         if self.response is not None and not isinstance(self.response, dict) and not self.response.json() and self.response.text:
-            self.message = self.response.text
+            self.message = f"[{self.error_code}] {self.response.text}"
         elif str(self.error_code) == "404":
             self.message = "Page not Found. Most likely you need elevated authorization to access this resource"
 
@@ -226,6 +226,28 @@ class SuspendedAccount(TwitterError):
     def __init__(self, error_code, error_name, response, message="Your Account is Suspended", **kw):
         super().__init__(error_code, error_name, response, message)
 
+
+class ArkoseLoginRequired(TwitterError):
+    """
+        Exception Raised when you need to solve a captcha in Login Flow
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code=403, error_name="ArkoseLoginRequired", response=None, message="ArkoseLogin(Captcha) Detected while logging-in, please do restart the process with 'captcha_solver'", **kw):
+        super().__init__(error_code, error_name, response, message)
+
+class CaptchaSolverFailed(TwitterError):
+    """
+            Exception Raised when you need to solve a captcha in Login Flow
+
+            Attributes:
+                message -- explanation of the error
+        """
+
+    def __init__(self, error_code=0, error_name="CaptchaSolverFailed", response=None, message="ArkoseLogin(Captcha) Detected while logging-in, please do restart the process with 'captcha_solver'",**kw):
+        super().__init__(error_code, error_name, response, message)
 
 # For Backward Compatibility
 UnknownError = TwitterError

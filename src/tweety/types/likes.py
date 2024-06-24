@@ -40,7 +40,6 @@ class TweetLikes(BaseGeneratorClass):
                 if parsed:
                     _users.append(parsed)
             except:
-                # traceback.print_exc()
                 pass
 
         cursor = self._get_cursor_(response)

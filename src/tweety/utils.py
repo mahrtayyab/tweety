@@ -11,7 +11,7 @@ import sys
 import uuid
 from typing import Union
 from dateutil import parser as date_parser
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from .exceptions import AuthenticationRequired
 from .filters import Language
 
@@ -24,6 +24,7 @@ MIME_TYPES = {
     "gif": "image/gif",
     "webp": "image/webp",
     "mp4": "video/mp4",
+    "flv": "video/mp4",
     "mov": "video/quicktime",
     "m4v": "video/x-m4v"
 }
@@ -260,4 +261,56 @@ def iterable_to_string(__iterable__: Union[list, tuple], __delimiter__: str = ",
         __iterable__ = [str(getattr(i, __attr__)) for i in __iterable__]
 
     return __delimiter__.join(__iterable__)
+
+
+def dict_to_string(__dict__: dict, __object_delimiter__: str = "=", __end_delimiter__: str = ";"):
+    actual_string = ""
+    for key, value in __dict__.items():
+        actual_string += f"{key}{__object_delimiter__}{value}{__end_delimiter__}"
+
+    return actual_string
+
+
+def get_url_parts(url):
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+
+    url_parts = {
+        "scheme": parsed_url.scheme,
+        "netloc": parsed_url.netloc,
+        "path": parsed_url.path,
+        "params": parsed_url.params,
+        "query": query_params,
+        "fragment": parsed_url.fragment,
+        "host": f"{parsed_url.scheme}://{parsed_url.netloc}"
+    }
+
+    return url_parts
+
+
+def unpack_proxy(proxy_dict):
+    username, password, host, port = None, None, None, None
+    if str(proxy_dict.__class__.__name__) == "Proxy":
+        proxy_dict = proxy_dict.get_dict()
+
+    proxy = proxy_dict.get("http://") or proxy_dict.get("https://")
+    scheme, url = proxy.split("://")
+    creds, host_with_port = None, None
+    url_split = url.split("@")
+    if len(url_split) == 2:
+        creds, host_with_port = url_split
+    else:
+        host_with_port = url_split[0]
+
+    host, port = host_with_port.split(":")
+    if creds is not None:
+        username, password = creds.split(":")
+
+    return {
+        "type": scheme,
+        "host": host,
+        "port": port,
+        "username": username,
+        "password": password
+    }
 

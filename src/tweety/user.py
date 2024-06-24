@@ -61,9 +61,6 @@ class UserMethods:
         :return: .types.usertweet.SelfTimeline
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         timeline = SelfTimeline(self.user.id, self, timeline_type, pages, wait_time, cursor)
         list(timeline.generator())
 
@@ -84,9 +81,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.usertweet.SelfTimeline, list[.types.twDataTypes.Tweet])
         """
-
-        if wait_time is None:
-            wait_time = 0
 
         timeline = SelfTimeline(self.user.id, self, timeline_type, pages, wait_time, cursor)
 
@@ -234,9 +228,6 @@ class UserMethods:
         :return: .types.mention.Mention
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         mentions = Mention(self.user.id, self, pages, wait_time, cursor)
         list(mentions.generator())
 
@@ -256,9 +247,6 @@ class UserMethods:
         :return: (.types.mention.Mention, list[.types.twDataTypes.Tweet])
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         mentions = Mention(self.user.id, self, pages, wait_time, cursor)
 
         return mentions.generator()
@@ -276,9 +264,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: Bookmarks
         """
-
-        if wait_time is None:
-            wait_time = 0
 
         bookmarks = Bookmarks(self.user.id, self, pages, wait_time, cursor)
         list(bookmarks.generator())
@@ -299,9 +284,6 @@ class UserMethods:
         :return: (.types.bookmarks.Bookmarks, list[.types.twDataTypes.Tweet])
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         bookmarks = Bookmarks(self.user.id, self, pages, wait_time, cursor)
 
         return bookmarks.generator()
@@ -321,8 +303,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.notification.TweetNotifications
         """
-        if wait_time is None:
-            wait_time = 0
 
         notifications = TweetNotifications(self.me.id, self, pages, wait_time, cursor)
         list(notifications.generator())
@@ -343,9 +323,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.notification.TweetNotifications, list[.types.twDataTypes.Tweet])
         """
-
-        if wait_time is None:
-            wait_time = 0
 
         notifications = TweetNotifications(self.me.id, self, pages, wait_time, cursor)
 
@@ -397,10 +374,7 @@ class UserMethods:
         members = [members] if not isinstance(members, list) else members
         member_ids = []
         for member in members:
-            if isinstance(member, (User, ShortUser)):
-                member_ids.append(member.id)
-            else:
-                member_ids.append(member)
+            member_ids.append(self.get_user_id(member))
 
         group_id = group_id.id if isinstance(group_id, Conversation) else group_id
 
@@ -550,19 +524,17 @@ class UserMethods:
         if reply_to and isinstance(reply_to, Tweet):
             reply_to = get_tweet_id(reply_to)
 
-        if not reply_to and quote:
+        if quote:
             if isinstance(quote, int) or str(quote).isdigit():
                 quote = self.tweet_detail(quote)
 
             if isinstance(quote, Tweet):
                 quote = quote.url
 
-            if str(quote).startswith("https://twitter.com/"):
+            if str(quote).startswith("https://twitter.com/") or str(quote).startswith("https://x.com/"):
                 quote = quote
             else:
                 quote = None
-        else:
-            quote = None
 
         if place and isinstance(place, Place):
             place = place.id
@@ -626,10 +598,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.lists.Lists, list[.types.twDataTypes.List])
         """
-
-        if wait_time is None:
-            wait_time = 0
-
         lists = Lists(self.user.id, self, pages, wait_time, cursor)
 
         return lists.generator()
@@ -647,9 +615,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.lists.Lists
         """
-
-        if wait_time is None:
-            wait_time = 0
 
         lists = Lists(self.user.id, self, pages, wait_time, cursor)
         list(lists.generator())
@@ -670,9 +635,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: (.types.lists.ListMembers, list[.types.twDataTypes.User])
         """
-
-        if wait_time is None:
-            wait_time = 0
 
         if isinstance(list_id, TwList):
             list_id = list_id.id
@@ -697,9 +659,6 @@ class UserMethods:
         :return: .types.lists.ListMembers
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         if isinstance(list_id, TwList):
             list_id = list_id.id
 
@@ -723,9 +682,6 @@ class UserMethods:
         :return: (.types.lists.ListTweets, list[.types.twDataTypes.Tweet])
         """
 
-        if wait_time is None:
-            wait_time = 0
-
         if isinstance(list_id, TwList):
             list_id = list_id.id
 
@@ -748,9 +704,6 @@ class UserMethods:
         :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :return: .types.lists.ListTweets
         """
-
-        if wait_time is None:
-            wait_time = 0
 
         if isinstance(list_id, TwList):
             list_id = list_id.id
@@ -776,10 +729,8 @@ class UserMethods:
 
         :return: .types.follow.UserFollowers
         """
-        if wait_time is None:
-            wait_time = 0
 
-        user_id = self._get_user_id(username)
+        user_id = self.get_user_id(username)
 
         mutualFollowers = MutualFollowers(user_id, self, pages, wait_time, cursor)
 
@@ -804,10 +755,8 @@ class UserMethods:
 
         :return: .types.follow.UserFollowers
         """
-        if wait_time is None:
-            wait_time = 0
 
-        user_id = self._get_user_id(username)
+        user_id = self.get_user_id(username)
 
         mutualFollowers = MutualFollowers(user_id, self, pages, wait_time, cursor)
 
@@ -892,9 +841,7 @@ class UserMethods:
         :return:
         """
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
-
+        user_id = self.get_user_id(user_id)
         response = self.request.follow_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
@@ -906,8 +853,7 @@ class UserMethods:
         :return:
         """
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
+        user_id = self.get_user_id(user_id)
 
         response = self.request.unfollow_user(user_id)
         response['__typename'] = "User"
@@ -920,8 +866,7 @@ class UserMethods:
         :return:
         """
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
+        user_id = self.get_user_id(user_id)
 
         response = self.request.block_user(user_id)
         response['__typename'] = "User"
@@ -934,10 +879,35 @@ class UserMethods:
         :return:
         """
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
+        user_id = self.get_user_id(user_id)
 
         response = self.request.unblock_user(user_id)
+        response['__typename'] = "User"
+        return User(self, response)
+
+    def mute_user(self, user_id):
+        """
+
+        :param user_id: User Id of the user you want to block
+        :return:
+        """
+
+        user_id = self.get_user_id(user_id)
+
+        response = self.request.mute_user(user_id)
+        response['__typename'] = "User"
+        return User(self, response)
+
+    def unmute_user(self, user_id):
+        """
+
+        :param user_id: User Id of the user you want to unblock
+        :return:
+        """
+
+        user_id = self.get_user_id(user_id)
+
+        response = self.request.unmute_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
 
@@ -988,8 +958,7 @@ class UserMethods:
         :return: Bool
         """
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
+        user_id = self.get_user_id(user_id)
 
         self.request.toggle_user_notifications(user_id, True)
 
@@ -1003,8 +972,7 @@ class UserMethods:
         :return: Bool
         """
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
+        user_id = self.get_user_id(user_id)
 
         self.request.toggle_user_notifications(user_id, False)
         return True
@@ -1063,8 +1031,7 @@ class UserMethods:
         if isinstance(list_id, TwList):
             list_id = list_id.id
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
+        user_id = self.get_user_id(user_id)
 
         response = self.request.add_list_member(list_id, user_id)
         if not response.get('data', {}).get('list', {}).get('name'):
@@ -1080,8 +1047,7 @@ class UserMethods:
         if isinstance(list_id, TwList):
             list_id = list_id.id
 
-        if isinstance(user_id, User):
-            user_id = user_id.id
+        user_id = self.get_user_id(user_id)
 
         response = self.request.remove_list_member(list_id, user_id)
         if not response.get('data', {}).get('list', {}).get('name'):

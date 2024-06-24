@@ -575,4 +575,5 @@ class SendMessage:
 
     def send(self):
         response = self._client.http.send_message(self._conv, self._text, self._file)
-        return Message(response['entries'][0]['message'], response, self._client)
+        messages = [Message(i["message"], response, self._client) for i in response.get("entries", [])]
+        return messages[0] if len(messages) == 1 else messages
