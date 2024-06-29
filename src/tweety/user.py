@@ -1,12 +1,13 @@
 import datetime
 from typing import Union, Tuple, List
-from .exceptions import ListNotFound
+from .exceptions import ListNotFound, ConversationNotFound
 from .types.inbox import Message, Conversation
 from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
                     Topic, TopicTweets, MutualFollowers, ScheduledTweets, ScheduledTweet, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
                     ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED)
+from . import constants
 
 
 @AuthRequired
@@ -365,6 +366,27 @@ class UserMethods:
         inbox = Inbox(self.user.id, self, pages, wait_time, page_types)
         return inbox.generator()
 
+    def get_conversation(self, conversation_id: Union[str, Conversation], max_id=None):
+        """
+            Get a conversation using its ID
+
+        :param conversation_id: Conversation ID
+        :param max_id: cursor from which onward you want to get messages
+        :return:
+        """
+
+        if isinstance(conversation_id, Conversation):
+            conversation_id = conversation_id.id
+
+        res = self.request.get_conversation(conversation_id, max_id)
+        _conversation_timeline = res.get("conversation_timeline", {})
+        this_conv = find_objects(_conversation_timeline, conversation_id, None, recursive=False, none_value=None)
+
+        if not this_conv:
+            raise ConversationNotFound(f"Conversation with ID={conversation_id} isn't found")
+
+        return Conversation(this_conv, _conversation_timeline, self)
+
     def add_member_to_group(
             self,
             members: Union[str, int, list],
@@ -457,9 +479,12 @@ class UserMethods:
     def send_message(
             self,
             username: Union[str, int, User],
-            text: str,
+            text: str = "",
             file: Union[str, UploadedMedia] = None,
-            in_group: bool = False  # TODO : Find better way
+            in_group: bool = False,  # TODO : Find better way,
+            reply_to_message_id: Union[int, str, Message] = None,
+            audio_only=False,
+            quote_tweet_id=None,
     ) -> Message:
 
         """
@@ -468,6 +493,9 @@ class UserMethods:
         :param file: (`str`, `UploadedMedia`) File to be sent with message too
         :param username: (`str`, `int`, `User`) Username of the user or id of group whom to send message
         :param text: (`str`) Text to be sent as message
+        :param reply_to_message_id: (`str`, `int`, `Message`) Reply to a message in conversation
+        :param audio_only: (`bool`) Message media will be sent as audio only
+        :param quote_tweet_id: (`str`, `int`, `Tweet`) Quote a Tweet in Message
         :return: .types.inbox.Message
 
         :example:
@@ -476,7 +504,10 @@ class UserMethods:
             client.send_message("elonmusk", "Hi Musk!")
         """
 
-        if not in_group:
+        if not file and not text.strip():
+            raise ValueError("'file' and 'text' argument both can't be None")
+
+        if not in_group and "-" not in str(username):
             user_id = self._get_user_id(username)
             conversation_id = create_conversation_id(self.user.id, user_id)
         else:
@@ -485,7 +516,15 @@ class UserMethods:
         if file:
             file = self._upload_media(file, "dm_image")[0].media_id
 
-        return SendMessage(self, conversation_id, text, file).send()
+        if isinstance(reply_to_message_id, Message):
+            reply_to_message_id = reply_to_message_id.id
+
+        if isinstance(quote_tweet_id, Tweet):
+            quote_tweet_id = quote_tweet_id.id
+        elif isinstance(quote_tweet_id, str):
+            quote_tweet_id = get_tweet_id(quote_tweet_id)
+
+        return SendMessage(self, conversation_id, text, file, reply_to_message_id, audio_only, quote_tweet_id).send()
 
     def create_tweet(
             self,
@@ -1166,14 +1205,42 @@ class UserMethods:
         response = self.request.pin_tweet(tweetId)
         return True if find_objects(response, "message", "post pinned successfully") else False
 
-    def _upload_media(self, files, _type="tweet_image"):
-        if not isinstance(files, list):
+    def unpin_tweet(self, tweet_id):
+        """
+            UnPin a Tweet
+
+        :param tweet_id: (`str`, `int`, `Tweet`)
+        :return: bool
+        """
+
+        tweetId = get_tweet_id(tweet_id)
+
+        response = self.request.unpin_tweet(tweetId)
+        return True if find_objects(response, "message", "post unpinned successfully") else False
+
+    def upload_media(
+            self,
+            files=Union[str, List[Union[str, tuple]]],
+            upload_type=constants.UPLOAD_TYPE_TWEET_IMAGE
+    ):
+        """
+            Upload a file to Twitter
+
+        :param files: List of files to upload
+        :param upload_type: Type of Upload ("tweet_image", "dm_image")
+        :return: List[UploadedMedia]
+        """
+
+        return self._upload_media(files, upload_type)
+
+    def _upload_media(self, files, _type=constants.UPLOAD_TYPE_TWEET_IMAGE):
+        if not isinstance(files, constants.ITERABLE_TYPES):
             files = [files]
 
         uploaded = []
 
         for file in files:
-            if isinstance(file, (tuple, list)):
+            if isinstance(file, constants.ITERABLE_TYPES):
                 file_path = file[0]
                 alt_text = file[1]
             else:
@@ -1186,6 +1253,14 @@ class UserMethods:
                 else:
                     uploaded.append(file_path)
             else:
-                uploaded.append(UploadedMedia(file_path, self, alt_text, None, _type).upload())
+                uploaded.append(
+                    UploadedMedia(
+                        file_path,
+                        self,
+                        alt_text,
+                        None,
+                        _type
+                    ).upload()
+                )
 
         return uploaded

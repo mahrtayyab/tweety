@@ -29,6 +29,8 @@ class TweetConversationFilters:
 
     PeopleYouMention = _CallableString("ByInvitation")
     PeopleYouFollow = _CallableString("Community")
+    Subscribers = _CallableString("Subscribers")
+    VerifiedUsers = _CallableString("Verified")
 
 
 class CommunityTweets:

@@ -324,7 +324,6 @@ class Tweet(_TwType):
         article_raw = article_raw.get("article_results", {}).get("result")
         return Article(self._client, article_raw)
 
-
     def _get_conversation_control(self):
         if not self._original_tweet.get('conversation_control') or self.author == self._client.me:
             return True
@@ -838,6 +837,7 @@ class Media(_TwType):
         self.id = self._raw.get("id_str")
         self.alt_text = self._raw.get("ext_alt_text")
         self.indices = self._raw.get("indices")
+        self.audio_only = self._raw.get('audio_only')
         self.media_url_https = self.direct_url = self._get_direct_url()
         self.type = self._raw.get("type")
         self.url = self._raw.get("url")
@@ -899,7 +899,7 @@ class Media(_TwType):
         return None
 
     def __repr__(self):
-        return f"Media(id={self.id}, type={self.type})"
+        return f"Media(id={self.id}, type={self.type}, audio_only={self.audio_only})"
 
     def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         url = self.best_stream().direct_url

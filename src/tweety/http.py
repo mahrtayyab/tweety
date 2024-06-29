@@ -377,8 +377,8 @@ class Request:
         response = self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
-    def send_message(self, conversation_id, text, media_id):
-        request_data = self._builder.send_message(conversation_id, text, media_id)
+    def send_message(self, conversation_id, text, media_id, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
+        request_data = self._builder.send_message(conversation_id, text, media_id, reply_to_message_id, audio_only, quote_tweet_id)
         response = self.__get_response__(**request_data)
         return response
 
@@ -627,6 +627,11 @@ class Request:
 
     def pin_tweet(self, tweet_id):
         request_data = self._builder.pin_tweet(tweet_id)
+        response = self.__get_response__(**request_data)
+        return response
+
+    def unpin_tweet(self, tweet_id):
+        request_data = self._builder.unpin_tweet(tweet_id)
         response = self.__get_response__(**request_data)
         return response
 

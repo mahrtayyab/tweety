@@ -7,6 +7,7 @@ import os.path
 import random
 import re
 import string
+import subprocess
 import sys
 import uuid
 from typing import Union
@@ -24,7 +25,6 @@ MIME_TYPES = {
     "gif": "image/gif",
     "webp": "image/webp",
     "mp4": "video/mp4",
-    "flv": "video/mp4",
     "mov": "video/quicktime",
     "m4v": "video/x-m4v"
 }
@@ -116,7 +116,7 @@ def create_query_id():
     return get_random_string(22)
 
 
-def check_if_file_is_image(file):
+def check_if_file_is_supported(file):
     if not str(file).startswith("https://") and not os.path.exists(file):
         raise ValueError("Path {} doesn't exists".format(file))
 
@@ -313,4 +313,48 @@ def unpack_proxy(proxy_dict):
         "username": username,
         "password": password
     }
+
+
+def run_command(command):
+    try:
+        if isinstance(command, (list, tuple)):
+            command = " ".join(command)
+
+        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return result.stdout.decode('utf-8')
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"Command '{command}' failed with error: {e.stderr.decode('utf-8')}")
+
+
+def encode_audio_message(input_filename, ffmpeg_path=None):
+    """
+    Encode the mp3 or audio file to Twitter Audio Message Format
+
+    :param input_filename: Filename of mp3/ogg or audio file
+    :param ffmpeg_path: Path of 'ffmpeg' binary for your platform
+    :return: str (`encoded_filename`)
+    """
+
+    if not ffmpeg_path:
+        ffmpeg_path = "ffmpeg"
+
+    _input_filename = f'"{input_filename}"'
+    _output_aac_filename = f'"{input_filename}.aac"'
+    output_filename = f'"{input_filename}.mp4"'
+
+    commands = [
+        [ffmpeg_path, "-y", "-i", _input_filename, "-c:a", "aac", "-b:a", "65k", "-ar", "44100", "-ac", "1", _output_aac_filename],
+        [ffmpeg_path, "-y", "-f", "lavfi", "-i", "color=c=black:s=854x480", "-i", _output_aac_filename, "-c:v", "libx264", "-c:a", "copy", "-shortest", output_filename]
+    ]
+
+    for command in commands:
+        run_command(command)
+
+    try:
+        # Attempt to delete aac audio file in order to save disk space
+        os.remove(_output_aac_filename)
+    except:
+        pass
+
+    return output_filename[1:-1]
 

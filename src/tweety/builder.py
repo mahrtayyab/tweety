@@ -105,6 +105,7 @@ class UrlBuilder:
     URL_AUSER_GET_MUTUAL_FRIENDS = "https://x.com/i/api/graphql/35Y2QFmL84HIisnm-FHAng/FollowersYouKnow"  # noqa
     URL_AUSER_GET_BLOCKED_USERS = "https://x.com/i/api/graphql/f87G4V_l5E9rJ-Ylw0D-yQ/BlockedAccountsAll"  # noqa
     URL_PIN_TWEET = "https://x.com/i/api/graphql/VIHsNu89pK-kW35JpHq7Xw/PinTweet"  # noqa
+    URL_UnPIN_TWEET = "https://x.com/i/api/graphql/BhKei844ypCyLYCg0nwigw/UnpinTweet"  # noqa
     URL_GET_SCHEDULED_TWEETS = "https://x.com/i/api/graphql/ITtjAzvlZni2wWXwf295Qg/FetchScheduledTweets"
     URL_DELETE_SCHEDULED_TWEETS = "https://x.com/i/api/graphql/CTOVqej0JBXAZSwkp1US0g/DeleteScheduledTweet"
 
@@ -857,7 +858,7 @@ class UrlBuilder:
             'cards_platform': 'Web-12',
             'include_cards': 1,
             'include_quote_count': True,
-            'dm_users': False,
+            'dm_users': False
         }
 
         return "POST", self._build(self.URL_AUSER_SEND_MESSAGE, urlencode(params)), json_data
@@ -875,7 +876,7 @@ class UrlBuilder:
         return "POST", url, None, data
 
     @return_with_headers
-    def send_message(self, conversation_id, text, media_id=None):
+    def send_message(self, conversation_id, text, media_id=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
         params = {
             'ext': 'mediaColor,altText,mediaStats,highlightedLabel,hasNftAvatar,voiceInfo,birdwatchPivot,superFollowMetadata,unmentionInfo,editControl',
             'include_ext_alt_text': True,
@@ -897,10 +898,20 @@ class UrlBuilder:
             'cards_platform': 'Web-12',
             'include_cards': 1,
             'include_quote_count': True,
-            'dm_users': False,
+            'dm_users': False
         }
+
         if media_id:
             json_data['media_id'] = media_id
+
+            if audio_only:
+                json_data["audio_only_media_attachment"] = True
+
+        if reply_to_message_id:
+            json_data["reply_to_dm_id"] = reply_to_message_id
+
+        if quote_tweet_id:
+            json_data["tweet_id"] = quote_tweet_id
 
         return "POST", self._build(self.URL_AUSER_SEND_MESSAGE, urlencode(params)), json_data
 
@@ -1060,24 +1071,6 @@ class UrlBuilder:
         }
 
         return "POST", self._build(self.URL_AUSER_VOTE_POOL, urlencode(params))
-
-    @return_with_headers
-    def schedule_create_tweet(self, text, files, time):
-        variables = {
-            'post_tweet_request': {
-                'auto_populate_reply_metadata': False,
-                'status': text,
-                'exclude_reply_user_ids': [],
-                'media_ids': files
-            },
-            'execute_at': time,
-        }
-        json_data = dict(
-            variables=variables,
-            queryId=utils.create_query_id()
-        )
-
-        return "POST", self.URL_AUSER_CREATE_TWEET_SCHEDULE, json_data
 
     @return_with_headers
     def set_media_metadata(self, media_id, alt_text, sensitive_tags):
@@ -1902,6 +1895,17 @@ class UrlBuilder:
         }
 
         return "POST", self.URL_PIN_TWEET, json_data
+
+    @return_with_headers
+    def unpin_tweet(self, tweet_id):
+        json_data = {
+            'variables': {
+                'tweet_id': str(tweet_id),
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_UnPIN_TWEET, json_data
 
     @return_with_headers
     def get_scheduled_tweet(self):

@@ -5,7 +5,7 @@ from http.cookiejar import MozillaCookieJar
 from httpx._content import encode_multipart_data
 from .. import constants
 from . import Gif
-from ..utils import calculate_md5, get_random_string, check_if_file_is_image
+from ..utils import calculate_md5, get_random_string, check_if_file_is_supported
 from ..exceptions import *
 
 
@@ -162,7 +162,7 @@ class UploadedMedia:
             client,
             alt_text=None,
             sensitive_media_warning=None,
-            media_category="tweet_image"
+            media_category=constants.UPLOAD_TYPE_TWEET_IMAGE
     ):
         self.media_id = None
         self._file = file_path
@@ -194,15 +194,28 @@ class UploadedMedia:
         return 0
 
     def get_mime_type(self):
-        return check_if_file_is_image(self._file)
+        return check_if_file_is_supported(self._file)
 
     @staticmethod
     def _create_boundary():
-        return bytes(f'------WebKitFormBoundary{get_random_string(16)}', "utf-8")
+        return bytes(f'----WebKitFormBoundary{get_random_string(16)}', "utf-8")
 
     def _initiate_upload(self):
         response = self._client.http.upload_media_init(self.size, self.mime_type, self._media_category, source_url=self._source_url)
-        return response['media_id_string']
+        media_id = response.get('media_id_string')
+
+        if not media_id:
+            raise ValueError(f"Unable to Initiate the Media Upload: {response}")
+
+        return media_id
+
+    @staticmethod
+    def get_multipart_headers(multipart) -> dict[str, str]:
+        content_length = multipart.get_content_length()
+        content_type = multipart.content_type
+        if content_length is None:
+            return {"transfer-encoding": "chunked", "content-type": content_type}
+        return {"content-length": str(content_length), "content-type": content_type}
 
     def _append_upload(self, media_id):
         with open(self._file, "rb") as f:
@@ -211,8 +224,9 @@ class UploadedMedia:
 
             for segment_index in range(segments):
                 boundary = self._create_boundary()
-                headers, multipart = encode_multipart_data({}, {"media": ('blob', f.read(self.FILE_CHUNK_SIZE), "application/octet-stream")}, boundary)
-                headers.update({"X-Media-Type": self.mime_type})
+                _, multipart = encode_multipart_data({}, {"media": ('blob', f.read(self.FILE_CHUNK_SIZE), "application/octet-stream")}, boundary)
+                headers = self.get_multipart_headers(multipart)
+                headers.update({"x-media-type": self.mime_type})
                 self._client.http.upload_media_append(media_id, multipart, headers, segment_index)
 
     def set_metadata(self):

@@ -1,6 +1,6 @@
 import re
 import time
-from .twDataTypes import User, Media, URL, Hashtag, ShortUser, Symbol
+from .twDataTypes import User, Media, URL, Hashtag, ShortUser, Symbol, Tweet
 from ..constants import INBOX_PAGE_TYPES, INBOX_PAGE_TYPE_UNTRUSTED, INBOX_PAGE_TYPE_TRUSTED
 from ..utils import parse_time, parse_wait_time, get_next_index
 from ..exceptions import TwitterError
@@ -353,8 +353,8 @@ class Conversation(dict):
             time.sleep(parse_wait_time(wait_time))
         return messages
 
-    def send_message(self, text, file=None):
-        return self._client.send_message(self.id, text=text, file=file, in_group=self.type == self.TYPE_GROUP_DM)
+    def send_message(self, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
+        return self._client.send_message(self.id, text=text, file=file, in_group=self.type == self.TYPE_GROUP_DM, reply_to_message_id=reply_to_message_id, audio_only=audio_only, quote_tweet_id=quote_tweet_id)
 
     def __eq__(self, other):
         if isinstance(other, Conversation):
@@ -499,6 +499,8 @@ class Message(dict):
         self.symbols = self['symbols'] = self._get_symbols()
         self.hashtags = self['hashtags'] = self._get_hashtags()
         self.user_mentions = self['user_mentions'] = self._get_user_mentions()
+        self.shared_tweet = self._get_shared_tweet()
+        self.reply_to = self._get_reply_to()
 
     def _get_urls(self):
         return [URL(self._client, i) for i in self._entities.get('urls', [])]
@@ -513,7 +515,12 @@ class Message(dict):
         return [ShortUser(self._client, i) for i in self._entities.get('user_mentions', [])]
 
     def _get_message_data(self, dataKey, default=None):
-        return self._raw['message_data'].get(dataKey, default)
+        message_data = self._raw.get("message_data")
+
+        if not message_data:
+            message_data = self._raw
+
+        return message_data.get(dataKey, default)
 
     def get_recipient(self, target):
         user = self._get_message_data(target)
@@ -535,6 +542,34 @@ class Message(dict):
             return re.sub(r"https://t\.co/\S+", "", text).strip()
 
         return ""
+
+    def _get_reply_to(self):
+        reply_data = self._get_message_data("reply_data")
+        if not reply_data:
+            return None
+
+        return Message(reply_data, self._raw, self._client)
+
+    def _get_shared_tweet(self):
+        attachment = self._get_message_data("attachment")
+
+        if not attachment:
+            return None
+
+        this_tweet = attachment.get("tweet", {})
+        this_status = this_tweet.get("status", {})
+        this_user = this_status.get("user")
+        rest_id = this_tweet.get("id")
+
+        if not this_tweet:
+            return None
+
+        this_status["__typename"] = "Tweet"
+        this_user["__typename"] = "User"
+        this_status["core"] = this_user
+        this_status["rest_id"] = rest_id
+
+        return Tweet(self._client, this_status)
 
     def _get_media(self):
         media = None
@@ -567,13 +602,16 @@ class Message(dict):
 
 
 class SendMessage:
-    def __init__(self, client, conversation_id, text, file=None):
+    def __init__(self, client, conversation_id, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
         self._conv = conversation_id
         self._text = text
         self._client = client
         self._file = file
+        self._audio_only = audio_only
+        self._reply_to_message_id = reply_to_message_id
+        self._quote_tweet_id = quote_tweet_id
 
     def send(self):
-        response = self._client.http.send_message(self._conv, self._text, self._file)
+        response = self._client.http.send_message(self._conv, self._text, self._file, self._reply_to_message_id, self._audio_only, self._quote_tweet_id)
         messages = [Message(i["message"], response, self._client) for i in response.get("entries", [])]
         return messages[0] if len(messages) == 1 else messages

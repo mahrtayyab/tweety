@@ -30,6 +30,18 @@ class TwitterError(Exception):
         super().__init__(self.message)
 
 
+class ConversationNotFound(TwitterError):
+    """
+        Exception raised when conversation is not Found.
+
+        Attributes:
+            message -- explanation of the error
+        """
+
+    def __init__(self, error_code=404, error_name="ConversationNotFound", response=None, message="Conversation Not Found", **kw):
+        super().__init__(error_code, error_name, response, message)
+
+
 class UserNotFound(TwitterError):
     """Exception raised when user isn't found.
 

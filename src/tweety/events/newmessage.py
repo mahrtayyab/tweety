@@ -25,8 +25,8 @@ class NewMessageUpdate:
             self.id = self.message.id
             self.media = self.message.media if hasattr(self.message, "media") else None
 
-        def respond(self, text, file=None):
-            return self.conversation.send_message(text, file)
+        def respond(self, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
+            return self.conversation.send_message(text, file, reply_to_message_id, audio_only, quote_tweet_id)
 
         def __repr__(self):
             return "NewMessage(id={}, sender={}, receiver={}, time={}, text={})".format(
