@@ -222,13 +222,14 @@ class Request:
 
     def verify_cookies(self):
 
-        data = self._builder.aUser_settings()
+        """data = self._builder.aUser_settings()
         response = self.__get_response__(**data)
 
         if not response.get("screen_name"):
             raise InvalidCredentials(None, None, None)
 
-        self.username = response.get("screen_name")
+        self.username = response.get("screen_name")"""
+        pass
 
     def get_user(self, username=None):
         if not username:
