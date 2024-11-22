@@ -18,15 +18,17 @@ pip install https://github.com/mahrtayyab/tweety/archive/main.zip --upgrade
 
 ## A Quick Example:
 ```python
-  from tweety import Twitter
-  
-  app = Twitter("session")
-  
-# assuming app is authenticated class instance
-  
-  all_tweets = app.get_tweets("elonmusk")
-  for tweet in all_tweets:
-      print(tweet)
+    from tweety import TwitterAsync
+    import asyncio
+    
+    async def main():
+    
+        app = TwitterAsync("session")  
+        all_tweets = await app.get_tweets("elonmusk")
+        for tweet in all_tweets:
+            print(tweet)
+
+    asyncio.run(main())
 ```
 
 > [!IMPORTANT] 

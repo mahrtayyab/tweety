@@ -2,7 +2,7 @@ import datetime
 from typing import Union, Tuple, List
 from .exceptions import ListNotFound, ConversationNotFound
 from .types.inbox import Message, Conversation
-from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id
+from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id, async_list
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
                     Topic, TopicTweets, MutualFollowers, ScheduledTweets, ScheduledTweet, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
@@ -23,16 +23,16 @@ class UserMethods:
 
     @property
     def rate_limits(self):
-        return self.request._limits
+        return self.http._limits
 
-    def get_scheduled_tweets(self):
+    async def get_scheduled_tweets(self):
         """
         Get Tweets scheduled by authenticated user
         :return: .types.usertweet.ScheduledTweets
         """
         return ScheduledTweets(self)
 
-    def delete_scheduled_tweet(self, tweet_id):
+    async def delete_scheduled_tweet(self, tweet_id):
         """
         Delete a Scheduled Tweet
 
@@ -43,10 +43,10 @@ class UserMethods:
         if isinstance(tweet_id, ScheduledTweet):
             tweet_id = tweet_id.id
 
-        res = self.request.delete_scheduled_tweet(tweet_id)
+        res = await self.http.delete_scheduled_tweet(tweet_id)
         return True if find_objects(res, "scheduledtweet_delete", "Done") else False
 
-    def get_home_timeline(
+    async def get_home_timeline(
             self,
             timeline_type: str = HOME_TIMELINE_TYPE_FOR_YOU,
             pages: int = 1,
@@ -63,11 +63,9 @@ class UserMethods:
         """
 
         timeline = SelfTimeline(self.user.id, self, timeline_type, pages, wait_time, cursor)
-        list(timeline.generator())
+        return await async_list(timeline)
 
-        return timeline
-
-    def iter_home_timeline(
+    async def iter_home_timeline(
             self,
             timeline_type: str = HOME_TIMELINE_TYPE_FOR_YOU,
             pages: int = 1,
@@ -85,9 +83,10 @@ class UserMethods:
 
         timeline = SelfTimeline(self.user.id, self, timeline_type, pages, wait_time, cursor)
 
-        return timeline.generator()
+        async for result_tuple in timeline.generator():
+            yield result_tuple
 
-    def get_tweet_likes(
+    async def get_tweet_likes(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -106,10 +105,9 @@ class UserMethods:
         tweetId = get_tweet_id(tweet_id)
 
         likes = TweetLikes(tweetId, self, pages, wait_time, cursor)
-        list(likes.generator())
-        return likes
+        return await async_list(likes)
 
-    def iter_tweet_likes(
+    async def iter_tweet_likes(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -129,9 +127,10 @@ class UserMethods:
 
         likes = TweetLikes(tweetId, self, pages, wait_time, cursor)
 
-        return likes.generator()
+        async for result_tuple in likes.generator():
+            yield result_tuple
 
-    def get_tweet_retweets(
+    async def get_tweet_retweets(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -150,10 +149,9 @@ class UserMethods:
         tweetId = get_tweet_id(tweet_id)
 
         retweets = TweetRetweets(tweetId, self, pages, wait_time, cursor)
-        list(retweets.generator())
-        return retweets
+        return await async_list(retweets)
 
-    def iter_tweet_retweets(
+    async def iter_tweet_retweets(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -173,9 +171,10 @@ class UserMethods:
 
         retweets = TweetRetweets(tweetId, self, pages, wait_time, cursor)
 
-        return retweets.generator()
+        async for result_tuple in retweets.generator():
+            yield result_tuple
 
-    def get_tweet_quotes(
+    async def get_tweet_quotes(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -193,9 +192,9 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        return self.search(f"quoted_tweet_id:{tweetId}", pages=pages, wait_time=wait_time, cursor=cursor)
+        return await self.search(f"quoted_tweet_id:{tweetId}", pages=pages, wait_time=wait_time, cursor=cursor)
 
-    def iter_tweet_quotes(
+    async def iter_tweet_quotes(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -213,9 +212,9 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        return self.iter_search(f"quoted_tweet_id:{tweetId}", pages=pages, wait_time=wait_time, cursor=cursor)
+        return await self.iter_search(f"quoted_tweet_id:{tweetId}", pages=pages, wait_time=wait_time, cursor=cursor)
 
-    def get_mentions(
+    async def get_mentions(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -230,11 +229,9 @@ class UserMethods:
         """
 
         mentions = Mention(self.user.id, self, pages, wait_time, cursor)
-        list(mentions.generator())
+        return await async_list(mentions)
 
-        return mentions
-
-    def iter_mentions(
+    async def iter_mentions(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -250,9 +247,10 @@ class UserMethods:
 
         mentions = Mention(self.user.id, self, pages, wait_time, cursor)
 
-        return mentions.generator()
+        async for result_tuple in mentions.generator():
+            yield result_tuple
 
-    def get_bookmarks(
+    async def get_bookmarks(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -267,11 +265,9 @@ class UserMethods:
         """
 
         bookmarks = Bookmarks(self.user.id, self, pages, wait_time, cursor)
-        list(bookmarks.generator())
+        return await async_list(bookmarks)
 
-        return bookmarks
-
-    def iter_bookmarks(
+    async def iter_bookmarks(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -287,9 +283,10 @@ class UserMethods:
 
         bookmarks = Bookmarks(self.user.id, self, pages, wait_time, cursor)
 
-        return bookmarks.generator()
+        async for result_tuple in bookmarks.generator():
+            yield result_tuple
 
-    def get_tweet_notifications(
+    async def get_tweet_notifications(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -306,11 +303,9 @@ class UserMethods:
         """
 
         notifications = TweetNotifications(self.me.id, self, pages, wait_time, cursor)
-        list(notifications.generator())
+        return await async_list(notifications)
 
-        return notifications
-
-    def iter_tweet_notifications(
+    async def iter_tweet_notifications(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -327,9 +322,10 @@ class UserMethods:
 
         notifications = TweetNotifications(self.me.id, self, pages, wait_time, cursor)
 
-        return notifications.generator()
+        async for result_tuple in notifications.generator():
+            yield result_tuple
 
-    def get_inbox(
+    async def get_inbox(
             self,
             user_id: Union[int, str, User] = None,
             pages: int = 1,
@@ -345,16 +341,15 @@ class UserMethods:
         """
 
         inbox = Inbox(self.user.id, self, pages, wait_time, page_types)
-        list(inbox.generator())
-        return inbox
+        return await async_list(inbox)
 
-    def iter_inbox(
+    async def iter_inbox(
             self,
             user_id: Union[int, str, User] = None,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             page_types: Union[str, List[str]] = INBOX_PAGE_TYPE_TRUSTED
-    ) -> Inbox:
+    ):
         """
         :param user_id : (`str`, `int`, `User`) Not Implemented
         :param pages: (`int`) The number of pages to get
@@ -364,9 +359,10 @@ class UserMethods:
         """
 
         inbox = Inbox(self.user.id, self, pages, wait_time, page_types)
-        return inbox.generator()
+        async for result_tuple in inbox.generator():
+            yield result_tuple
 
-    def get_conversation(self, conversation_id: Union[str, Conversation], max_id=None):
+    async def get_conversation(self, conversation_id: Union[str, Conversation], max_id=None):
         """
             Get a conversation using its ID
 
@@ -378,7 +374,7 @@ class UserMethods:
         if isinstance(conversation_id, Conversation):
             conversation_id = conversation_id.id
 
-        res = self.request.get_conversation(conversation_id, max_id)
+        res = await self.http.get_conversation(conversation_id, max_id)
         _conversation_timeline = res.get("conversation_timeline", {})
         this_conv = find_objects(_conversation_timeline, conversation_id, None, recursive=False, none_value=None)
 
@@ -387,7 +383,7 @@ class UserMethods:
 
         return Conversation(this_conv, _conversation_timeline, self)
 
-    def add_member_to_group(
+    async def add_member_to_group(
             self,
             members: Union[str, int, list],
             group_id: Union[str, int, Conversation]
@@ -396,13 +392,14 @@ class UserMethods:
         members = [members] if not isinstance(members, list) else members
         member_ids = []
         for member in members:
-            member_ids.append(self.get_user_id(member))
+            user_id = await self.get_user_id(member)
+            member_ids.append(user_id)
 
         group_id = group_id.id if isinstance(group_id, Conversation) else group_id
 
-        return self.request.add_group_member(member_ids, group_id)
+        return await self.http.add_group_member(member_ids, group_id)
 
-    def create_conversation_group(
+    async def create_conversation_group(
             self,
             participants: List[Union[str, int, User, ShortUser]],
             first_message: str,
@@ -420,23 +417,23 @@ class UserMethods:
         participants_id = []
         for participant in participants:
             try:
-                user_id = self._get_user_id(participant)
+                user_id = await self.get_user_id(participant)
                 participants_id.append(str(user_id))
             except:
                 pass
 
         participants_id = ",".join(participants_id)
-        response = self.request.create_conversation_group(participants_id, first_message)
+        response = await self.http.create_conversation_group(participants_id, first_message)
         new_conversation = list(response["conversations"].values())[0]
         conversation = Conversation(new_conversation, response, self)
 
         if name:
-            self.update_conversation_group_name(conversation, name)
+            await self.update_conversation_group_name(conversation, name)
             conversation.name = name
 
         return conversation
 
-    def update_conversation_group_name(
+    async def update_conversation_group_name(
             self,
             conversation_id: Union[str, int, Conversation],
             name: str
@@ -452,10 +449,10 @@ class UserMethods:
         if isinstance(conversation_id, Conversation):
             conversation_id = conversation_id.id
 
-        self.request.update_conversation_name(conversation_id, name)
+        await self.http.update_conversation_name(conversation_id, name)
         return True
 
-    def update_conversation_group_avatar(
+    async def update_conversation_group_avatar(
             self,
             conversation_id: Union[str, int, Conversation],
             file: Union[str, UploadedMedia]
@@ -471,12 +468,13 @@ class UserMethods:
         if isinstance(conversation_id, Conversation):
             conversation_id = conversation_id.id
 
-        file = self._upload_media(file)[0].media_id
+        file = await self._upload_media(file)
+        file = file[0].media_id
 
-        self.request.update_conversation_avatar(conversation_id, file)
+        await self.http.update_conversation_avatar(conversation_id, file)
         return True
 
-    def send_message(
+    async def send_message(
             self,
             username: Union[str, int, User],
             text: str = "",
@@ -508,13 +506,14 @@ class UserMethods:
             raise ValueError("'file' and 'text' argument both can't be None")
 
         if not in_group and "-" not in str(username):
-            user_id = self._get_user_id(username)
+            user_id = await self.get_user_id(username)
             conversation_id = create_conversation_id(self.user.id, user_id)
         else:
             conversation_id = username
 
         if file:
-            file = self._upload_media(file, "dm_image")[0].media_id
+            file = await self._upload_media(file, "dm_image")
+            file = file[0].media_id
 
         if isinstance(reply_to_message_id, Message):
             reply_to_message_id = reply_to_message_id.id
@@ -524,9 +523,10 @@ class UserMethods:
         elif isinstance(quote_tweet_id, str):
             quote_tweet_id = get_tweet_id(quote_tweet_id)
 
-        return SendMessage(self, conversation_id, text, file, reply_to_message_id, audio_only, quote_tweet_id).send()
+        message = SendMessage(self, conversation_id, text, file, reply_to_message_id, audio_only, quote_tweet_id)
+        return await message.send()
 
-    def create_tweet(
+    async def create_tweet(
             self,
             text: str = "",
             files: List[Union[str, UploadedMedia, Tuple[str, str]]] = None,
@@ -556,7 +556,7 @@ class UserMethods:
             raise ValueError("'files' and 'text' argument both can't be None")
 
         if files:
-            files = self._upload_media(files)
+            files = await self._upload_media(files)
         else:
             files = []
 
@@ -565,7 +565,7 @@ class UserMethods:
 
         if quote:
             if isinstance(quote, int) or str(quote).isdigit():
-                quote = self.tweet_detail(quote)
+                quote = await self.tweet_detail(quote)
 
             if isinstance(quote, Tweet):
                 quote = quote.url
@@ -578,11 +578,11 @@ class UserMethods:
         if place and isinstance(place, Place):
             place = place.id
 
-        response = self.request.create_tweet(text, files, filter_, reply_to, quote, pool, place, batch_compose)
+        response = await self.http.create_tweet(text, files, filter_, reply_to, quote, pool, place, batch_compose)
         response['data']['create_tweet']['tweet_results']['result']['__typename'] = "Tweet"
         return Tweet(self, response, response)
 
-    def schedule_tweet(
+    async def schedule_tweet(
             self,
             date: datetime.datetime,
             text: str = "",
@@ -605,7 +605,7 @@ class UserMethods:
             raise ValueError("'files' and 'text' argument both can't be None")
 
         if files:
-            files = self._upload_media(files)
+            files = await self._upload_media(files)
         else:
             files = []
 
@@ -620,11 +620,11 @@ class UserMethods:
         elif isinstance(date, (float, str)):
             date = int(date)
 
-        response = self.request.schedule_tweet(date, text, files, filter_, reply_to, place)
+        response = await self.http.schedule_tweet(date, text, files, filter_, reply_to, place)
         rest_id = find_objects(response, "rest_id", None)
         return rest_id
 
-    def iter_lists(
+    async def iter_lists(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -639,9 +639,10 @@ class UserMethods:
         """
         lists = Lists(self.user.id, self, pages, wait_time, cursor)
 
-        return lists.generator()
+        async for result_tuple in lists.generator():
+            yield result_tuple
 
-    def get_lists(
+    async def get_lists(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -656,10 +657,9 @@ class UserMethods:
         """
 
         lists = Lists(self.user.id, self, pages, wait_time, cursor)
-        list(lists.generator())
-        return lists
+        return await async_list(lists)
 
-    def iter_list_member(
+    async def iter_list_member(
             self,
             list_id: Union[str, int, List],
             pages: int = 1,
@@ -680,9 +680,10 @@ class UserMethods:
 
         lists = ListMembers(list_id, self, pages, wait_time, cursor)
 
-        return lists.generator()
+        async for result_tuple in lists.generator():
+            yield result_tuple
 
-    def get_list_member(
+    async def get_list_member(
             self,
             list_id: Union[str, int, List],
             pages: int = 1,
@@ -702,10 +703,9 @@ class UserMethods:
             list_id = list_id.id
 
         lists = ListMembers(list_id, self, pages, wait_time, cursor)
-        list(lists.generator())
-        return lists
+        return await async_list(lists)
 
-    def iter_list_tweets(
+    async def iter_list_tweets(
             self,
             list_id: Union[str, int, List],
             pages: int = 1,
@@ -726,9 +726,10 @@ class UserMethods:
 
         lists = ListTweets(list_id, self, pages, wait_time, cursor)
 
-        return lists.generator()
+        async for result_tuple in lists.generator():
+            yield result_tuple
 
-    def get_list_tweets(
+    async def get_list_tweets(
             self,
             list_id: Union[str, int, List],
             pages: int = 1,
@@ -748,10 +749,9 @@ class UserMethods:
             list_id = list_id.id
 
         lists = ListTweets(list_id, self, pages, wait_time, cursor)
-        list(lists.generator())
-        return lists
+        return await async_list(lists)
 
-    def get_mutual_followers(
+    async def get_mutual_followers(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -769,15 +769,13 @@ class UserMethods:
         :return: .types.follow.UserFollowers
         """
 
-        user_id = self.get_user_id(username)
+        user_id = await self.get_user_id(username)
 
         mutualFollowers = MutualFollowers(user_id, self, pages, wait_time, cursor)
 
-        list(mutualFollowers.generator())
+        return await async_list(mutualFollowers)
 
-        return mutualFollowers
-
-    def iter_mutual_followers(
+    async def iter_mutual_followers(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -795,13 +793,14 @@ class UserMethods:
         :return: .types.follow.UserFollowers
         """
 
-        user_id = self.get_user_id(username)
+        user_id = await self.get_user_id(username)
 
         mutualFollowers = MutualFollowers(user_id, self, pages, wait_time, cursor)
 
-        return mutualFollowers.generator()
+        async for result_tuple in mutualFollowers.generator():
+            yield result_tuple
 
-    def like_tweet(self, tweet_id: Union[str, int, Tweet]):
+    async def like_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
@@ -810,10 +809,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.like_tweet(tweetId)
+        response = await self.http.like_tweet(tweetId)
         return True if find_objects(response, "favorite_tweet", "Done") else False
 
-    def unlike_tweet(self, tweet_id: Union[str, int, Tweet]):
+    async def unlike_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
@@ -822,10 +821,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.unlike_tweet(tweetId)
+        response = await self.http.unlike_tweet(tweetId)
         return True if find_objects(response, "unfavorite_tweet", "Done") else False
 
-    def retweet_tweet(self, tweet_id: Union[str, int, Tweet]):
+    async def retweet_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
@@ -834,10 +833,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.retweet_tweet(tweetId)
+        response = await self.http.retweet_tweet(tweetId)
         return True if find_objects(response, "rest_id", None) else False
 
-    def delete_retweet(self, tweet_id: Union[str, int, Tweet]):
+    async def delete_retweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to reply to
@@ -846,10 +845,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.delete_retweet(tweetId)
+        response = await self.http.delete_retweet(tweetId)
         return True if find_objects(response, "rest_id", None) else False
 
-    def bookmark_tweet(self, tweet_id: Union[str, int, Tweet]):
+    async def bookmark_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet to be bookmarked
@@ -858,10 +857,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.bookmark_tweet(tweetId)
+        response = await self.http.bookmark_tweet(tweetId)
         return True if find_objects(response, "tweet_bookmark_put", "Done") else False
 
-    def delete_bookmark_tweet(self, tweet_id: Union[str, int, Tweet]):
+    async def delete_bookmark_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str` | `int` | `Tweet`) ID of tweet which was bookmarked and have to be removed
@@ -870,87 +869,87 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.delete_bookmark_tweet(tweetId)
+        response = await self.http.delete_bookmark_tweet(tweetId)
         return True if find_objects(response, "tweet_bookmark_delete", "Done") else False
 
-    def follow_user(self, user_id):
+    async def follow_user(self, user_id):
         """
 
         :param user_id: User Id of the user you want to follow
         :return:
         """
 
-        user_id = self.get_user_id(user_id)
-        response = self.request.follow_user(user_id)
+        user_id = await self.get_user_id(user_id)
+        response = await self.http.follow_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
 
-    def unfollow_user(self, user_id):
+    async def unfollow_user(self, user_id):
         """
 
         :param user_id: User Id of the user you want to unfollow
         :return:
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        response = self.request.unfollow_user(user_id)
+        response = await self.http.unfollow_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
 
-    def block_user(self, user_id):
+    async def block_user(self, user_id):
         """
 
         :param user_id: User Id of the user you want to block
         :return:
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        response = self.request.block_user(user_id)
+        response = await self.http.block_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
     
-    def unblock_user(self, user_id):
+    async def unblock_user(self, user_id):
         """
 
         :param user_id: User Id of the user you want to unblock
         :return:
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        response = self.request.unblock_user(user_id)
+        response = await self.http.unblock_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
 
-    def mute_user(self, user_id):
+    async def mute_user(self, user_id):
         """
 
         :param user_id: User Id of the user you want to block
         :return:
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        response = self.request.mute_user(user_id)
+        response = await self.http.mute_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
 
-    def unmute_user(self, user_id):
+    async def unmute_user(self, user_id):
         """
 
         :param user_id: User Id of the user you want to unblock
         :return:
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        response = self.request.unmute_user(user_id)
+        response = await self.http.unmute_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
 
-    def pool_vote(self, poll_id, tweet, choice, poll_name=None):
+    async def pool_vote(self, poll_id, tweet, choice, poll_name=None):
         """
 
         :param poll_id: (`str`, `Poll`) ID OR URI of the Poll , Or the `Poll` Object
@@ -973,11 +972,11 @@ class UserMethods:
         if isinstance(choice, Choice):
             choice = choice.key
 
-        response = self.request.poll_vote(poll_id, poll_name, tweet, choice)
+        response = await self.http.poll_vote(poll_id, poll_name, tweet, choice)
         response['card']['legacy'] = response['card']
         return Poll(self, response['card'])
 
-    def delete_tweet(self, tweet_id):
+    async def delete_tweet(self, tweet_id):
         """
 
         :param tweet_id: (`str`, `int`, Tweet) Tweet to be deleted
@@ -986,10 +985,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.delete_tweet(tweetId)
+        response = await self.http.delete_tweet(tweetId)
         return True if response.get('data', {}).get('delete_tweet') else False
 
-    def enable_user_notification(self, user_id):
+    async def enable_user_notification(self, user_id):
         """
         Enable user notification on new tweet from specific user
 
@@ -997,13 +996,13 @@ class UserMethods:
         :return: Bool
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        self.request.toggle_user_notifications(user_id, True)
+        await self.http.toggle_user_notifications(user_id, True)
 
         return True
 
-    def disable_user_notification(self, user_id):
+    async def disable_user_notification(self, user_id):
         """
         Disable user notification on new tweet from specific user
 
@@ -1011,25 +1010,25 @@ class UserMethods:
         :return: Bool
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        self.request.toggle_user_notifications(user_id, False)
+        await self.http.toggle_user_notifications(user_id, False)
         return True
 
-    def get_list(
+    async def get_list(
             self,
             list_id: Union[str, int, TwList]
     ):
         if isinstance(list_id, TwList):
             return list_id
 
-        response = self.request.get_list(list_id)
+        response = await self.http.get_list(list_id)
         if not response.get('data', {}).get('list', {}).get('name'):
             raise ListNotFound(404, "ListNotFound", None)
 
         return TwList(self, response['data'])
 
-    def create_list(
+    async def create_list(
             self,
             name: str,
             description: str = "",
@@ -1043,10 +1042,10 @@ class UserMethods:
         :return: .types.twDataTypes.List
         """
 
-        response = self.request.create_list(name, description, is_private)
+        response = await self.http.create_list(name, description, is_private)
         return TwList(self, response['data'])
 
-    def delete_list(
+    async def delete_list(
             self,
             list_id: Union[str, int, TwList],
     ):
@@ -1059,10 +1058,10 @@ class UserMethods:
         if isinstance(list_id, TwList):
             list_id = list_id.id
 
-        response = self.request.delete_list(list_id)
+        response = await self.http.delete_list(list_id)
         return True if response.get('data', {}).get('list_delete', '') == 'Done' else False
 
-    def add_list_member(
+    async def add_list_member(
             self,
             list_id: Union[str, int, TwList],
             user_id: Union[str, int, User],
@@ -1070,15 +1069,15 @@ class UserMethods:
         if isinstance(list_id, TwList):
             list_id = list_id.id
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        response = self.request.add_list_member(list_id, user_id)
+        response = await self.http.add_list_member(list_id, user_id)
         if not response.get('data', {}).get('list', {}).get('name'):
             raise ListNotFound(404, "ListNotFound", None)
 
         return TwList(self, response['data'])
 
-    def remove_list_member(
+    async def remove_list_member(
             self,
             list_id: Union[str, int, TwList],
             user_id: Union[str, int, User],
@@ -1086,25 +1085,25 @@ class UserMethods:
         if isinstance(list_id, TwList):
             list_id = list_id.id
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
-        response = self.request.remove_list_member(list_id, user_id)
+        response = await self.http.remove_list_member(list_id, user_id)
         if not response.get('data', {}).get('list', {}).get('name'):
             raise ListNotFound(404, "ListNotFound", None)
 
         return TwList(self, response['data'])
 
-    def get_topic(self, topic_id):
+    async def get_topic(self, topic_id):
         """
 
         :param topic_id: ID of the Topic
         :return:
         """
 
-        response = self.request.get_topic_landing_page(topic_id)
+        response = await self.http.get_topic_landing_page(topic_id)
         return Topic(self, response)
 
-    def get_topic_tweets(
+    async def get_topic_tweets(
             self,
             topic_id: Union[str, int, Topic],
             pages: int = 1,
@@ -1125,10 +1124,9 @@ class UserMethods:
             topic_id = topic_id.id
 
         topic_tweets = TopicTweets(topic_id, self, pages, cursor, wait_time)
-        list(topic_tweets.generator())
-        return topic_tweets
+        return await async_list(topic_tweets)
 
-    def iter_topic_tweets(
+    async def iter_topic_tweets(
             self,
             topic_id: Union[str, int, Topic],
             pages: int = 1,
@@ -1149,13 +1147,14 @@ class UserMethods:
             topic_id = topic_id.id
 
         topic_tweets = TopicTweets(topic_id, self, pages, cursor, wait_time)
-        return topic_tweets.generator()
+        async for result_tuple in topic_tweets.generator():
+            yield result_tuple
 
-    def get_tweet_analytics(self, tweet_id):
-        response = self.request.get_tweet_analytics(tweet_id)
+    async def get_tweet_analytics(self, tweet_id):
+        response = await self.http.get_tweet_analytics(tweet_id)
         return TweetAnalytics(self, response)
 
-    def get_blocked_users(
+    async def get_blocked_users(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -1171,10 +1170,9 @@ class UserMethods:
         """
 
         blocked_users = BlockedUsers(self, pages, wait_time, cursor)
-        list(blocked_users.generator())
-        return blocked_users
+        return await async_list(blocked_users)
 
-    def iter_blocked_users(
+    async def iter_blocked_users(
             self,
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
@@ -1190,9 +1188,10 @@ class UserMethods:
         """
 
         blocked_users = BlockedUsers(self, pages, wait_time, cursor)
-        return blocked_users.generator()
+        async for result_tuple in blocked_users.generator():
+            yield result_tuple
 
-    def pin_tweet(self, tweet_id):
+    async def pin_tweet(self, tweet_id):
         """
             Pin a Tweet
 
@@ -1202,10 +1201,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.pin_tweet(tweetId)
+        response = await self.http.pin_tweet(tweetId)
         return True if find_objects(response, "message", "post pinned successfully") else False
 
-    def unpin_tweet(self, tweet_id):
+    async def unpin_tweet(self, tweet_id):
         """
             UnPin a Tweet
 
@@ -1215,10 +1214,10 @@ class UserMethods:
 
         tweetId = get_tweet_id(tweet_id)
 
-        response = self.request.unpin_tweet(tweetId)
+        response = await self.http.unpin_tweet(tweetId)
         return True if find_objects(response, "message", "post unpinned successfully") else False
 
-    def upload_media(
+    async def upload_media(
             self,
             files=Union[str, List[Union[str, tuple]]],
             upload_type=constants.UPLOAD_TYPE_TWEET_IMAGE
@@ -1231,9 +1230,9 @@ class UserMethods:
         :return: List[UploadedMedia]
         """
 
-        return self._upload_media(files, upload_type)
+        return await self._upload_media(files, upload_type)
 
-    def _upload_media(self, files, _type=constants.UPLOAD_TYPE_TWEET_IMAGE):
+    async def _upload_media(self, files, _type=constants.UPLOAD_TYPE_TWEET_IMAGE):
         if not isinstance(files, constants.ITERABLE_TYPES):
             files = [files]
 
@@ -1249,18 +1248,18 @@ class UserMethods:
 
             if isinstance(file_path, UploadedMedia):
                 if file_path.media_id is None:
-                    uploaded.append(file_path.upload())
+                    uploaded.append(await file_path.upload())
                 else:
                     uploaded.append(file_path)
             else:
-                uploaded.append(
-                    UploadedMedia(
+                file = UploadedMedia(
                         file_path,
                         self,
                         alt_text,
                         None,
                         _type
-                    ).upload()
                 )
+                await file.upload()
+                uploaded.append(file)
 
         return uploaded

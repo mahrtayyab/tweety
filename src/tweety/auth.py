@@ -10,7 +10,7 @@ from . import constants
 
 class AuthMethods:
 
-    def connect(self):
+    async def connect(self):
         """
         This method will be used to connect to already saved session in disk
         """
@@ -19,15 +19,14 @@ class AuthMethods:
             return
 
         self.request.cookies = self.session.cookies_dict()
-        self.request.verify_cookies()
-        self.user = self.get_user_info(self.request.username)
+        await self.request.verify_cookies()
+        self.user = await self.get_user_info(self.request.username)
         self.request.set_user(self.user)
-        self.session.set_session_user(self.user)
-        self._is_connected = True
+        await self.session.save_session(self.cookies, self.user)
         self.is_user_authorized = True
         return self.user
 
-    def start(
+    async def start(
             self,
             username=None,
             password=None,
@@ -47,13 +46,6 @@ class AuthMethods:
         :return: .types.twDataTypes.User (the user which is authenticated)
         """
 
-        if self.session.logged_in:
-            try:
-                return self.connect()
-            except InvalidCredentials:
-                self.request.cookies = None
-                pass
-
         username = input('Please enter the Username: ') if not username else username
         password = getpass.getpass('Please enter your password: ') if not password else password
 
@@ -61,7 +53,7 @@ class AuthMethods:
         _extra_once = False
         while not self.logged_in:
             try:
-                return self.sign_in(username, password, extra=_extra)
+                return await self.sign_in(username, password, extra=_extra)
             except ActionRequired as e:
                 _extra = input(f"\rAction Required :> {str(e.message)} : ")
                 _extra_once = True
@@ -71,7 +63,7 @@ class AuthMethods:
                 else:
                     raise ask_info
 
-    def sign_in(
+    async def sign_in(
             self,
             username,
             password,
@@ -92,7 +84,7 @@ class AuthMethods:
 
         if self.session.logged_in and self.session.user['username'].lower() == username.lower():
             try:
-                return self.connect()
+                return await self.connect()
             except InvalidCredentials:
                 self.request.set_cookies("", False)
                 pass
@@ -108,9 +100,9 @@ class AuthMethods:
         if not self._login_flow_state:
             self._login_flow_state = self._login_flow.initial_state
 
-        return self._login()
+        return await self._login()
 
-    def load_cookies(
+    async def load_cookies(
             self,
             cookies: Union[str, dict, MozillaCookieJar]
     ):
@@ -120,23 +112,22 @@ class AuthMethods:
         :param cookies:  (`str`, `dict`, `MozillaCookieJar`) The Cookies to load
         :return: .types.twDataTypes.User (the user which is authenticated)
         """
-        self.cookies = Cookies(cookies, False)
-        self.logged_in = True
-        self.session.save_session(self.cookies)
-        return self.connect()
+        self.cookies = Cookies(cookies)
+        await self.session.save_session(self.cookies, None)
+        return await self.connect()
 
-    def load_auth_token(self, auth_token):
+    async def load_auth_token(self, auth_token):
         URL = "https://x.com/i/api/1.1/account/update_profile.json"
         temp_cookie = {"auth_token": auth_token}
         temp_headers = {'authorization': constants.DEFAULT_BEARER_TOKEN}
-        res = self.request.session.post(URL, cookies=temp_cookie, headers=temp_headers)
+        res = await self.request.session.post(URL, cookies=temp_cookie, headers=temp_headers)
         ct0 = res.cookies.get('ct0')
 
         if not ct0:
             raise DeniedLogin(response=res, message="Auth Token isn't Valid")
 
         temp_cookie['ct0'] = ct0
-        return self.load_cookies(temp_cookie)
+        return await self.load_cookies(temp_cookie)
 
     @staticmethod
     def _get_action_text(response):
@@ -154,20 +145,23 @@ class AuthMethods:
             secondary_message = secondary_message.get('text', '')
         return f"{primary_message}. {secondary_message}"
 
-    def _login(self):
-        _username, _password, _extra = self._username, self._password, self._extra
+    async def _login(self):
 
         while not self.logged_in:
             _login_payload = self._login_flow.get(
                 self._login_flow_state,
                 json_=self._last_json,
-                username=_username,
-                password=_password,
-                extra=_extra,
+                username=self._username,
+                password=self._password,
+                extra=self._extra,
                 captcha_token=self._captcha_token
             )
 
-            response = self.request.login(self._login_url, _payload=_login_payload)
+            # Twitter now often asks for multiple verifications
+            if self._login_flow_state in constants.AUTH_ACTION_REQUIRED_KEYS:
+                self._extra = None
+
+            response = await self.request.login(self._login_url, _payload=_login_payload)
 
             self._last_json = response.json()
 
@@ -177,11 +171,11 @@ class AuthMethods:
             if self._last_json.get('status') != "success":
                 raise DeniedLogin(response=response, message=response.text)
 
-            self._login_url = self._login_url.split("?")[0]
             subtask = self._last_json["subtasks"][0].get("subtask_id")
+            self._login_url = self._login_url.split("?")[0]
             self._login_flow_state = subtask
 
-            if subtask in ("LoginTwoFactorAuthChallenge", "LoginAcid", "LoginEnterAlternateIdentifierSubtask") and not _extra:
+            if subtask in constants.AUTH_ACTION_REQUIRED_KEYS and not self._extra:
                 message = self._get_action_text(self._last_json)
                 raise ActionRequired(0, "ActionRequired", response, message)
 
@@ -189,7 +183,7 @@ class AuthMethods:
                 if self._captcha_solver is None:
                     raise ArkoseLoginRequired(response=response)
 
-                token = self.request.solve_captcha(websiteUrl="https://iframe.arkoselabs.com")
+                token = await self.request.solve_captcha(websiteUrl="https://iframe.arkoselabs.com")
                 # token = self.request.solve_captcha(websiteUrl="https://twitter.com/i/flow/login", blob_data=data[0])
                 self._captcha_token = token
 
@@ -199,10 +193,9 @@ class AuthMethods:
 
             if subtask == "LoginSuccessSubtask":
                 self.request.remove_header("att")
-                self.logged_in = True
                 self.cookies = Cookies(dict(response.cookies))
-                self.session.save_session(self.cookies)
-                return self.connect()
+                await self.session.save_session(self.cookies, None)
+                return await self.connect()
 
         raise DeniedLogin(response=response, message="Unknown Error Occurred")
 

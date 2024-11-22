@@ -22,9 +22,9 @@ class TweetRetweets(BaseGeneratorClass):
             len(self.users)
         )
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _users = []
-        response = self.client.http.get_tweet_retweets(tweet_id=self.tweet_id, cursor=cursor)
+        response = await self.client.http.get_tweet_retweets(tweet_id=self.tweet_id, cursor=cursor)
 
         entries = self._get_entries(response)
 

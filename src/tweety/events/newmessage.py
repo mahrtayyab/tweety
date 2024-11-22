@@ -1,16 +1,19 @@
-import threading
-import time
+import asyncio
 from ..types.inbox import Inbox, Message
+from ..utils import get_running_loop
 
 
 class NewMessageUpdate:
     def __init__(self, client, callback):
         self.client = client
         self.callback_func = callback
-        self.inbox = Inbox(self.client.user.id, self.client, 1)
-        list(self.inbox.generator())
+        self.inbox = None
+        self.cursor = None
+
+    async def start(self):
+        self.inbox = await self.client.get_inbox(pages=1)
         self.cursor = self.inbox.cursor
-        self.wait_for_message()
+        await self.wait_for_message()
 
     class NewMessage:
         def __init__(self, conversation, message):
@@ -25,21 +28,23 @@ class NewMessageUpdate:
             self.id = self.message.id
             self.media = self.message.media if hasattr(self.message, "media") else None
 
-        def respond(self, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
-            return self.conversation.send_message(text, file, reply_to_message_id, audio_only, quote_tweet_id)
+        async def respond(self, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
+            return await self.conversation.send_message(text, file, reply_to_message_id, audio_only, quote_tweet_id)
 
         def __repr__(self):
             return "NewMessage(id={}, sender={}, receiver={}, time={}, text={})".format(
                 self.id, self.sender, self.receiver, self.time, self.text
             )
 
-    def wait_for_message(self):
+    async def wait_for_message(self):
         while True:
-            new_chats = self.inbox.get_new_messages()
+            new_chats = await self.inbox.get_new_messages()
+
             if new_chats:
                 for conv in new_chats:
                     for message in conv.messages:
                         event = None
+
                         if isinstance(message, Message):
                             if not message.sender or str(message.sender.id) != str(self.client.user.id):
                                 event = self.NewMessage(conv, message)
@@ -47,6 +52,6 @@ class NewMessageUpdate:
                             event = message
 
                         if event:
-                            threading.Thread(target=self.callback_func, args=(event,)).start()
+                            get_running_loop().create_task(self.callback_func(event))
 
-            time.sleep(5)
+            await asyncio.sleep(5)

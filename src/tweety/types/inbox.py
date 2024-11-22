@@ -1,3 +1,4 @@
+import asyncio
 import re
 import time
 from .twDataTypes import User, Media, URL, Hashtag, ShortUser, Symbol, Tweet
@@ -28,7 +29,7 @@ class Inbox(dict):
         self.untrusted_last_seen_event_id = None
         self.user_id = user_id
 
-    def _parse_response(self, response):
+    async def _parse_response(self, response):
         this_page = []
         _initial_inbox = response.get('inbox_initial_state') or response.get('user_events') or response.get('inbox_timeline')
         _conversations = _initial_inbox.get("conversations", {})
@@ -52,14 +53,14 @@ class Inbox(dict):
         self._parse_messages(this_page)
         return this_page, _initial_inbox
 
-    def get_page(self, min_entry_id=None, page_type=INBOX_PAGE_TYPE_TRUSTED):
+    async def get_page(self, min_entry_id=None, page_type=INBOX_PAGE_TYPE_TRUSTED):
         if not self._got_initial:
             if not self.cursor:
-                response = self._client.http.get_initial_inbox()
+                response = await self._client.http.get_initial_inbox()
             else:
-                response = self._client.http.get_inbox_updates(cursor=self.cursor)
+                response = await self._client.http.get_inbox_updates(cursor=self.cursor)
 
-            page, inbox = self._parse_response(response)
+            page, inbox = await self._parse_response(response)
             self.cursor = self['cursor'] = inbox.get('cursor')
             self.last_seen_event_id = self['last_seen_event_id'] = inbox.get('last_seen_event_id')
             self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = inbox.get('trusted_last_seen_event_id')
@@ -82,25 +83,25 @@ class Inbox(dict):
             for _ in range(self._retries):
                 try:
                     if page_type == INBOX_PAGE_TYPE_UNTRUSTED:
-                        response = self._client.http.get_untrusted_inbox(min_entry_id)
+                        response = await self._client.http.get_untrusted_inbox(min_entry_id)
                     else:
-                        response = self._client.http.get_trusted_inbox(min_entry_id)
+                        response = await self._client.http.get_trusted_inbox(min_entry_id)
                 except TwitterError as inbox_fetch_error:
                     pass
 
             if response:
-                page, inbox = self._parse_response(response)
+                page, inbox = await self._parse_response(response)
             else:
                 page, inbox = [], {}
 
             return page, inbox.get('min_entry_id', 0), inbox.get('status', self.AT_END_STATUS)
 
-    def get_new_messages(self, cursor=None):
+    async def get_new_messages(self, cursor=None):
         if not cursor:
             cursor = self.cursor
 
-        response = self._client.http.get_inbox_updates(cursor=cursor)
-        page, inbox = self._parse_response(response)
+        response = await self._client.http.get_inbox_updates(cursor=cursor)
+        page, inbox = await self._parse_response(response)
         self.cursor = self['cursor'] = inbox.get('cursor')
         self.last_seen_event_id = self['last_seen_event_id'] = inbox.get('last_seen_event_id')
         self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = inbox.get('trusted_last_seen_event_id')
@@ -111,9 +112,9 @@ class Inbox(dict):
 
         return page
 
-    def get_next_page(self, page_type=None):
+    async def get_next_page(self, page_type=None):
         if not self._got_initial:
-            page, cursor, _ = self.get_page()
+            page, cursor, _ = await self.get_page()
             self.cursor = self['cursor'] = cursor
             return page
         else:
@@ -131,18 +132,18 @@ class Inbox(dict):
             if status == self.AT_END_STATUS:
                 return []
 
-            page, new_min_entry_id, new_status = self.get_page(min_entry_id=min_entry_id, page_type=page_type)
+            page, new_min_entry_id, new_status = await self.get_page(min_entry_id=min_entry_id, page_type=page_type)
             self._inbox_timelines[page_type]["min_entry_id"] = new_min_entry_id
             self._inbox_timelines[page_type]["status"] = new_status
             return page
 
-    def generator(self):
+    async def generator(self):
         this_page = 0
         page_type_index = 0
         page_type = self._types[page_type_index]
 
         while this_page != int(self.pages):
-            results = self.get_next_page(page_type)
+            results = await self.get_next_page(page_type)
 
             if len(results) == 0:
                 page_type_index = get_next_index(self._types, page_type_index)
@@ -156,9 +157,7 @@ class Inbox(dict):
             this_page += 1
 
             if this_page != self.pages:
-                time.sleep(parse_wait_time(self.wait_time))
-
-        return self
+                await asyncio.sleep(parse_wait_time(self.wait_time))
 
     def _parse_messages(self, conversations):
         for conv in conversations:
@@ -299,15 +298,13 @@ class Conversation(dict):
                 _message = self._parse_message(entry)
                 if _message:
                     messages.append(_message)
-        else:
-            messages = self.get_all_messages()
 
         messages = sorted(messages, key=lambda x: x.time, reverse=True)
         return messages
 
-    def get_page(self, cursor, till_date=None):
+    async def get_page(self, cursor, till_date=None):
         messages = []
-        response = self._client.http.get_conversation(self.id, cursor)
+        response = await self._client.http.get_conversation(self.id, cursor)
         conversation_status = response.get('conversation_timeline', {}).get('status', "AT_END")
         cursor = response.get('conversation_timeline', {}).get('min_entry_id', 0)
         for entry in response.get('conversation_timeline', {}).get('entries', []):
@@ -321,21 +318,21 @@ class Conversation(dict):
 
         return messages, conversation_status, cursor
 
-    def get_next_page(self, till_date=None):
-        messages, self.conversation_status, self.cursor = self.get_page(self.cursor, till_date=till_date)
+    async def get_next_page(self, till_date=None):
+        messages, self.conversation_status, self.cursor = await self.get_page(self.cursor, till_date=till_date)
         return messages
 
-    def get_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
+    async def get_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
         all_messages = []
-        for _, messages in self.iter_all_messages(wait_time=wait_time, cursor=cursor, till_date=till_date, count=count):
+        async for _, messages in self.iter_all_messages(wait_time=wait_time, cursor=cursor, till_date=till_date, count=count):
             all_messages.extend(messages)
         return all_messages
 
-    def iter_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
+    async def iter_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
         messages = []
         self.cursor = cursor if cursor != 0 else self.cursor
         while True:
-            _page = self.get_next_page(till_date)
+            _page = await self.get_next_page(till_date)
 
             actual_page = []
             for message in _page:
@@ -350,11 +347,10 @@ class Conversation(dict):
             if self.conversation_status == self.AT_END_STATUS or (count and len(messages) >= count):
                 break
 
-            time.sleep(parse_wait_time(wait_time))
-        return messages
+            await asyncio.sleep(parse_wait_time(wait_time))
 
-    def send_message(self, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
-        return self._client.send_message(self.id, text=text, file=file, in_group=self.type == self.TYPE_GROUP_DM, reply_to_message_id=reply_to_message_id, audio_only=audio_only, quote_tweet_id=quote_tweet_id)
+    async def send_message(self, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
+        return await self._client.send_message(self.id, text=text, file=file, in_group=self.type == self.TYPE_GROUP_DM, reply_to_message_id=reply_to_message_id, audio_only=audio_only, quote_tweet_id=quote_tweet_id)
 
     def __eq__(self, other):
         if isinstance(other, Conversation):
@@ -611,7 +607,7 @@ class SendMessage:
         self._reply_to_message_id = reply_to_message_id
         self._quote_tweet_id = quote_tweet_id
 
-    def send(self):
-        response = self._client.http.send_message(self._conv, self._text, self._file, self._reply_to_message_id, self._audio_only, self._quote_tweet_id)
+    async def send(self):
+        response = await self._client.http.send_message(self._conv, self._text, self._file, self._reply_to_message_id, self._audio_only, self._quote_tweet_id)
         messages = [Message(i["message"], response, self._client) for i in response.get("entries", [])]
         return messages[0] if len(messages) == 1 else messages

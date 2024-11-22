@@ -16,9 +16,9 @@ class UserFollowers(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _users = []
-        response = self.client.http.get_user_followers(self.user_id, cursor=cursor)
+        response = await self.client.http.get_user_followers(self.user_id, cursor=cursor)
 
         entries = self._get_entries(response)
 
@@ -51,9 +51,9 @@ class UserFollowings(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _users = []
-        response = self.client.http.get_user_followings(self.user_id, cursor=cursor)
+        response = await self.client.http.get_user_followings(self.user_id, cursor=cursor)
 
         entries = self._get_entries(response)
 
@@ -86,9 +86,9 @@ class UserSubscribers(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _users = []
-        response = self.client.http.get_user_subscribers(self.user_id, cursor=cursor)
+        response = await self.client.http.get_user_subscribers(self.user_id, cursor=cursor)
 
         entries = self._get_entries(response)
 
@@ -121,9 +121,9 @@ class MutualFollowers(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _users = []
-        response = self.client.http.get_mutual_friends(self.user_id, cursor=cursor)
+        response = await self.client.http.get_mutual_friends(self.user_id, cursor=cursor)
 
         entries = self._get_entries(response)
 
@@ -156,9 +156,9 @@ class BlockedUsers(BaseGeneratorClass):
         self.user_id = self.client.me.id
         self.wait_time = wait_time
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _users = []
-        response = self.client.http.get_blocked_users(cursor=cursor)
+        response = await self.client.http.get_blocked_users(cursor=cursor)
 
         entries = self._get_entries(response)
 

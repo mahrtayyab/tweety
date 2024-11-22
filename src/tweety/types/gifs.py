@@ -15,9 +15,9 @@ class GifSearch(BaseGeneratorClass):
         self.is_next_page = True
         self.gifs = []
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _gifs = []
-        response = self.client.http.gif_search(self.term, cursor)
+        response = await self.client.http.gif_search(self.term, cursor)
 
         if not response.get('data'):
             return _gifs

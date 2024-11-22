@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='tweety-ns',
     packages=['tweety', 'tweety.types', 'tweety.events', 'tweety.captcha'],
-    version='1.1.9',
+    version='2.0',
     license='MIT',
     description='An easy Twitter Scraper',
     author='Tayyab Kharl',
@@ -13,7 +13,7 @@ setup(
     install_requires=[
         'beautifulsoup4',
         'openpyxl',
-        'httpx',
+        'httpx[http2]',
         'dateutils',
         'anticaptchaofficial',
         'capsolver',

@@ -16,9 +16,9 @@ class TopicTweets(BaseGeneratorClass):
         self.topic = None
         self.tweets = []
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
-        response = self.client.http.get_topic_landing_page(self.topic_id, cursor)
+        response = await self.client.http.get_topic_landing_page(self.topic_id, cursor)
 
         if not self.topic:
             self.topic = Topic(self.client, response)

@@ -1,4 +1,4 @@
 beautifulsoup4
-httpx
+httpx[http2]
 openpyxl
 dateutils

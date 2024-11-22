@@ -1,9 +1,10 @@
+import traceback
+
 from . import Tweet, Excel, User, List
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread
 from ..utils import find_objects
 from ..filters import SearchFilters
-
 
 
 class Search(BaseGeneratorClass):
@@ -34,9 +35,9 @@ class Search(BaseGeneratorClass):
             self.keyword, len(self.results), self.filter
         )
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         thisObjects = []
-        response = self.client.http.perform_search(self.keyword, cursor, self.filter)
+        response = await self.client.http.perform_search(self.keyword, cursor, self.filter)
         entries = self._get_entries(response)
 
         if self.filter == SearchFilters.Lists:
@@ -49,13 +50,11 @@ class Search(BaseGeneratorClass):
             try:
                 if object_type is None:
                     continue
-
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     thisObjects.append(parsed)
             except:
                 pass
-
         cursor = self._get_cursor_(response)
         cursor_top = self._get_cursor_(response, "Top")
 
@@ -101,10 +100,9 @@ class TypeHeadSearch(dict):
         self.keyword = keyword
         self.result_type = result_type
         self.results = []
-        self._get_results()
 
-    def _get_results(self):
-        response = self.client.http.search_typehead(self.keyword, self.result_type)
+    async def get_results(self):
+        response = await self.client.http.search_typehead(self.keyword, self.result_type)
         for _type_name, _type_object in self.DATA_TYPES.items():
             for result in response.get(_type_name, []):
                 try:

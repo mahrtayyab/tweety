@@ -1,22 +1,25 @@
+import asyncio
 import base64
 import datetime
-import hashlib
 import inspect
 import json
 import os.path
-import random
-import re
 import string
 import subprocess
 import sys
 import uuid
-from typing import Union
 from dateutil import parser as date_parser
 from urllib.parse import urlparse, parse_qs
 from .exceptions import AuthenticationRequired
 from .filters import Language
+import re
+import random
+import base64
+import hashlib
+from typing import Union, List
 
 GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
+MIGRATION_REGEX = re.compile(r"""(http(?:s)?://(?:www\.)?(twitter|x){1}\.com(/x)?/migrate([/?])?tok=[a-zA-Z0-9%\-_]+)+""", re.VERBOSE)
 MIME_TYPES = {
     "png": "image/png",
     "jpg": "image/jpeg",
@@ -35,6 +38,30 @@ WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'l
 SENSITIVE_MEDIA_TAGS = ['adult_content', 'graphic_violence', 'other']
 
 
+def DictRequestData(cls):
+
+    def method_wrapper_decorator(func):
+        request_keys = ["method", "url", "params", "json", "data"]
+
+        def wrapper(self, *args, **kwargs):
+            request_data = func(self, *args, **kwargs)
+
+            request = {}
+            for index, data in enumerate(request_data):
+                this_key = request_keys[index]
+                request[this_key] = data
+            return request
+
+        return wrapper
+
+    if inspect.isclass(cls):
+        for name, method in vars(cls).items():
+            if name != "__init__" and callable(method):
+                setattr(cls, name, method_wrapper_decorator(method))
+        return cls
+    return method_wrapper_decorator(cls)
+
+
 def AuthRequired(cls):
     def method_wrapper_decorator(func):
         def wrapper(self, *args, **kwargs):
@@ -51,6 +78,78 @@ def AuthRequired(cls):
                 setattr(cls, name, method_wrapper_decorator(method))
         return cls
     return method_wrapper_decorator(cls)
+
+
+def get_running_loop():
+    if sys.version_info >= (3, 7):
+        try:
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return loop
+            # return asyncio.get_event_loop_policy().get_event_loop()
+    else:
+        return asyncio.get_event_loop()
+
+
+async def async_list(generator_base_object):
+    async for _ in generator_base_object.generator():
+        pass
+    return generator_base_object
+
+
+def float_to_hex(x):
+    result = []
+    quotient = int(x)
+    fraction = x - quotient
+
+    while quotient > 0:
+        quotient = int(x / 16)
+        remainder = int(x - (float(quotient) * 16))
+
+        if remainder > 9:
+            result.insert(0, chr(remainder + 55))
+        else:
+            result.insert(0, str(remainder))
+
+        x = float(quotient)
+
+    if fraction == 0:
+        return ''.join(result)
+
+    result.append('.')
+
+    while fraction > 0:
+        fraction *= 16
+        integer = int(fraction)
+        fraction -= float(integer)
+
+        if integer > 9:
+            result.append(chr(integer + 55))
+        else:
+            result.append(str(integer))
+
+    return ''.join(result)
+
+
+def is_odd(num: Union[int, float]):
+    if num % 2:
+        return -1.0
+    return 0.0
+
+
+def base64_encode(this_string):
+    this_string = this_string.encode() if isinstance(this_string, str) else this_string
+    return base64.b64encode(this_string).decode()
+
+
+def base64_decode(this_input):
+    try:
+        data = base64.b64decode(this_input)
+        return data.decode()
+    except Exception: # noqa
+        return list(bytes(this_input, "utf-8"))
 
 
 def replace_between_indexes(original_string, from_index, to_index, replacement_text):
@@ -217,6 +316,9 @@ def parse_time(time):
     if not time:
         return None
 
+    if isinstance(time, float):
+        time = int(time)
+
     if isinstance(time, int) or str(time).isdigit():
         try:
             return datetime.datetime.fromtimestamp(int(time))
@@ -226,7 +328,7 @@ def parse_time(time):
     return date_parser.parse(time)
 
 
-def get_user_from_typehead(target_username, users):
+async def get_user_from_typehead(target_username, users):
     for user in users:
         if str(user.username).lower() == str(target_username).lower():
             return user
@@ -241,7 +343,14 @@ def get_tweet_id(tweet_identifier):
 
 
 def is_tweet_protected(raw):
-    return find_objects(raw, "__typename", ["TweetUnavailable", "TweetTombstone"], recursive=False)
+    protected = find_objects(raw, "__typename", ["TweetUnavailable", "TweetTombstone"], recursive=False)
+
+    if protected is None:
+        is_not_dummy_object = find_objects(raw, "tweet_results", None, recursive=False)
+        if is_not_dummy_object is {}:
+            return True
+
+    return protected
 
 
 def check_translation_lang(lang):
@@ -358,3 +467,6 @@ def encode_audio_message(input_filename, ffmpeg_path=None):
 
     return output_filename[1:-1]
 
+
+def tweet_id_to_datetime(tweet_id: int):
+    return datetime.datetime.fromtimestamp(((tweet_id >> 22) + 1288834974657) / 1000.0)

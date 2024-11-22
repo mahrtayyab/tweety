@@ -77,7 +77,7 @@ class GenericError:
             epochCurrentTime = int(datetime.datetime.now().timestamp())
             return epochLimitTime - epochCurrentTime
 
-        return None
+        return 0
 
     def _raise_exception(self):
         if self.EXCEPTIONS.get(self.error_code):
@@ -98,9 +98,8 @@ class GenericError:
 
 
 class Cookies:
-    def __init__(self, cookies, is_http_response=False):
+    def __init__(self, cookies):
         self._raw_cookies = cookies
-        self._is_http_response = is_http_response
         self.parse_cookies()
 
     def parse_cookies(self):
@@ -108,31 +107,23 @@ class Cookies:
             for i in self._raw_cookies:
                 setattr(self, i.name, i.value)
         else:
-            if self._is_http_response:
-                # TODO : Find a proper way to parse
-                n = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
-                for k, p in enumerate(self._raw_cookies.split(",")):
-                    if k in n:
-                        key, value = str(p.split(';')[0]).split("=", 1)
-                        setattr(self, key.strip(), value.strip())
+            true_cookies = dict()
+            if isinstance(self._raw_cookies, str):
+                cookie_list = self._raw_cookies.split(";")
+                for cookie in cookie_list:
+                    split_cookie = cookie.strip().split("=", 1)
+
+                    if len(split_cookie) >= 2:
+                        cookie_key = split_cookie[0]
+                        cookie_value = split_cookie[1]
+                        true_cookies[cookie_key] = cookie_value
+            elif isinstance(self._raw_cookies, dict):
+                true_cookies = self._raw_cookies
             else:
-                true_cookies = dict()
-                if isinstance(self._raw_cookies, str):
-                    cookie_list = self._raw_cookies.split(";")
-                    for cookie in cookie_list:
-                        split_cookie = cookie.strip().split("=", 1)
+                raise TypeError("cookies should be of class 'str', 'dict' or 'MozillaCookieJar' not {}".format(self._raw_cookies.__class__))
 
-                        if len(split_cookie) >= 2:
-                            cookie_key = split_cookie[0]
-                            cookie_value = split_cookie[1]
-                            true_cookies[cookie_key] = cookie_value
-                elif isinstance(self._raw_cookies, dict):
-                    true_cookies = self._raw_cookies
-                else:
-                    raise TypeError("cookies should be of class 'str', 'dict' or 'MozillaCookieJar' not {}".format(self._raw_cookies.__class__))
-
-                for key, value in true_cookies.items():
-                    setattr(self, key.strip(), value.strip())
+            for key, value in true_cookies.items():
+                setattr(self, key.strip(), value.strip())
 
     def to_dict(self):
         result = {}
@@ -200,8 +191,8 @@ class UploadedMedia:
     def _create_boundary():
         return bytes(f'----WebKitFormBoundary{get_random_string(16)}', "utf-8")
 
-    def _initiate_upload(self):
-        response = self._client.http.upload_media_init(self.size, self.mime_type, self._media_category, source_url=self._source_url)
+    async def _initiate_upload(self):
+        response = await self._client.http.upload_media_init(self.size, self.mime_type, self._media_category, source_url=self._source_url)
         media_id = response.get('media_id_string')
 
         if not media_id:
@@ -217,7 +208,7 @@ class UploadedMedia:
             return {"transfer-encoding": "chunked", "content-type": content_type}
         return {"content-length": str(content_length), "content-type": content_type}
 
-    def _append_upload(self, media_id):
+    async def _append_upload(self, media_id):
         with open(self._file, "rb") as f:
             segments, remainder = divmod(self.size, self.FILE_CHUNK_SIZE)
             segments += bool(remainder)
@@ -227,14 +218,14 @@ class UploadedMedia:
                 _, multipart = encode_multipart_data({}, {"media": ('blob', f.read(self.FILE_CHUNK_SIZE), "application/octet-stream")}, boundary)
                 headers = self.get_multipart_headers(multipart)
                 headers.update({"x-media-type": self.mime_type})
-                self._client.http.upload_media_append(media_id, multipart, headers, segment_index)
+                await self._client.http.upload_media_append(media_id, b"".join([i for i in multipart.iter_chunks()]), headers, segment_index)
 
-    def set_metadata(self):
-        self._client.http.set_media_set_metadata(self.media_id, self._alt_text, self._sensitive_media_warning)
+    async def set_metadata(self):
+        await self._client.http.set_media_set_metadata(self.media_id, self._alt_text, self._sensitive_media_warning)
 
-    def _finish_upload(self, media_id):
+    async def _finish_upload(self, media_id):
         if not self._source_url:
-            response = self._client.http.upload_media_finalize(media_id, self.md5_hash)
+            response = await self._client.http.upload_media_finalize(media_id, self.md5_hash)
         else:
             response = {"processing_info": {"state": "pending", "check_after_secs": 1}}
 
@@ -246,7 +237,7 @@ class UploadedMedia:
 
             if processing_info.get('state') in ('pending', 'in_progress') and 'error' not in processing_info:
                 time.sleep(processing_info['check_after_secs'])
-                response = self._client.http.upload_media_status(self.media_id)
+                response = await self._client.http.upload_media_status(self.media_id)
             elif processing_info.get("error"):
                 error = processing_info["error"]
                 code, name, message = error.get("code", 1), error.get("name", ""), error.get("message", "")
@@ -259,16 +250,16 @@ class UploadedMedia:
             else:
                 return
 
-    def upload(self):
-        self.media_id = self._initiate_upload()
+    async def upload(self):
+        self.media_id = await self._initiate_upload()
 
         if not self._source_url:
-            self._append_upload(self.media_id)
+            await self._append_upload(self.media_id)
 
-        self._finish_upload(self.media_id)
+        await self._finish_upload(self.media_id)
 
         if self._alt_text:
-            self.set_metadata()
+            await self.set_metadata()
 
         return self
 

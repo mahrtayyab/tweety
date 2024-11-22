@@ -7,9 +7,13 @@ class Session:
         self._client = client
         self.user = None
         self.logged_in = False
-        self.cookies = ""
+        self.cookies = {}
 
     def cookies_dict(self):
+
+        if isinstance(self.cookies, dict):
+            return self.cookies
+
         result = {}
         split = str(self.cookies).split(";")
         for i in split:
@@ -55,6 +59,23 @@ class FileSession(Session):
         directory = os.path.dirname(session_path) or os.getcwd()
         return os.path.abspath(os.path.join(directory, f"{_session}.tw_session"))
 
+    async def save_session(self, cookies, user):
+        self.logged_in = True
+
+        if hasattr(cookies, "to_dict"):
+            cookies = cookies.to_dict()
+
+        session_data = {
+            "cookies": cookies or self.cookies,
+            "user": user or self.user
+        }
+
+        self.cookies = cookies or self.cookies
+        self.user = user or self.user
+
+        with open(self.session_file_path, "w") as f:
+            json.dump(session_data, f, default=str)
+
     def _load_session(self):
         if os.path.exists(self.session_file_path):
             with open(self.session_file_path, "r") as f:
@@ -63,18 +84,4 @@ class FileSession(Session):
                 self.user = session_data.get('user', {})
 
             self.logged_in = True
-
-    def set_session_user(self, user):
-        self.user = dict(user)
-
-        with open(self.session_file_path, "w") as f:
-            session_data = dict(cookies=str(self.cookies), user=dict(user))
-            json.dump(session_data, f, indent=4, default=str)
-
-    def save_session(self, cookies):
-        self.cookies = str(cookies)
-        self.logged_in = True
-        with open(self.session_file_path, "w") as f:
-            session_data = dict(cookies=str(cookies))
-            json.dump(session_data, f, indent=4)
 

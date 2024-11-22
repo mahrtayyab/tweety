@@ -1,7 +1,7 @@
 import warnings
 from typing import Union, Type
 from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang,
-                    is_tweet_protected)
+                    is_tweet_protected, async_list)
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
                     ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places,
@@ -51,14 +51,15 @@ class BotMethods:
             elif "__call__" not in dir(captcha_solver):
                 raise AttributeError("captcha_solver instance '{}' doesn't have '__call__' method".format(type(captcha_solver)))
 
-            self._captcha_solver = captcha_solver(self)
+            self._captcha_solver = captcha_solver(self, self._proxy)
 
+        self.cookies = None
         self.logged_in = False
         self.is_user_authorized = False
         self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, captcha_solver=captcha_solver, **httpx_kwargs)
         self.user = None
-
-    def get_user_info(self, username: Union[str, int, list] = None):
+    
+    async def get_user_info(self, username: Union[str, int, list] = None):
         """
         Get the User Info of the specified username
 
@@ -77,7 +78,7 @@ class BotMethods:
 
         if isinstance(username, list) or str(username).isdigit() or isinstance(username, int):
             usernames = [username] if not isinstance(username, list) else username
-            users_raw = self.request.get_users_by_rest_id(usernames)
+            users_raw = await self.request.get_users_by_rest_id(usernames)
             users = find_objects(users_raw, "users", None, recursive=False, none_value=[])
 
             parsed_users = []
@@ -98,7 +99,7 @@ class BotMethods:
             else:
                 return parsed_users
         else:
-            user_raw = self.request.get_user(username)
+            user_raw = await self.request.get_user(username)
             user = User(self, user_raw)
             self._cached_users[str(username).lower()] = user.id
             return user
@@ -115,11 +116,11 @@ class BotMethods:
     @property
     def cache(self):
         return self._cached_users
+    
+    async def get_user_id(self, username: str):
+        return await self._get_user_id(username)
 
-    def get_user_id(self, username: str):
-        return self._get_user_id(username)
-
-    def _get_user_id(self, username):
+    async def _get_user_id(self, username):
         if not username:
             username = self.me
 
@@ -132,14 +133,15 @@ class BotMethods:
         else:
             user = None
             try:
-                user = get_user_from_typehead(username, self.typehead_user_search(username))
+                all_users = await self.typehead_user_search(username)
+                user = await get_user_from_typehead(username, all_users)
             except TwitterError as e:
                 if str(e.__class__.__name__) == "AuthenticationRequired" or "[34]" in str(e):
                     # We can only get user using `get_user_info` when unauthenticated or if user is not suspended
                     pass
 
             if not user:
-                user = self.get_user_info(username)
+                user = await self.get_user_info(username)
 
             if user:
                 user_id = user.id
@@ -147,7 +149,7 @@ class BotMethods:
                 raise UserNotFound()
         return user_id
 
-    def get_tweets(
+    async def get_tweets(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -167,15 +169,11 @@ class BotMethods:
         :return: .types.usertweet.UserTweets
         """
 
-        user_id = self._get_user_id(username)
-
+        user_id = await self._get_user_id(username)
         userTweets = UserTweets(user_id, self, pages, replies, wait_time, cursor)
+        return await async_list(userTweets)
 
-        list(userTweets.generator())
-
-        return userTweets
-
-    def iter_tweets(
+    async def iter_tweets(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -196,13 +194,14 @@ class BotMethods:
         :return: (.types.usertweet.UserTweets, list[.types.twDataTypes.Tweet])
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userTweets = UserTweets(user_id, self, pages, replies, wait_time, cursor)
 
-        return userTweets.generator()
+        async for result_tuple in userTweets.generator():
+            yield result_tuple
 
-    def get_user_highlights(
+    async def get_user_highlights(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -222,15 +221,13 @@ class BotMethods:
         :return: .types.usertweet.userHighlights
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userHighlights = UserHighlights(user_id, self, pages, replies, wait_time, cursor)
 
-        list(userHighlights.generator())
+        return await async_list(userHighlights)
 
-        return userHighlights
-
-    def iter_user_highlights(
+    async def iter_user_highlights(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -251,13 +248,14 @@ class BotMethods:
         :return: (.types.usertweet.UserHighlights, list[.types.twDataTypes.Tweet])
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userHighlights = UserHighlights(user_id, self, pages, replies, wait_time, cursor)
 
-        return userHighlights.generator()
+        async for result_tuple in userHighlights.generator():
+            yield result_tuple
 
-    def get_user_likes(
+    async def get_user_likes(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -277,15 +275,13 @@ class BotMethods:
         :return: .types.usertweet.userLikes
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userLikes = UserLikes(user_id, self, pages, replies, wait_time, cursor)
 
-        list(userLikes.generator())
+        return await async_list(userLikes)
 
-        return userLikes
-
-    def iter_user_likes(
+    async def iter_user_likes(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -306,14 +302,15 @@ class BotMethods:
         :return: (.types.usertweet.UserLikes, list[.types.twDataTypes.Tweet])
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userLikes = UserLikes(user_id, self, pages, replies, wait_time, cursor)
 
-        return userLikes.generator()
+        async for result_tuple in userLikes.generator():
+            yield result_tuple
 
     @AuthRequired
-    def get_user_media(
+    async def get_user_media(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -331,16 +328,14 @@ class BotMethods:
         :return: .types.usertweet.UserMedia
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userMedia = UserMedia(user_id, self, pages, wait_time, cursor)
 
-        list(userMedia.generator())
-
-        return userMedia
+        return await async_list(userMedia)
 
     @AuthRequired
-    def iter_user_media(
+    async def iter_user_media(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -359,21 +354,22 @@ class BotMethods:
         :return: (.types.usertweet.UserMedia, list[.types.twDataTypes.Tweet])
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userMedia = UserMedia(user_id, self, pages, wait_time, cursor)
 
-        return userMedia.generator()
+        async for result_tuple in userMedia.generator():
+            yield result_tuple
 
     @AuthRequired
-    def get_trends(self):
+    async def get_trends(self):
         """
         Get the Trends from you locale
 
         :return: list of .types.twDataTypes.Trends
         """
         trends = []
-        response = self.request.get_trends()
+        response = await self.request.get_trends()
 
         entries = find_objects(response, "addEntries", None)
         if not entries or len(entries) == 0:
@@ -387,7 +383,7 @@ class BotMethods:
         return trends
 
     @AuthRequired
-    def search(
+    async def search(
             self,
             keyword: str,
             pages: int = 1,
@@ -411,12 +407,10 @@ class BotMethods:
 
         search = Search(keyword, self, pages, filter_, wait_time, cursor)
 
-        list(search.generator())
-
-        return search
+        return await async_list(search)
 
     @AuthRequired
-    def iter_search(
+    async def iter_search(
             self,
             keyword: str,
             pages: int = 1,
@@ -441,14 +435,17 @@ class BotMethods:
 
         search = Search(keyword, self, pages, filter_, wait_time, cursor)
 
-        return search.generator()
+        async for result_tuple in search.generator():
+            yield result_tuple
 
     @AuthRequired
-    def typehead_user_search(self, keyword):
-        return TypeHeadSearch(self, keyword, "users")
+    async def typehead_user_search(self, keyword):
+        type_head_search = TypeHeadSearch(self, keyword, "users")
+        await type_head_search.get_results()
+        return type_head_search
 
     @AuthRequired
-    def get_audio_space(self, space_id: Union[str, Tweet]) -> AudioSpace:
+    async def get_audio_space(self, space_id: Union[str, Tweet]) -> AudioSpace:
         """
 
         :param: space_id: ID of the Audio Space , or the Tweet Object that Space Audio is part of.
@@ -458,7 +455,7 @@ class BotMethods:
         if isinstance(space_id, Tweet):
             space_id = space_id.audio_space_id
 
-        space = self.request.get_audio_space(space_id)
+        space = await self.request.get_audio_space(space_id)
 
         if not find_objects(space, "metadata", None):
             raise AudioSpaceNotFound(404, "BadRequest", response=space)
@@ -466,18 +463,18 @@ class BotMethods:
         return AudioSpace(self, space)
 
     @AuthRequired
-    def get_community(self, community_id):
+    async def get_community(self, community_id):
         """
 
         :param: community_id: ID of the community to get
         :return:
         """
 
-        response = self.request.get_community(community_id)
+        response = await self.request.get_community(community_id)
         return Community(self, response)
 
     @AuthRequired
-    def get_user_communities(self, user_id=None):
+    async def get_user_communities(self, user_id=None):
         """
         Get Communities of a specific user is member of
 
@@ -485,14 +482,13 @@ class BotMethods:
         :return:.types.community.UserCommunities
         """
 
-        user_id = self.get_user_id(user_id)
+        user_id = await self.get_user_id(user_id)
 
         userCommunities = UserCommunities(self, user_id)
-        list(userCommunities.generator())
-        return userCommunities
+        return await async_list(userCommunities)
 
     @AuthRequired
-    def iter_community_tweets(
+    async def iter_community_tweets(
             self,
             community_id: Union[str, int, Community],
             pages: int = 1,
@@ -518,10 +514,11 @@ class BotMethods:
 
         communityTweets = CommunityTweets(community_id, self, pages, filter_, wait_time, cursor)
 
-        return communityTweets.generator()
+        async for result_tuple in communityTweets.generator():
+            yield result_tuple
 
     @AuthRequired
-    def get_community_tweets(
+    async def get_community_tweets(
             self,
             community_id: Union[str, int, Community],
             pages: int = 1,
@@ -547,12 +544,10 @@ class BotMethods:
 
         communityTweets = CommunityTweets(community_id, self, pages, filter_, wait_time, cursor)
 
-        list(communityTweets.generator())
-
-        return communityTweets
+        return await async_list(communityTweets)
 
     @AuthRequired
-    def get_community_members(
+    async def get_community_members(
             self,
             community_id: Union[str, int, Community],
             pages: int = 1,
@@ -577,12 +572,10 @@ class BotMethods:
 
         communityTweets = CommunityMembers(community_id, self, pages, filter_, wait_time, cursor)
 
-        list(communityTweets.generator())
-
-        return communityTweets
+        return await async_list(communityTweets)
 
     @AuthRequired
-    def iter_community_members(
+    async def iter_community_members(
             self,
             community_id: Union[str, int, Community],
             pages: int = 1,
@@ -607,10 +600,11 @@ class BotMethods:
 
         communityTweets = CommunityMembers(community_id, self, pages, filter_, wait_time, cursor)
 
-        return communityTweets.generator()
+        async for result_tuple in communityTweets.generator():
+            yield result_tuple
 
     @AuthRequired
-    def get_user_followers(
+    async def get_user_followers(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -628,16 +622,14 @@ class BotMethods:
         :return: .types.follow.UserFollowers
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userFollowers = UserFollowers(user_id, self, pages, wait_time, cursor)
 
-        list(userFollowers.generator())
-
-        return userFollowers
+        return await async_list(userFollowers)
 
     @AuthRequired
-    def iter_user_followers(
+    async def iter_user_followers(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -656,14 +648,15 @@ class BotMethods:
         :return: (.types.follow.UserFollowers, list[.types.twDataTypes.User])
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userFollowers = UserFollowers(user_id, self, pages, wait_time, cursor)
 
-        return userFollowers.generator()
+        async for result_tuple in userFollowers.generator():
+            yield result_tuple
 
     @AuthRequired
-    def get_user_followings(
+    async def get_user_followings(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -681,16 +674,14 @@ class BotMethods:
         :return: .types.follow.UserFollowings
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userFollowings = UserFollowings(user_id, self, pages, wait_time, cursor)
 
-        list(userFollowings.generator())
-
-        return userFollowings
+        return await async_list(userFollowings)
 
     @AuthRequired
-    def iter_user_followings(
+    async def iter_user_followings(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -709,14 +700,15 @@ class BotMethods:
         :return: (.types.follow.UserFollowings, list[.types.twDataTypes.User])
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userFollowings = UserFollowings(user_id, self, pages, wait_time, cursor)
 
-        return userFollowings.generator()
+        async for result_tuple in userFollowings.generator():
+            yield result_tuple
 
     @AuthRequired
-    def get_user_subscribers(
+    async def get_user_subscribers(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -734,16 +726,14 @@ class BotMethods:
         :return: .types.follow.UserSubscribers
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userSubscribers = UserSubscribers(user_id, self, pages, wait_time, cursor)
 
-        list(userSubscribers.generator())
-
-        return userSubscribers
+        return await async_list(userSubscribers)
 
     @AuthRequired
-    def iter_user_subscribers(
+    async def iter_user_subscribers(
             self,
             username: Union[str, int, User],
             pages: int = 1,
@@ -762,14 +752,15 @@ class BotMethods:
         :return: (.types.follow.UserSubscribers, list[.types.twDataTypes.User])
         """
 
-        user_id = self._get_user_id(username)
+        user_id = await self._get_user_id(username)
 
         userSubscribers = UserSubscribers(user_id, self, pages, wait_time, cursor)
 
-        return userSubscribers.generator()
+        async for result_tuple in userSubscribers.generator():
+            yield result_tuple
 
     @AuthRequired
-    def get_tweet_comments(
+    async def get_tweet_comments(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -790,11 +781,10 @@ class BotMethods:
         tweetId = get_tweet_id(tweet_id)
 
         comments = TweetComments(tweetId, self, get_hidden, pages, wait_time, cursor)
-        list(comments.generator())
-        return comments
+        return await async_list(comments)
 
     @AuthRequired
-    def iter_tweet_comments(
+    async def iter_tweet_comments(
             self,
             tweet_id: Union[str, Tweet],
             pages: int = 1,
@@ -817,10 +807,11 @@ class BotMethods:
 
         comments = TweetComments(tweetId, self, get_hidden, pages, wait_time, cursor)
 
-        return comments.generator()
+        async for result_tuple in comments.generator():
+            yield result_tuple
 
     @AuthRequired
-    def tweet_edit_history(self, identifier) -> TweetHistory:
+    async def tweet_edit_history(self, identifier) -> TweetHistory:
         """
         Get Edit History of a Tweet
 
@@ -830,9 +821,11 @@ class BotMethods:
         """
 
         tweetId = get_tweet_id(identifier)
-        return TweetHistory(tweetId, self)
+        tweet_history = TweetHistory(tweetId, self)
+        await tweet_history.get_history()
+        return tweet_history
 
-    def tweet_detail(self, identifier: str) -> Tweet:
+    async def tweet_detail(self, identifier: str) -> Tweet:
         """
         Get Detail of a single tweet
 
@@ -843,7 +836,7 @@ class BotMethods:
 
         tweetId = get_tweet_id(identifier)
 
-        response = self.request.get_tweet_detail(tweetId)
+        response = await self.request.get_tweet_detail(tweetId)
 
         if self.user is None:
             if find_objects(response, "tweetResult", None):
@@ -870,7 +863,7 @@ class BotMethods:
 
         raise InvalidTweetIdentifier(response=response)
 
-    def translate_tweet(self, tweet_id, language):
+    async def translate_tweet(self, tweet_id, language):
         """
             Translate Tweet in another Language
 
@@ -881,19 +874,19 @@ class BotMethods:
 
         tweetId = get_tweet_id(tweet_id)
         language = check_translation_lang(language)
-        response = self.request.get_tweet_translation(tweetId, language)
+        response = await self.request.get_tweet_translation(tweetId, language)
         return TweetTranslate(self, response)
 
-    def search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
+    async def search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
         search = GifSearch(search_term, self, pages, cursor, wait_time)
-        list(search.generator())
-        return search
+        return await async_list(search)
 
-    def iter_search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
+    async def iter_search_gifs(self, search_term, pages=1, cursor=None, wait_time=2):
         search = GifSearch(search_term, self, pages, cursor, wait_time)
-        return search.generator()
+        async for result_tuple in search.generator():
+            yield result_tuple
 
-    def search_place(self, lat=None, long=None, search_term=None):
+    async def search_place(self, lat=None, long=None, search_term=None):
         """
         Search Place either using `search_term` , or `latitude` and `longitude`
 
@@ -903,5 +896,6 @@ class BotMethods:
         :return: .type.places.Places
         """
 
-        return Places(self, lat, long, search_term)
-
+        places = Places(self, lat, long, search_term)
+        await places.get_page()
+        return places

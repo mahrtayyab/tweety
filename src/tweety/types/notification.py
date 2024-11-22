@@ -16,10 +16,10 @@ class TweetNotifications(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
 
-        response = self.client.http.get_tweet_notifications(cursor=cursor)
+        response = await self.client.http.get_tweet_notifications(cursor=cursor)
         users = response.get('globalObjects', {}).get('users', {})
         tweets = response.get('globalObjects', {}).get('tweets', {})
 

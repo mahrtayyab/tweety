@@ -145,9 +145,9 @@ class EditControl(_TwType):
         # self.history = [self.parent]
 
     @property
-    def latest(self):
+    async def latest(self):
         if not self.is_latest:
-            _latest = self._client.tweet_detail(self.tweet_ids[-1])
+            _latest = await self._client.tweet_detail(self.tweet_ids[-1])
             return _latest
         return self._parent
 
@@ -181,28 +181,29 @@ class Tweet(_TwType):
             for thread in self.threads:  # noqa
                 yield thread
 
-    def like(self):
-        return self._client.like_tweet(self.id)
+    async def like(self):
+        return await self._client.like_tweet(self.id)
 
-    def unlike(self):
-        return self._client.unlike_tweet(self.id)
+    async def unlike(self):
+        return await self._client.unlike_tweet(self.id)
 
-    def retweet(self):
-        return self._client.retweet_tweet(self.id)
+    async def retweet(self):
+        return await self._client.retweet_tweet(self.id)
 
-    def translate(self, language):
-        return self._client.translate_tweet(self.id, language)
+    async def translate(self, language):
+        return await self._client.translate_tweet(self.id, language)
 
-    def delete(self):
+    async def delete(self):
         if self.author.id != self._client.me.id:
             return False
 
-        return self._client.delete_tweet(self.id)
+        return await self._client.delete_tweet(self.id)
 
-    def download_all_media(self, progress_callback=None):
+    async def download_all_media(self, progress_callback=None):
         filenames = []
         for media in self.media:
-            filenames.append(media.download(progress_callback=progress_callback))
+            filename = await media.download(progress_callback=progress_callback)
+            filenames.append(filename)
 
         return filenames
 
@@ -240,11 +241,11 @@ class Tweet(_TwType):
                     pass
         return _threads
 
-    def get_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
-        return self._client.get_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
+    async def get_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
+        return await self._client.get_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
-    def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
-        return self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
+    async def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
+        return await self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
 
     def _check_if_protected(self):
         is_protected = is_tweet_protected(self._raw)
@@ -467,13 +468,13 @@ class Tweet(_TwType):
 
         return 0
 
-    def get_reply_to(self):
+    async def get_reply_to(self):
         if not self.is_reply:
             return None
 
         tweet_id = self._original_tweet['in_reply_to_status_id_str']
         if not self._full_http_response:
-            response = self._client.http.get_tweet_detail(tweet_id)
+            response = await self._client.http.get_tweet_detail(tweet_id)
         else:
             response = self._full_http_response
 
@@ -707,7 +708,7 @@ class RichText(_TwType):
     def _get_mentions(self):
         return [ShortUser(self._client, i) for i in self._entities.get('user_mentions', [])]
 
-    def get_html(self):
+    async def get_html(self):
         tags = self.tags
         tags.extend(self.user_mentions)
         tags.extend(self.media)
@@ -770,8 +771,8 @@ class SelfThread(_TwType):
             for tweet in self.tweets:  # noqa
                 yield tweet
 
-    def expand(self):
-        tweet = self._client.tweet_detail(self.tweets[0].id)
+    async def expand(self):
+        tweet = await self._client.tweet_detail(self.tweets[0].id)
         self.tweets = tweet.threads
 
     def _get_all_tweet_ids(self):
@@ -810,11 +811,11 @@ class ConversationThread(_TwType):
             elif entry_type == "showmore":
                 self.cursor = thread['item']['itemContent']['value']
 
-    def expand(self):
+    async def expand(self):
         if not self.cursor:
             return self.tweets
 
-        response = self._client.http.get_tweet_detail(self.parent.id, self.cursor)
+        response = await self._client.http.get_tweet_detail(self.parent.id, self.cursor)
         moduleItems = find_objects(response, "moduleItems", None)
 
         if not moduleItems or len(moduleItems) == 0:
@@ -880,7 +881,7 @@ class Media(_TwType):
             if not i.get("content_type").split("/")[-1] == "x-mpegURL":
                 self.streams.append(Stream(self._client, i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio")))
 
-    def best_stream(self):
+    async def best_stream(self):
         if self.type == MEDIA_TYPE_IMAGE:
             return self
         elif self.type == MEDIA_TYPE_VIDEO:
@@ -901,13 +902,14 @@ class Media(_TwType):
     def __repr__(self):
         return f"Media(id={self.id}, type={self.type}, audio_only={self.audio_only})"
 
-    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
-        url = self.best_stream().direct_url
+    async def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+        url = await self.best_stream()
+        url = url.direct_url
 
         if not url:
             raise ValueError("No Media Download URL found")
 
-        return self._client.http.download_media(url, filename, progress_callback)
+        return await self._client.http.download_media(url, filename, progress_callback)
 
     def _get_source_user(self):
         source_user = find_objects(self._raw, "source_user", None, recursive=False)
@@ -934,7 +936,7 @@ class Stream(_TwType):
         self.res = self._get_resolution()
 
     def _get_resolution(self):
-        result = re.findall("/(\d+)x(\d+)/", self.url)
+        result = re.findall(r"/(\d+)x(\d+)/", self.url)
         if result:
             result = result[0]
             return f"{result[0]}*{result[1]}"
@@ -944,8 +946,8 @@ class Stream(_TwType):
     def __repr__(self):
         return f"Stream(content_type={self.content_type}, length={self.length}, bitrate={self.bitrate}, res={self.res})"
 
-    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
-        return self._client.http.download_media(self.url, filename, progress_callback)
+    async def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+        return await self._client.http.download_media(self.url, filename, progress_callback)
 
 
 class MediaSize(_TwType):
@@ -975,8 +977,8 @@ class ShortUser(_TwType):
         self.from_index = self._indices[0] if self._indices else None
         self.to_index = self._indices[1] if self._indices else None
 
-    def get_full_user(self):
-        return self._client.get_user_info(self.id)
+    async def get_full_user(self):
+        return await self._client.get_user_info(self.id)
 
     def __eq__(self, other):
         if isinstance(other, ShortUser):
@@ -1138,7 +1140,7 @@ class Poll(_TwType):
 
         for key, value in self._parsed.items():
             if re.match(self.CHOICE_LABEL_REGEX, key):
-                number = re.findall("\d+", key)[0]
+                number = re.findall(r"\d+", key)[0]
                 string_value = value['string_value']
                 choice_count = self._parsed.get(self.CHOICE_COUNT_FORMAT.format(number), {}).get('string_value', "0")
 
@@ -1303,35 +1305,35 @@ class User(_TwType):
             self.id, self.username, self.name, self.verified
         )
 
-    def follow(self):
-        return self._client.follow_user(self.id)
+    async def follow(self):
+        return await self._client.follow_user(self.id)
 
-    def unfollow(self):
-        return self._client.unfollow_user(self.id)
+    async def unfollow(self):
+        return await self._client.unfollow_user(self.id)
     
-    def block(self):
-        return self._client.block_user(self.id)
+    async def block(self):
+        return await self._client.block_user(self.id)
     
-    def unblock(self):
-        return self._client.unblock_user(self.id)
+    async def unblock(self):
+        return await self._client.unblock_user(self.id)
 
-    def enable_notifications(self):
+    async def enable_notifications(self):
         if not self.notifications:
-            return self._client.enable_user_notification(self.id)
+            return await self._client.enable_user_notification(self.id)
 
         return True
 
-    def disable_notifications(self):
+    async def disable_notifications(self):
         if self.notifications:
-            return self._client.disable_user_notification(self.id)
+            return await self._client.disable_user_notification(self.id)
 
         return True
 
-    def add_to_list(self, list_id):
-        return self._client.add_list_member(list_id, self.id)
+    async def add_to_list(self, list_id):
+        return await self._client.add_list_member(list_id, self.id)
 
-    def remove_from_list(self, list_id):
-        return self._client.remove_list_member(list_id, self.id)
+    async def remove_from_list(self, list_id):
+        return await self._client.remove_list_member(list_id, self.id)
 
     def _get_is_blocked(self):
         return self._original_user.get('blocking', False)
@@ -1421,8 +1423,8 @@ class AudioSpace(_TwType):
     def _get_participants(self, participant):
         return [PeriScopeUser(self._client, user) for user in self._participants[participant]]
 
-    def get_stream_link(self):
-        return self._client.http.get_audio_stream(self.media_key)
+    async def get_stream_link(self):
+        return await self._client.http.get_audio_stream(self.media_key)
 
     def __repr__(self):
         return "AudioSpace(id={}, title={}, state={}, tweet={})".format(
@@ -1632,13 +1634,14 @@ class TweetAnalytics(_TwType):
 
 
 class ApiMedia:
-    def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
-        url = self.best_stream().url
+    async def download(self, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+        url = await self.best_stream()
+        url = url.url
 
         if not url:
             raise ValueError("No Media Download URL found")
 
-        return self._client.http.download_media(url, filename, progress_callback)
+        return await self._client.http.download_media(url, filename, progress_callback)
 
 
 class ApiImage(_TwType, ApiMedia):
@@ -1651,7 +1654,7 @@ class ApiImage(_TwType, ApiMedia):
         self.height = self._raw.get("original_img_height")
         self.alt_text = self._raw.get("alt_text")
 
-    def best_stream(self):
+    async def best_stream(self):
         return self
 
     def __repr__(self):
@@ -1684,7 +1687,7 @@ class ApiGif(_TwType, ApiMedia):
         self.alt_text = self._raw.get("alt_text")
         self.variants = [ApiVideoVariant(self._client, i) for i in self._raw.get("variants", [])]
 
-    def best_stream(self):
+    async def best_stream(self):
         bit_rates = [int(getattr(i, "bit_rate", 0)) for i in self.variants]
         max_bit_rate = max(bit_rates)
         for variant in self.variants:
@@ -1711,7 +1714,7 @@ class ApiVideo(_TwType, ApiMedia):
         self.aspect_ratio = f"{self._aspect_ratio.get('numerator')}/{self._aspect_ratio.get('denominator')}"
         self.variants = [ApiVideoVariant(self._client, i) for i in self._raw.get("variants", [])]
 
-    def best_stream(self):
+    async def best_stream(self):
         bit_rates = [int(getattr(i, "bit_rate", 0)) for i in self.variants]
         max_bit_rate = max(bit_rates)
         for variant in self.variants:
@@ -1752,8 +1755,8 @@ class ScheduledTweet(_TwType):
                 medias.append(ApiGif(self._client, entity["media_info"], entity["media_key"]))
         return medias
 
-    def delete(self):
-        return self._client.delete_scheduled_tweet(self.id)
+    async def delete(self):
+        return await self._client.delete_scheduled_tweet(self.id)
 
     def __repr__(self):
         return "ScheduledTweet(id={}, date={}, text={}, media={})".format(

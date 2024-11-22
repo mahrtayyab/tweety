@@ -24,9 +24,9 @@ class UserCommunities(BaseGeneratorClass):
         all_users = find_objects(response, "__typename", "User", none_value=[])
         return all_users
 
-    def get_page(self, cursor=None):
+    async def get_page(self, cursor=None):
         _communities = []
-        response = self.client.http.get_user_communities(self.user_id)
+        response = await self.client.http.get_user_communities(self.user_id)
         entries = self._get_entries(response)
 
         for entry in entries:
@@ -72,9 +72,9 @@ class CommunityTweets(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
-        response = self.client.http.get_community_tweets(self.community_id, self.filter, cursor=cursor)
+        response = await self.client.http.get_community_tweets(self.community_id, self.filter, cursor=cursor)
 
         entries = self._get_entries(response)
 
@@ -124,9 +124,9 @@ class CommunityMembers(BaseGeneratorClass):
         all_users = find_objects(response, "__typename", "User", none_value=[])
         return all_users
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _users = []
-        response = self.client.http.get_community_members(self.community_id, self.filter, cursor=cursor)
+        response = await self.client.http.get_community_members(self.community_id, self.filter, cursor=cursor)
 
         response_users = self._get_users(response)
 

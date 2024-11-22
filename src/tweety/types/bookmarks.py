@@ -16,9 +16,9 @@ class Bookmarks(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
-        response = self.client.http.get_bookmarks(cursor=cursor)
+        response = await self.client.http.get_bookmarks(cursor=cursor)
 
         entries = self._get_entries(response)
         for entry in entries:

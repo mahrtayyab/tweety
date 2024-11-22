@@ -33,10 +33,10 @@ class UserTweets(BaseGeneratorClass):
         pinned_tweet = Tweet(self.client, pinned, None)
         return pinned_tweet
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
 
-        response = self.client.http.get_tweets(self.user_id, replies=self.get_replies, cursor=cursor)
+        response = await self.client.http.get_tweets(self.user_id, replies=self.get_replies, cursor=cursor)
 
         if not response['data']['user'].get("result"):
             raise UserNotFound(response=response)
@@ -70,6 +70,7 @@ class UserTweets(BaseGeneratorClass):
     def to_xlsx(self, filename=None):
         return Excel(self, filename)
 
+
 class UserHighlights(BaseGeneratorClass):
     OBJECTS_TYPES = {
         "tweet": Tweet,
@@ -95,10 +96,10 @@ class UserHighlights(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
 
-        response = self.client.http.get_highlights(self.user_id, cursor=cursor)
+        response = await self.client.http.get_highlights(self.user_id, cursor=cursor)
 
         if not response['data']['user'].get("result"):
             raise UserNotFound(response=response)
@@ -155,10 +156,10 @@ class UserLikes(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
 
-        response = self.client.http.get_likes(self.user_id, cursor=cursor)
+        response = await self.client.http.get_likes(self.user_id, cursor=cursor)
 
         if not response['data']['user'].get("result"):
             raise UserNotFound(response=response)
@@ -217,10 +218,10 @@ class UserMedia(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
 
-        response = self.client.http.get_medias(self.user_id, cursor=cursor)
+        response = await self.client.http.get_medias(self.user_id, cursor=cursor)
         if not response['data']['user'].get("result"):
             raise UserNotFound(response=response)
 
@@ -271,9 +272,9 @@ class SelfTimeline(BaseGeneratorClass):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
         _tweets = []
-        response = self.client.http.get_home_timeline(timeline_type=self.timeline_type,cursor=cursor)
+        response = await self.client.http.get_home_timeline(timeline_type=self.timeline_type,cursor=cursor)
 
         entries = self._get_entries(response)
 
@@ -312,18 +313,20 @@ class TweetComments(BaseGeneratorClass):
         self.tweet_id = tweet_id
         self.pages = pages
         self.wait_time = wait_time
-        self.parent = self._get_parent()
+        self.parent = None
 
     def _get_target_object(self, tweet):
         entry_type = str(tweet['entryId']).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
-    def _get_parent(self):
-        return self.tweet_id if isinstance(self.tweet_id, Tweet) else self.client.tweet_detail(self.tweet_id)
+    async def _get_parent(self):
+        return self.tweet_id if isinstance(self.tweet_id, Tweet) else await self.client.tweet_detail(self.tweet_id)
 
-    def get_page(self, cursor):
+    async def get_page(self, cursor):
+        if not self.parent:
+            self.parent = await self._get_parent()
         _comments = []
-        response = self.client.http.get_tweet_detail(self.tweet_id, cursor)
+        response = await self.client.http.get_tweet_detail(self.tweet_id, cursor)
 
         entries = self._get_entries(response)
 
@@ -358,14 +361,14 @@ class TweetHistory(BaseGeneratorClass):
 
     def __init__(self, tweet_id, client):
         super().__init__()
+        self.tweets = []
         self.client = client
         self._tweet_id = tweet_id
         self.latest = None
-        self.tweets = self['tweets'] = self._get_history()
 
-    def _get_history(self):
+    async def get_history(self):
         results = []
-        response = self.client.http.get_tweet_edit_history(self._tweet_id)
+        response = await self.client.http.get_tweet_edit_history(self._tweet_id)
         entries = find_objects(response, "type", "TimelineAddEntries", recursive=False, none_value={})
         entries = entries.get('entries', [])
         if not entries:
@@ -380,6 +383,7 @@ class TweetHistory(BaseGeneratorClass):
                     self.latest = self['latest'] = _tweet
 
                 results.append(_tweet)
+        self.tweets = self["tweets"] = results
         return results
 
     def __getitem__(self, index):
@@ -408,8 +412,8 @@ class ScheduledTweets(dict):
         self.tweets = []
         self.get_page()
 
-    def get_page(self):
-        res = self._client.http.get_scheduled_tweets()
+    async def get_page(self):
+        res = await self._client.http.get_scheduled_tweets()
         tweets_list = find_objects(res, "scheduled_tweet_list", value=None, none_value=[])
 
         for tweet in tweets_list:

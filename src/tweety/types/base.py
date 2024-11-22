@@ -1,4 +1,4 @@
-import time
+import asyncio
 from tweety.types import ShortUser
 from .twDataTypes import User, Tweet
 from ..utils import find_objects, parse_wait_time
@@ -27,13 +27,13 @@ class BaseGeneratorClass(dict):
 
         return entry.get('entries', [])
 
-    def get_next_page(self, cursor=0):
+    async def get_next_page(self, cursor=0):
         if cursor == 0 and not self.is_next_page:
             return []
 
         cursor = cursor if cursor != 0 else self.cursor
 
-        results, cursor, cursor_top = self.get_page(cursor)
+        results, cursor, cursor_top = await self.get_page(cursor)
         self.is_next_page = self._has_next_page(cursor)
         self.cursor, self.cursor_top = cursor, cursor_top
         _result_attr = self._RESULT_ATTR
@@ -55,26 +55,27 @@ class BaseGeneratorClass(dict):
 
         return results
 
-    def generator(self):
+    async def generator(self):
         this_page = 0
         while this_page != int(self.pages):
-            results = self.get_next_page()
+            try:
+                results = await self.get_next_page()
 
-            if len(results) == 0:
+                if len(results) == 0:
+                    break
+
+                yield self, results
+
+                if not self.is_next_page:
+                    break
+
+                this_page += 1
+
+                if this_page != self.pages:
+                    this_wait_time = parse_wait_time(self.wait_time)
+                    await asyncio.sleep(this_wait_time)
+            except asyncio.CancelledError:
                 break
-
-            yield self, results
-
-            if not self.is_next_page:
-                break
-
-            this_page += 1
-
-            if this_page != self.pages:
-                this_wait_time = parse_wait_time(self.wait_time)
-                time.sleep(this_wait_time)
-
-        return self
 
     def __repr__(self):
         class_name = self.__class__.__name__
