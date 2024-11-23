@@ -14,7 +14,6 @@ from .exceptions import AuthenticationRequired
 from .filters import Language
 import re
 import random
-import base64
 import hashlib
 from typing import Union, List
 
@@ -347,7 +346,7 @@ def is_tweet_protected(raw):
 
     if protected is None:
         is_not_dummy_object = find_objects(raw, "tweet_results", None, recursive=False)
-        if is_not_dummy_object is {}:
+        if isinstance(is_not_dummy_object, dict) and len(is_not_dummy_object) == 0:
             return True
 
     return protected

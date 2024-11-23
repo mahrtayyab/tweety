@@ -1,6 +1,6 @@
 import json
 import os.path
-
+from .utils import dict_to_string
 
 class Session:
     def __init__(self, client):
@@ -25,8 +25,19 @@ class Session:
 
         return result
 
+    async def save_session(self, cookies, user):
+        self.logged_in = True
+
+        if hasattr(cookies, "to_dict"):
+            cookies = cookies.to_dict()
+
+        self.cookies = cookies or self.cookies
+        self.user = user or self.user
+
     def __str__(self):
-        return self.cookies
+        if isinstance(self.cookies, dict):
+            return dict_to_string(self.cookies)
+        return str(self.cookies)
 
 
 class MemorySession(Session):
@@ -38,12 +49,14 @@ class MemorySession(Session):
         self._client = client
         return self
 
-    def set_session_user(self, user):
-        self.user = dict(user)
-
-    def save_session(self, cookies):
-        self.cookies = str(cookies)
+    async def save_session(self, cookies, user):
         self.logged_in = True
+
+        if hasattr(cookies, "to_dict"):
+            cookies = cookies.to_dict()
+
+        self.cookies = cookies or self.cookies
+        self.user = user or self.user
 
 
 class FileSession(Session):
@@ -60,18 +73,8 @@ class FileSession(Session):
         return os.path.abspath(os.path.join(directory, f"{_session}.tw_session"))
 
     async def save_session(self, cookies, user):
-        self.logged_in = True
-
-        if hasattr(cookies, "to_dict"):
-            cookies = cookies.to_dict()
-
-        session_data = {
-            "cookies": cookies or self.cookies,
-            "user": user or self.user
-        }
-
-        self.cookies = cookies or self.cookies
-        self.user = user or self.user
+        await super().save_session(cookies, user)
+        session_data = {"cookies": self.cookies, "user": self.user}
 
         with open(self.session_file_path, "w") as f:
             json.dump(session_data, f, default=str)

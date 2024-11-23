@@ -115,16 +115,21 @@ class AuthMethods:
         return await self.connect()
 
     async def load_auth_token(self, auth_token):
-        URL = "https://x.com/i/api/1.1/account/update_profile.json"
+        # URL = "https://x.com/i/api/1.1/account/update_profile.json"
+        URL = "https://business.x.com/en"
         temp_cookie = {"auth_token": auth_token}
         temp_headers = {'authorization': constants.DEFAULT_BEARER_TOKEN}
-        res = await self.request.session.post(URL, cookies=temp_cookie, headers=temp_headers)
+        res = await self.request.session.get(URL, cookies=temp_cookie)
         ct0 = res.cookies.get('ct0')
+
+        if not ct0:
+            res = await self.request.session.get(URL, cookies=temp_cookie, headers=temp_headers)
+            ct0 = res.cookies.get('ct0')
 
         if not ct0:
             raise DeniedLogin(response=res, message="Auth Token isn't Valid")
 
-        temp_cookie['ct0'] = ct0
+        temp_cookie.update(dict(res.cookies))
         return await self.load_cookies(temp_cookie)
 
     @staticmethod

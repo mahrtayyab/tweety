@@ -328,6 +328,11 @@ class Request:
         self.set_user(user)
         return user
 
+    async def get_user_state(self):
+        request = self._builder.get_user_state()
+        response = await self.__get_response__(**request)
+        return response
+
     async def get_user(self, username=None):
         if not username:
             username = self.username

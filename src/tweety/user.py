@@ -25,6 +25,9 @@ class UserMethods:
     def rate_limits(self):
         return self.http._limits
 
+    async def get_user_state(self):
+        return await self.http.get_user_state()
+
     async def get_scheduled_tweets(self):
         """
         Get Tweets scheduled by authenticated user
