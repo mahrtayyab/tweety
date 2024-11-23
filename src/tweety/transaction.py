@@ -131,7 +131,6 @@ class TransactionGenerator:
 
     def get_key(self, response=None):
         response = self.validate_response(response) or self.home_page_html
-        # <meta name="twitter-site-verification" content="mentU...+1yPz..../IcNS+......./RaF...R+b"/>
         element = response.select_one("[name='twitter-site-verification']")
         if not element:
             raise Exception("Couldn't get twitter site verification code")
@@ -141,7 +140,6 @@ class TransactionGenerator:
         return list(base64.b64decode(bytes(key, 'utf-8')))
 
     def get_frames(self, response=None):
-        # loading-x-anim-0...loading-x-anim-3
         response = self.validate_response(response) or self.home_page_html
         return response.select("[id^='loading-x-anim']")
 
@@ -193,7 +191,6 @@ class TransactionGenerator:
         return animation_key
 
     def generate_transaction_id(self, method: str, path: str, response=None, key=None, animation_key=None, time_now=None):
-        "X-Client-Transaction-Id"
         try:
             time_now = time_now or math.floor(
                 (time.time() * 1000 - 1682924400 * 1000) / 1000)

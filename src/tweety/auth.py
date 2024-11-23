@@ -19,9 +19,7 @@ class AuthMethods:
             return
 
         self.request.cookies = self.session.cookies_dict()
-        await self.request.verify_cookies()
-        self.user = await self.get_user_info(self.request.username)
-        self.request.set_user(self.user)
+        self.user = await self.request.verify_cookies()
         await self.session.save_session(self.cookies, self.user)
         self.is_user_authorized = True
         return self.user
@@ -86,7 +84,7 @@ class AuthMethods:
             try:
                 return await self.connect()
             except InvalidCredentials:
-                self.request.set_cookies("", False)
+                self.request.cookies = None
                 pass
 
         self._username = username

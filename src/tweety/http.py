@@ -10,6 +10,7 @@ from urllib.parse import quote, urlparse
 import bs4
 import httpx
 from .exceptions import GuestTokenNotFound, TwitterError, UserNotFound, InvalidCredentials
+from .types import User
 from .types.n_types import GenericError
 from .utils import custom_json, GUEST_TOKEN_REGEX, get_random_string, MIGRATION_REGEX
 from .builder import UrlBuilder
@@ -37,7 +38,8 @@ class Request:
             headers={
                 'user-agent': constants.REQUEST_USER_AGENT,
                 'sec-ch-ua-platform': f'"{random.choice(constants.REQUEST_PLATFORMS)}"',
-                'x-twitter-client-language': 'en'
+                'x-twitter-client-language': 'en',
+                'origin': 'https://x.com'
             },
             http2=True,
             proxies=proxy,
@@ -83,9 +85,9 @@ class Request:
             'accept': '*/*',
             'accept-language': 'en-PK,en;q=0.9',
             'content-type': 'application/x-www-form-urlencoded',
-            'referer': 'https://x.com',
+            'referer': 'https://x.com/',
             'authorization': constants.DEFAULT_BEARER_TOKEN,
-            'sec-ch-ua': '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
+            'sec-ch-ua': constants.REQUEST_USER_AGENT_CH,
             'sec-ch-ua-mobile': '?0',
             'sec-fetch-dest': 'empty',
             'sec-fetch-mode': 'cors',
@@ -145,6 +147,9 @@ class Request:
     async def _update_cookies(self, response):
         updated_required = False
 
+        if not response.cookies or response.cookies is None or self._client.cookies is None:
+            return
+
         if response.cookies.get("ct0"):
             updated_required = True
             setattr(self._client.cookies, "ct0", response.cookies.get("ct0"))
@@ -201,6 +206,7 @@ class Request:
 
         await self._update_rate_limit(response, inspect.stack()[1][3])
         await self._update_cookies(response)
+
         if is_document:
             return response
 
@@ -253,7 +259,11 @@ class Request:
         if headers.get("authorization"):
             del headers["authorization"]
         try:
-            response = await self._session.request(method="GET", url=self._builder.URL_HOME_PAGE, headers=headers)
+            response = await self._session.request(method="GET", url="https://x.com/?mx=2", headers=headers)
+
+            if response.status_code not in range(200, 300):
+                response = await self._session.request(method="GET", url=self._builder.URL_HOME_PAGE, headers=headers)
+
             home_page = bs4.BeautifulSoup(response.content, 'lxml')
             migration_url = home_page.select_one("meta[http-equiv='refresh']")
             migration_redirection_url = re.search(MIGRATION_REGEX, str(migration_url)) or re.search(MIGRATION_REGEX, str(response.content))
@@ -271,8 +281,7 @@ class Request:
                 home_page = bs4.BeautifulSoup(response.content, 'lxml')
         except:
             pass
-        finally:
-            return home_page
+        return home_page
 
     async def _get_guest_token(self):
         token = None
@@ -283,7 +292,6 @@ class Request:
             this_response = this_response.json()
             token = this_response.get('guest_token')  # noqa
         except:
-            traceback.print_exc()
             pass
 
         try:
@@ -303,8 +311,7 @@ class Request:
         return token
 
     async def verify_cookies(self):
-
-        data = self._builder.aUser_settings()
+        data = self._builder.get_self_user()
         response = {}
         for i in range(self._retries):
             try:
@@ -313,10 +320,13 @@ class Request:
             except:
                 await asyncio.sleep(0.5)
 
-        if not response.get("screen_name"):
+        user = User(self._client, response)
+        if user is None:
             raise InvalidCredentials(None, None, None)
 
-        self.username = response.get("screen_name")
+        self.username = user.username
+        self.set_user(user)
+        return user
 
     async def get_user(self, username=None):
         if not username:

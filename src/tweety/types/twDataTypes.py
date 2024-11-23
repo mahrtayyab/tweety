@@ -1256,9 +1256,11 @@ class User(_TwType):
 
         self._original_user = self._user['legacy'] if self._user.get('legacy') else self._user
         self._social_context = self._user.get('social_context', {})
+        self._birthdate = find_objects(self._user, "birthdate", None, none_value=None)
         self.id = self.rest_id = self.get_id()
         self.created_at = self.date = self.get_created_at()
         self.entities = self._get_key("entities")
+        self.birth_date = self._get_birth_date()
         self.description = self.bio = self._get_key("description")
         self.fast_followers_count = self._get_key("fast_followers_count", default=0)
         self.favourites_count = self._get_key("favourites_count", default=0)
@@ -1334,6 +1336,16 @@ class User(_TwType):
 
     async def remove_from_list(self, list_id):
         return await self._client.remove_list_member(list_id, self.id)
+
+    def _get_birth_date(self):
+        if not self._birthdate:
+            return None
+
+        day = self._birthdate.get("day")
+        month = self._birthdate.get("month")
+        year = self._birthdate.get("year")
+
+        return datetime.date(int(year), int(month), int(day))
 
     def _get_is_blocked(self):
         return self._original_user.get('blocking', False)

@@ -1,4 +1,4 @@
-__version__ = "2.0"
+__version__ = "2.0.1"
 __author__ = "mahrtayyab"
 
 
@@ -24,7 +24,7 @@ def SyncWrap(cls):
 
     if inspect.isclass(cls):
         for name in dir(cls):
-            if not name.startswith('_') or name == '__init__':
+            if not name.startswith('_') or name != '__init__':
                 if inspect.iscoroutinefunction(getattr(cls, name)):
                     setattr(cls, name, method_wrapper_decorator(getattr(cls, name)))
 
