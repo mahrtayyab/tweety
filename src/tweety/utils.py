@@ -63,11 +63,11 @@ def DictRequestData(cls):
 
 def AuthRequired(cls):
     def method_wrapper_decorator(func):
-        def wrapper(self, *args, **kwargs):
+        async def wrapper(self, *args, **kwargs):
             if self.me is None:
                 raise AuthenticationRequired(200, "GenericForbidden", None)
 
-            return func(self, *args, **kwargs)
+            return await func(self, *args, **kwargs)
 
         return wrapper
 

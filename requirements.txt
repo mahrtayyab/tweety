@@ -1,4 +1,7 @@
-beautifulsoup4
+beautifulsoup4[lxml]~=4.12
 httpx[http2]
 openpyxl
 dateutils
+anticaptchaofficial
+capsolver
+2captcha-python

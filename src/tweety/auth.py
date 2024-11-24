@@ -115,7 +115,6 @@ class AuthMethods:
         return await self.connect()
 
     async def load_auth_token(self, auth_token):
-        # URL = "https://x.com/i/api/1.1/account/update_profile.json"
         URL = "https://business.x.com/en"
         temp_cookie = {"auth_token": auth_token}
         temp_headers = {'authorization': constants.DEFAULT_BEARER_TOKEN}

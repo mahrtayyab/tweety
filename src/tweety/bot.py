@@ -51,7 +51,8 @@ class BotMethods:
             elif "__call__" not in dir(captcha_solver):
                 raise AttributeError("captcha_solver instance '{}' doesn't have '__call__' method".format(type(captcha_solver)))
 
-            self._captcha_solver = captcha_solver(self, self._proxy)
+            # Captcha Solver is broken
+            # self._captcha_solver = captcha_solver(self, self._proxy)
 
         self.cookies = None
         self.logged_in = False
@@ -137,7 +138,7 @@ class BotMethods:
                 user = await get_user_from_typehead(username, all_users)
             except TwitterError as e:
                 if str(e.__class__.__name__) == "AuthenticationRequired" or "[34]" in str(e):
-                    # We can only get user using `get_user_info` when unauthenticated or if user is not suspended
+                    # We can only get user using `typehead_user_search` when authenticated or if user is not suspended
                     pass
 
             if not user:
