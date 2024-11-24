@@ -11,7 +11,7 @@ setup(
     url='https://github.com/mahrtayyab/tweety',
     keywords=['TWITTER', 'TWITTER SCRAPE', 'SCRAPE TWEETS'],
     install_requires=[
-        'beautifulsoup4',
+        'beautifulsoup4[lxml]~=4.12',
         'openpyxl',
         'httpx[http2]',
         'dateutils',
