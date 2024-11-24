@@ -288,7 +288,9 @@ class Request:
         this_response = None
         headers = self._get_request_headers()
         try:
-            this_response = await self._session.request(**self._builder.get_guest_token(), headers=headers)
+            request_data = self._builder.get_guest_token()
+            request_data["headers"] = headers
+            this_response = await self._session.request(**request_data)
             this_response = this_response.json()
             token = this_response.get('guest_token')  # noqa
         except:

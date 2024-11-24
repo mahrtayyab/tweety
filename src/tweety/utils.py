@@ -45,7 +45,7 @@ def DictRequestData(cls):
         def wrapper(self, *args, **kwargs):
             request_data = func(self, *args, **kwargs)
 
-            request = {}
+            request = {"headers": {}}
             for index, data in enumerate(request_data):
                 this_key = request_keys[index]
                 request[this_key] = data

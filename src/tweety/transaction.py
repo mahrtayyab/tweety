@@ -126,7 +126,7 @@ class TransactionGenerator:
 
     def validate_response(self, response: Union[bs4.BeautifulSoup, httpx.Response]):
         if not isinstance(response, (bs4.BeautifulSoup, httpx.Response)):
-            raise Exception("invalid response")
+            raise Exception("Unable to get Twitter Home Page")
         return response if isinstance(response, bs4.BeautifulSoup) else bs4.BeautifulSoup(response.content, 'lxml')
 
     def get_key(self, response=None):
