@@ -1341,9 +1341,9 @@ class User(_TwType):
         if not self._birthdate:
             return None
 
-        day = self._birthdate.get("day")
-        month = self._birthdate.get("month")
-        year = self._birthdate.get("year")
+        day = self._birthdate.get("day", 1)
+        month = self._birthdate.get("month", 1)
+        year = self._birthdate.get("year", 1)
 
         return datetime.date(int(year), int(month), int(day))
 

@@ -1256,11 +1256,11 @@ class UserMethods:
                     uploaded.append(file_path)
             else:
                 file = UploadedMedia(
-                        file_path,
-                        self,
-                        alt_text,
-                        None,
-                        _type
+                    file_path,
+                    self,
+                    alt_text,
+                    None,
+                    _type
                 )
                 await file.upload()
                 uploaded.append(file)

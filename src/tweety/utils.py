@@ -8,6 +8,8 @@ import string
 import subprocess
 import sys
 import uuid
+from io import BytesIO
+import magic
 from dateutil import parser as date_parser
 from urllib.parse import urlparse, parse_qs
 from .exceptions import AuthenticationRequired
@@ -17,6 +19,7 @@ import random
 import hashlib
 from typing import Union, List
 
+MIME_DETECTOR = magic.Magic(mime=True)
 GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
 MIGRATION_REGEX = re.compile(r"""(http(?:s)?://(?:www\.)?(twitter|x){1}\.com(/x)?/migrate([/?])?tok=[a-zA-Z0-9%\-_]+)+""", re.VERBOSE)
 MIME_TYPES = {
@@ -215,18 +218,27 @@ def create_query_id():
 
 
 def check_if_file_is_supported(file):
-    if not str(file).startswith("https://") and not os.path.exists(file):
+    if isinstance(file, str) and not str(file).startswith("https://") and not os.path.exists(file):
         raise ValueError("Path {} doesn't exists".format(file))
 
-    file = file.split("?")[0]
-    file_extension = file.split(".")[-1]
+    if isinstance(file, bytes):
+        file = file
+        file_mime = MIME_DETECTOR.from_buffer(file)
+    elif isinstance(file, BytesIO):
+        file = file.getvalue()
+        file_mime = MIME_DETECTOR.from_buffer(file)
+    elif str(file.__class__.__name__) == "Gif":
+        file_extension = "gif"
+        file_mime = MIME_TYPES.get(file_extension)
+    else:
+        file = file.split("?")[0]
+        file_extension = file.split(".")[-1]
+        file_mime = MIME_TYPES.get(file_extension)
 
-    if file_extension not in list(MIME_TYPES.keys()):
-        raise ValueError("File Extension '{}' is not supported. Use any of {}".format(
-            file_extension, list(MIME_TYPES.keys())
-        ))
+    if file_mime not in list(MIME_TYPES.values()):
+        raise ValueError("File Extension is not supported. Use any of {}".format(list(MIME_TYPES.keys())))
 
-    return MIME_TYPES[file_extension]
+    return file_mime
 
 
 def get_random_string(length):
@@ -238,9 +250,12 @@ def calculate_md5(file_path):
         return None
 
     md5_hash = hashlib.md5()
-    with open(file_path, "rb") as file:
-        for chunk in iter(lambda: file.read(4096), b""):
-            md5_hash.update(chunk)
+    if isinstance(file_path, bytes):
+        md5_hash.update(file_path)
+    else:
+        with open(file_path, "rb") as file:
+            for chunk in iter(lambda: file.read(4096), b""):
+                md5_hash.update(chunk)
     return md5_hash.hexdigest()
 
 

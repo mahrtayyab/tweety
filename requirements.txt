@@ -5,3 +5,4 @@ dateutils
 anticaptchaofficial
 capsolver
 2captcha-python
+python-magic

@@ -261,5 +261,18 @@ class CaptchaSolverFailed(TwitterError):
     def __init__(self, error_code=0, error_name="CaptchaSolverFailed", response=None, message="ArkoseLogin(Captcha) Detected while logging-in, please do restart the process with 'captcha_solver'",**kw):
         super().__init__(error_code, error_name, response, message)
 
+
+class UploadFailed(TwitterError):
+    """
+        Exception Raised when file upload failed
+
+        Attributes:
+            message -- explanation of the error
+    """
+
+    def __init__(self, error_code=400, error_name="UploadFailed", response=None, message="Unknown Error Occurred while uploading File",**kw):
+        super().__init__(error_code, error_name, response, message)
+
+
 # For Backward Compatibility
 UnknownError = TwitterError
