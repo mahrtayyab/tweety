@@ -3,8 +3,7 @@ import os
 import time
 from http.cookiejar import MozillaCookieJar
 from httpx._content import encode_multipart_data
-from ruamel.yaml import BytesIO
-
+from io import BytesIO
 from .. import constants
 from . import Gif
 from ..utils import calculate_md5, get_random_string, check_if_file_is_supported
