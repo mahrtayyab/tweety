@@ -20,7 +20,7 @@ class BotMethods:
         Constructor of the Twitter Public class
 
         :param: session_name: (`str`, `Session`) This is the name of the session which will be saved and can be loaded later
-        :param: proxy: (`dict` or `Proxy`) Provide the proxy you want to use while making a request
+        :param: proxy: [DEPRECATED] (`dict` or `Proxy`) Provide the proxy you want to use while making a request
         :param: captcha_solver: (`BaseCaptchaSolver`) Provide the instance of captcha solver class
                                 which has two mandatory methods named `unlock`, `__call__`.
                                 - both mandatory methods should accept at least one argument
@@ -50,6 +50,9 @@ class BotMethods:
                 raise AttributeError("captcha_solver instance '{}' doesn't have 'unlock' method".format(type(captcha_solver)))
             elif "__call__" not in dir(captcha_solver):
                 raise AttributeError("captcha_solver instance '{}' doesn't have '__call__' method".format(type(captcha_solver)))
+
+        if self._proxy is not None:
+            raise ValueError("`proxy` parameter has already been deprecated")
 
             # Captcha Solver is broken
             # self._captcha_solver = captcha_solver(self, self._proxy)

@@ -25,6 +25,8 @@ class Request:
     def __init__(self, client, max_retries=3, proxy=None, captcha_solver=None, **kwargs):
 
         timeout = kwargs.pop("timeout", 60)
+        if proxy is not None:
+            raise ValueError("`proxy` parameter has already been deprecated")
 
         self.user = None
         self.username = None
@@ -42,7 +44,6 @@ class Request:
                 'origin': 'https://x.com'
             },
             http2=True,
-            proxies=proxy,
             timeout=timeout,
             follow_redirects=True,
             **kwargs
