@@ -1,5 +1,6 @@
 import warnings
 from typing import Union, Type
+from httpx._types import ProxyTypes
 from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang,
                     is_tweet_protected, async_list)
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
@@ -15,12 +16,12 @@ from .captcha.base import BaseCaptchaSolver
 class BotMethods:
     LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json?flow_name=login"
 
-    def __init__(self, session_name: Union[str, Session], proxy: Union[dict, Proxy] = None, captcha_solver: Type[BaseCaptchaSolver] = None, **httpx_kwargs):
+    def __init__(self, session_name: Union[str, Session], proxy: ProxyTypes | None = None, captcha_solver: Type[BaseCaptchaSolver] = None, **httpx_kwargs):
         """
         Constructor of the Twitter Public class
 
         :param: session_name: (`str`, `Session`) This is the name of the session which will be saved and can be loaded later
-        :param: proxy: (`dict` or `Proxy`) Provide the proxy you want to use while making a request
+        :param: proxy: (`ProxyTypes` or `None`) Provide the proxy you want to use while making a request
         :param: captcha_solver: (`BaseCaptchaSolver`) Provide the instance of captcha solver class
                                 which has two mandatory methods named `unlock`, `__call__`.
                                 - both mandatory methods should accept at least one argument
@@ -34,7 +35,7 @@ class BotMethods:
         self._login_flow_state = None
         self._last_json = {}
         self._cached_users = {}
-        self._proxy = proxy.get_dict() if isinstance(proxy, Proxy) else proxy
+        self._proxy = proxy
         self._event_builders = []
         self._captcha_solver = None
 
@@ -44,6 +45,8 @@ class BotMethods:
             self.session = session_name
         else:
             self.session = FileSession(self, session_name)
+        if not (isinstance(proxy, ProxyTypes) or proxy is None):
+            raise ValueError("'proxy' argument must be ProxyTypes or None")
 
         if captcha_solver:
             if not hasattr(captcha_solver, "unlock"):
