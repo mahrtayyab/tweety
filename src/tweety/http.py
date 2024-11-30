@@ -42,7 +42,7 @@ class Request:
                 'origin': 'https://x.com'
             },
             http2=True,
-            proxies=proxy,
+            proxy=proxy,
             timeout=timeout,
             follow_redirects=True,
             **kwargs
