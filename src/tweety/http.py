@@ -9,7 +9,6 @@ from typing import Callable
 from urllib.parse import quote, urlparse
 import bs4
 import httpx
-from httpx._types import ProxyTypes
 from .exceptions import GuestTokenNotFound, TwitterError, UserNotFound, InvalidCredentials
 from .types import User
 from .types.n_types import GenericError
@@ -23,9 +22,7 @@ httpx.Response.json = custom_json
 
 class Request:
 
-    def __init__(self, client, max_retries=3, proxy: ProxyTypes | None=None, captcha_solver=None, **kwargs):
-        if not (isinstance(proxy, ProxyTypes) or ProxyTypes is None):
-            raise ValueError("'proxy' argument must be ProxyTypes or None")
+    def __init__(self, client, max_retries=3, proxy=None, captcha_solver=None, **kwargs):
 
         timeout = kwargs.pop("timeout", 60)
 
