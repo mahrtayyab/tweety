@@ -1,8 +1,6 @@
 import warnings
 from typing import Union, Type
-from httpx._types import ProxyTypes
 from httpx._config import Proxy as httpxProxy
-from httpx._urls import URL
 from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang,
                     is_tweet_protected, async_list)
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
@@ -18,7 +16,13 @@ from .captcha.base import BaseCaptchaSolver
 class BotMethods:
     LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json?flow_name=login"
 
-    def __init__(self, session_name: Union[str, Session], proxy: Union[ProxyTypes, None] = None, captcha_solver: Type[BaseCaptchaSolver] = None, **httpx_kwargs):
+    def __init__(
+            self,
+            session_name: Union[str, Session],
+            proxy: Union[httpxProxy, Proxy, str] = None,
+            captcha_solver: Type[BaseCaptchaSolver] = None,
+            **httpx_kwargs
+    ):
         """
         Constructor of the Twitter Public class
 
@@ -37,7 +41,7 @@ class BotMethods:
         self._login_flow_state = None
         self._last_json = {}
         self._cached_users = {}
-        self._proxy = proxy
+        self._proxy = str(proxy) if isinstance(proxy, Proxy) else proxy
         self._event_builders = []
         self._captcha_solver = None
 
@@ -47,13 +51,6 @@ class BotMethods:
             self.session = session_name
         else:
             self.session = FileSession(self, session_name)
-        if not (
-                isinstance(proxy, URL) or \
-                isinstance(proxy, str) or \
-                isinstance(proxy, httpxProxy) or \
-                proxy is None
-            ):
-            raise ValueError("'proxy' argument must be ProxyTypes(URL | str | Proxy) or None")
 
         if captcha_solver:
             if not hasattr(captcha_solver, "unlock"):

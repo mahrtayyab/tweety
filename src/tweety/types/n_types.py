@@ -11,42 +11,35 @@ from ..exceptions import *
 
 
 class Proxy:
+    PROTOCOLS = {
+        constants.PROXY_TYPE_HTTP: "http://",
+        constants.PROXY_TYPE_SOCKS4: "socks4://",
+        constants.PROXY_TYPE_SOCKS5: "socks5://",
+    }
+
     def __init__(self, host: str, port: int, proxy_type: int, username: str = None, password: str = None):
         self.host = host
         self.password = password
         self.proxy_type = proxy_type
         self.username = username
         self.port = port
-        self.proxy = self.__parse__()
-
-    def __iter__(self):
-        for k, v in self.proxy.items():
-            yield k, v
 
     def __proxy_url__(self):
+        if self.proxy_type not in list(self.PROTOCOLS.keys()):
+            raise ProxyParseError()
+
         if self.username and self.password:
-            return "{}:{}@{}:{}".format(
+            this_url = "{}:{}@{}:{}".format(
                 self.username, self.password, self.host, self.port
             )
         else:
-            return "{}:{}".format(self.host, self.port)
+            this_url = "{}:{}".format(self.host, self.port)
 
-    def __parse__(self):
-        proxy_url = self.__proxy_url__()
-        if self.proxy_type == constants.HTTP:
-            http_url = "http://{}".format(proxy_url)
-            return dict.fromkeys(['http://', 'https://'], http_url)
-        elif self.proxy_type == constants.SOCKS4:
-            socks_url = "socks4://{}".format(proxy_url)
-            return dict.fromkeys(['http://', 'https://'], socks_url)
-        elif self.proxy_type == constants.SOCKS5:
-            socks_url = "socks5://{}".format(proxy_url)
-            return dict.fromkeys(['http://', 'https://'], socks_url)
+        return "{}{}".format(self.PROTOCOLS[self.proxy_type], this_url)
 
-        raise ProxyParseError()
+    def __str__(self):
+        return self.__proxy_url__()
 
-    def get_dict(self):
-        return self.proxy
 
 
 class GenericError:

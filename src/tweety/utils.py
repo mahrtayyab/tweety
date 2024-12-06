@@ -71,7 +71,6 @@ def AuthRequired(cls):
                 raise AuthenticationRequired(200, "GenericForbidden", None)
 
             return await func(self, *args, **kwargs)
-
         return wrapper
 
     if inspect.isclass(cls):

@@ -4,3 +4,6 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.poetry.extras]
+windows = ["python-magic-bin"]

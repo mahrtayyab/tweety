@@ -6,3 +6,4 @@ anticaptchaofficial
 capsolver
 2captcha-python
 python-magic
+python-magic-bin; os_name == 'nt'
