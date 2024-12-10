@@ -488,6 +488,11 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
+    async def send_message_reaction(self, reaction_emoji, conversation_id, message_id):
+        request_data = self._builder.send_message_reaction( reaction_emoji, conversation_id, message_id)
+        response = await self.__get_response__(**request_data)
+        return response
+
     async def create_pool(self, pool):
         request_data = self._builder.create_pool(pool)
         response = await self.__get_response__(**request_data)
@@ -503,15 +508,15 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
-    async def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed):
+    async def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline):
         if pool:
             response = await self.create_pool(pool)
             pool = response.get('card_uri')
 
         if len(text) > 280:
-            request_data = self._builder.create_note_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo)
+            request_data = self._builder.create_note_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, community_id, post_on_timeline)
         else:
-            request_data = self._builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed)
+            request_data = self._builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline)
         response = await self.__get_response__(**request_data)
         return response
 

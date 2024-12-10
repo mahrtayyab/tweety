@@ -45,6 +45,7 @@ class UrlBuilder:
     URL_AUSER_ADD_GROUP_MEMBER = "https://x.com/i/api/graphql/oBwyQ0_xVbAQ8FAyG0pCRA/AddParticipantsMutation"  # noqa
     URL_AUSER_REMOVE_GROUP_MEMBER = "https://api.x.com/1.1/dm/conversation/{}/remove_participants.json"  # noqa
     URL_AUSER_SEND_MESSAGE = "https://x.com/i/api/1.1/dm/new2.json"  # noqa
+    URL_AUSER_SEND_MESSAGE_REACTION = "https://x.com/i/api/graphql/VyDyV9pC2oZEj6g52hgnhA/useDMReactionMutationAddMutation"  # noqa
     URL_AUSER_CONVERSATION = "https://x.com/i/api/1.1/dm/conversation/{}.json"  # noqa
     URL_AUSER_CREATE_TWEET = "https://x.com/i/api/graphql/znq7jUAqRjmPj7IszLem5Q/CreateTweet"  # noqa
     URL_AUSER_CREATE_NOTE_TWEET = "https://x.com/i/api/graphql/3Wu3Na3lrBzHKWJylOmaSg/CreateNoteTweet"  # noqa
@@ -382,10 +383,10 @@ class UrlBuilder:
 
         if filter_:
             variables['product'] = filter_
-        params = {'variables': str(json.dumps(variables, separators=(',', ':'))),
-                  'features': str(json.dumps(features, separators=(',', ':')))}
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
-        return "GET", self.URL_SEARCH, urlencode(params, safe="()%", quote_via=urllib.parse.quote)
+        return "GET", self.URL_SEARCH, urlencode(params, safe='"()%', quote_via=urllib.parse.quote_plus)
+
 
     def search_place(self, lat=None, long=None, search_term=None):
         params = {
@@ -936,6 +937,19 @@ class UrlBuilder:
 
         return "POST", self.URL_AUSER_SEND_MESSAGE, params, json_data
 
+    def send_message_reaction(self, reaction_emoji, conversation_id, message_id):
+        json_data = {
+            'variables': {
+                'conversationId': conversation_id,
+                'messageId': message_id,
+                'reactionTypes': ['Emoji'],
+                'emojiReactions': [reaction_emoji],
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_AUSER_SEND_MESSAGE_REACTION, None, json_data
+
     def create_pool(self, pool):
         params = {"card_data": pool}
 
@@ -961,7 +975,9 @@ class UrlBuilder:
             quote_tweet_url=None,
             pool=None,
             geo=None,
-            batch_compose=False
+            batch_compose=False,
+            community_id=None,
+            post_on_timeline=False
     ):
         media_entities = utils.create_media_entities(files)
         variables = {
@@ -1028,6 +1044,16 @@ class UrlBuilder:
         if geo:
             variables['geo'] = {"place_id": geo}
 
+        if community_id:
+            variables['semantic_annotation_ids'] = [{
+                'entity_id': community_id,
+                'group_id': '8',
+                'domain_id': '31'
+            }]
+
+            variables["broadcast"] = post_on_timeline
+            variables["disallowed_reply_options"] = None
+
         json_data = dict(
             variables=variables,
             features=features,
@@ -1046,6 +1072,8 @@ class UrlBuilder:
             quote_tweet_url=None,
             pool=None,
             geo=None,
+            community_id=None,
+            post_on_timeline=False
     ):
         media_entities = utils.create_media_entities(files)
         variables = {
@@ -1106,6 +1134,15 @@ class UrlBuilder:
 
         if geo:
             variables['geo'] = {"place_id": geo}
+
+        if community_id:
+            variables['semantic_annotation_ids'] = [{
+                'entity_id': community_id,
+                'group_id': '8',
+                'domain_id': '31'
+            }]
+
+            variables["broadcast"] = post_on_timeline
 
         json_data = dict(
             variables=variables,

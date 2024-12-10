@@ -498,6 +498,12 @@ class Message(dict):
         self.shared_tweet = self._get_shared_tweet()
         self.reply_to = self._get_reply_to()
 
+    async def reply(self, text, file=None, audio_only=False, quote_tweet_id=None):
+        return await self._client.send_message(self.conversation_id, text=text, file=file, audio_only=audio_only, quote_tweet_id=quote_tweet_id, reply_to_message_id=self.id)
+
+    async def react(self, reaction_emoji):
+        return await self._client.send_message_reaction(reaction_emoji, self.id, self.conversation_id)
+
     def _get_urls(self):
         return [URL(self._client, i) for i in self._entities.get('urls', [])]
 
