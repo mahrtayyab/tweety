@@ -116,7 +116,7 @@ class ListMembers(BaseGeneratorClass):
     @staticmethod
     def _get_users(response):
         all_users = find_objects(response, "__typename", "User", none_value=[])
-        return all_users
+        return [all_users] if not isinstance(all_users, list) else all_users
 
     async def get_page(self, cursor):
         _users = []

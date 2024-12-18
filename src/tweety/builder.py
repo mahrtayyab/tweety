@@ -13,7 +13,8 @@ class UrlBuilder:
     URL_API_INIT = "https://x.com/i/api/1.1/branch/init.json"
     URL_GET_USER_STATE = "https://api.x.com/help-center/forms/api/prod/user_state.json"
     URL_SELF_USER = "https://api.x.com/graphql/851wLy502Jw3dVkLYkyC2Q/ViewerUserQuery"
-    URL_USER_BY_SCREEN_NAME = "https://x.com/i/api/graphql/laYnJPCAcVo0o6pzcnlVxQ/UserByScreenName"
+    # URL_USER_BY_SCREEN_NAME = "https://x.com/i/api/graphql/laYnJPCAcVo0o6pzcnlVxQ/UserByScreenName"
+    URL_USER_BY_SCREEN_NAME = "https://api.x.com/graphql/QGIw94L0abhuohrr76cSbw/UserByScreenName"
     URL_USER_BY_USER_IDS = "https://x.com/i/api/graphql/lc85bOG5T3IIS4u485VtBg/UsersByRestIds"
     URL_USER_TWEETS = "https://x.com/i/api/graphql/Tg82Ez_kxVaJf7OPbUdbCg/UserTweets"
     URL_USER_MEDIAS = "https://x.com/i/api/graphql/HaouMjBviBKKTYZGV_9qtg/UserMedia"
@@ -117,7 +118,8 @@ class UrlBuilder:
     def get_self_user(self):
         variables = {"includeTweetImpression": True, "include_profile_info": True,
                      "includeHasBirdwatchNotes": True, "includeEditPerspective": True,
-                     "includeEditControl": True, "include_legacy_extended_profile": True, "withSafetyModeUserFields": True}
+                     "includeEditControl": True, "include_legacy_extended_profile": True,
+                     "withSafetyModeUserFields": True}
         features = {"super_follow_badge_privacy_enabled": True, "graduated_access_invisible_treatment_enabled": True,
                     "subscriptions_verification_info_enabled": True, "super_follow_user_api_enabled": True,
                     "blue_business_profile_image_shape_enabled": True,
@@ -141,24 +143,21 @@ class UrlBuilder:
         return "GET", self.URL_SELF_USER, params
 
     def user_by_screen_name(self, username):
-        variables = {"screen_name": str(username), "withSafetyModeUserFields": True}
-        features = {
-            "hidden_profile_likes_enabled": True,
-            "hidden_profile_subscriptions_enabled": True,
-            "subscriptions_verification_info_is_identity_verified_enabled": True,
-            "rweb_tipjar_consumption_enabled": True,
-            "responsive_web_twitter_article_notes_tab_enabled": True,
-            "responsive_web_graphql_exclude_directive_enabled": True,
-            "verified_phone_label_enabled": True,
-            "subscriptions_verification_info_verified_since_enabled": True,
-            "highlights_tweets_tab_ui_enabled": True,
-            "creator_subscriptions_tweet_preview_api_enabled": True,
-            "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-            "responsive_web_graphql_timeline_navigation_enabled": True,
-            "subscriptions_feature_can_gift_premium": True
-        }
-
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        variables = {"screen_name": str(username)}
+        features = {"hidden_profile_subscriptions_enabled": True,
+                    "profile_label_improvements_pcf_label_in_post_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "responsive_web_graphql_exclude_directive_enabled": True,
+                    "verified_phone_label_enabled": True,
+                    "subscriptions_verification_info_is_identity_verified_enabled": True,
+                    "subscriptions_verification_info_verified_since_enabled": True,
+                    "highlights_tweets_tab_ui_enabled": True, "responsive_web_twitter_article_notes_tab_enabled": True,
+                    "subscriptions_feature_can_gift_premium": True,
+                    "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True}
+        field_toggles = {"withAuxiliaryUserLabels": True}
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
+                  'fieldToggles': str(json.dumps(field_toggles))}
 
         return "GET", self.URL_USER_BY_SCREEN_NAME, params
 
@@ -386,7 +385,6 @@ class UrlBuilder:
         params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
         return "GET", self.URL_SEARCH, urlencode(params, safe='"()%', quote_via=urllib.parse.quote_plus)
-
 
     def search_place(self, lat=None, long=None, search_term=None):
         params = {

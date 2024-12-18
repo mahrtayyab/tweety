@@ -261,7 +261,7 @@ def check_if_file_is_supported(file):
     else:
         file = file.split("?")[0]
         file_extension = file.split(".")[-1]
-        file_mime = MIME_TYPES.get(file_extension)
+        file_mime = MIME_TYPES.get(file_extension)[0]
 
     if file_mime not in [i[0] for i in list(MIME_TYPES.values())]:
         raise ValueError("File Extension is not supported. Use any of {}".format(list(MIME_TYPES.keys())))

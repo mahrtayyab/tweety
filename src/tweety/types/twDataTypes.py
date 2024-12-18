@@ -1811,3 +1811,9 @@ class Article(_TwType):
         return "Article(id={}, date={}, title={})".format(
             self.id, self.date, self.title
         )
+
+class GrokShare(_TwType):
+    def __init__(self, client, grok_share_json):
+        self._raw = grok_share_json
+        self._client = client
+

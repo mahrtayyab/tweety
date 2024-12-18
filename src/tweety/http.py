@@ -279,8 +279,8 @@ class Request:
                 request_payload = {input_field.get("name"): input_field.get("value") for input_field in migration_form.select("input")}
                 response = await self._session.request(method=method, url=url, data=request_payload, headers=headers)
                 home_page = bs4.BeautifulSoup(response.content, 'lxml')
-        except:
-            pass
+        except Exception as twitter_home_error:
+            raise ValueError(f"Unable to get Twitter Home Page : {str(twitter_home_error)}")
         return home_page
 
     async def _get_guest_token(self):
@@ -314,17 +314,11 @@ class Request:
 
     async def verify_cookies(self):
         data = self._builder.get_self_user()
-        response = {}
-        for i in range(self._retries):
-            try:
-                response = await self.__get_response__(**data)
-                break
-            except:
-                await asyncio.sleep(0.5)
-
+        response = await self.__get_response__(**data)
         user = User(self._client, response)
+
         if user is None:
-            raise InvalidCredentials(None, None, None)
+                raise InvalidCredentials(None, None, response)
 
         self.username = user.username
         self.set_user(user)
