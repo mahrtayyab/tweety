@@ -358,6 +358,9 @@ def parse_time(time):
     if not time:
         return None
 
+    if isinstance(time, (datetime.datetime, datetime.date)):
+        return time
+
     if isinstance(time, float):
         time = int(time)
 
@@ -512,3 +515,6 @@ def encode_audio_message(input_filename, ffmpeg_path=None):
 
 def tweet_id_to_datetime(tweet_id: int):
     return datetime.datetime.fromtimestamp(((tweet_id >> 22) + 1288834974657) / 1000.0)
+
+def json_stringify(json_data):
+    return str(json.dumps(json_data, separators=(",", ":")))

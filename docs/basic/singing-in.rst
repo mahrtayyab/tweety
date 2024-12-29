@@ -17,11 +17,11 @@ This Method will ask for `Username`,  `Password` or any other information or act
 
 .. code-block:: python
 
-    from tweety import Twitter
+    from tweety import TwitterAsync
 
     app = Twitter("session")
-    app.start(username, password, extra=extra)
-    print(app.user)
+    await app.start(username, password, extra=extra)
+    print(app.me)
 
 - Arguments `username` , `password` and `extra` are optional
 
@@ -42,11 +42,11 @@ You can login to Twitter on Tweety using your `username` and `password`
 
 .. code-block:: python
 
-    from tweety import Twitter
+    from tweety import TwitterAsync
 
     app = Twitter("session")
-    app.sign_in(username, password)
-    print(app.user)
+    await app.sign_in(username, password)
+    print(app.me)
 
 
 - By running this code ,
@@ -58,14 +58,14 @@ You can login to Twitter on Tweety using your `username` and `password`
 
 .. code-block:: python
 
-    from tweety import Twitter
+    from tweety import TwitterAsync
 
     app = Twitter("session")
     try:
-        app.sign_in(username, password, extra=extra)
+        await app.sign_in(username, password, extra=extra)
     except ActionRequired as e:
         action = input(f"Action Required :> {str(e.message)} : ")
-        app.sign_in(username, password, extra=action)
+        await app.sign_in(username, password, extra=action)
 
 Singing In using Cookies
 ----------------------------
@@ -73,14 +73,14 @@ you can also log-in to Twitter on Tweety using ``Cookies``.
 
 .. code-block:: python
 
-    from tweety import Twitter
+    from tweety import TwitterAsync
 
     cookies_value = """guest_id=guest_id_value; guest_id_marketing=guest_id_marketing; guest_id_ads=guest_id_ads; kdt=kdt_value; auth_token=auth_token_value; ct0=ct0_value; twid=twid_value; personalization_id="personalization_id_value" """
 
     # Cookies can be a str or a dict
 
     app = Twitter("session")
-    app.load_cookies(cookies_value)
+    await app.load_cookies(cookies_value)
     print(app.me)
 
 
@@ -92,14 +92,14 @@ you can also log-in to Twitter on Tweety using ``auth_token``.
 
 .. code-block:: python
 
-    from tweety import Twitter
+    from tweety import TwitterAsync
 
     auth_token = """auth_token_value"""
 
     # Cookies can be a str or a dict
 
     app = Twitter("session")
-    app.load_auth_token(auth_token)
+    await app.load_auth_token(auth_token)
     print(app.me)
 
 
@@ -120,10 +120,10 @@ Now using the same session name ,you can load the previous session from file
 
 .. code-block:: python
 
-    from tweety import Twitter
+    from tweety import TwitterAsync
 
     app = Twitter("session")
-    app.connect()
+    await app.connect()
     # as 'session.tw_session' is already a authenticated session file , the session can be loaded using  `connect` method
 
     print(app.me)

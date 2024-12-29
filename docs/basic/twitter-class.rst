@@ -7,7 +7,7 @@ Twitter Class
 
 The Twitter aggregates several mixin classes to provide all the common functionality in a nice, Pythonic interface. Each mixin has its own methods, which you all can use.
 
-.. py:class:: Twitter(session_name: Union[str, Session], proxy: Union[dict, Proxy] = None)
+.. py:class:: TwitterAsync(session_name: Union[str, Session], proxy: Union[str, Proxy] = None)
 
 
     Bases : `UpdateMethods` , `BotMethods`, `AuthMethods`, `UserMethods`
@@ -20,7 +20,7 @@ The Twitter aggregates several mixin classes to provide all the common functiona
             This is the name of the session which will be saved and can be loaded later
 
         .. py:data:: proxy (optional)
-            :type: dict | Proxy
+            :type: str | Proxy
             :value: None
 
             Proxy you want to use
@@ -28,6 +28,13 @@ The Twitter aggregates several mixin classes to provide all the common functiona
     .. py:data:: Methods:
 
         All Methods are Here :ref:`all-functions`!
+
+.. py:class:: Twitter(session_name: Union[str, Session], proxy: Union[str, Proxy] = None)
+
+    This is just Synced Version of `TwitterAsync`.
+
+    .. attention:: It is just a little hack , some functions might not work always prefer using `TwitterAsync`.
+
 
 
 =======================
@@ -63,6 +70,7 @@ BaseGeneratorClass
     .. py:data:: Methods:
 
         .. py:method:: get_page(cursor: str)
+            :async:
 
             Get a Page of tweets
 
@@ -74,14 +82,15 @@ BaseGeneratorClass
                     Cursor of that specific Page
 
             .. py:data:: Return
-                :type: tuple[list[Tweet | SelfThread | User | ConversationThread | List], cursor: str, cursor_top: str]
+                :type: tuple[Union[list[Tweet | SelfThread | User | ConversationThread | TwList]], str, str]
 
         .. py:method:: get_next_page()
+            :async:
 
             Get next page of tweets if available using the saved cursor
 
             .. py:data:: Return
-                :type: list[Tweet | SelfThread | User | ConversationThread | List]
+                :type: list[Tweet | SelfThread | User | ConversationThread | TwList]
 
 
 

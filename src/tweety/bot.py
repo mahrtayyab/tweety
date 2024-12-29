@@ -770,7 +770,7 @@ class BotMethods:
     @AuthRequired
     async def get_tweet_comments(
             self,
-            tweet_id: Union[str, Tweet],
+            tweet_id: Union[int, str, Tweet],
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None,
@@ -871,7 +871,7 @@ class BotMethods:
 
         raise InvalidTweetIdentifier(response=response)
 
-    async def translate_tweet(self, tweet_id, language):
+    async def translate_tweet(self, tweet_id: Union[str, int, Tweet], language: str):
         """
             Translate Tweet in another Language
 

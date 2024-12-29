@@ -29,7 +29,10 @@ from .twDataTypes import (
     TweetTranslate,
     TweetAnalytics,
     Place,
-    ScheduledTweet
+    ScheduledTweet,
+    GrokMessage,
+    GrokShare,
+    GrokShareMessage
 )
 from .n_types import (
     UploadedMedia,

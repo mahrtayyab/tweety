@@ -9,8 +9,6 @@ Using Tweety you can also listen to the events and respond to them.
 Listen for new Message
 -----------------------
 
-.. attention:: Each triggered event will call the callback function in a new thread for time begin , in later versions , full async supprt will be added
-
 .. py:class:: NewMessageUpdate
 
     :reference: `tweety.events.newmessage.NewMessageUpdate`
@@ -19,14 +17,15 @@ Listen for new Message
 
     .. code-block:: python
 
-        from tweety.bot import Twitter
+        from tweety import TwitterAsync
+        from tweety import events
 
 
         cookies = cookies_value
         client = Twitter(cookies=cookies)
         @client.on(events.NewMessageUpdate)
-        def newMessage(event):
-             event.respond("OKAY")
+        async def newMessage(event):
+             await event.respond("OKAY")
 
         client.run_until_disconnected()
 

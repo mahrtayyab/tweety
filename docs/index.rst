@@ -1,17 +1,18 @@
 ========================
-Tweety's Documentation
+Tweety Documentation
 ========================
 
 .. code-block:: python
 
-   from tweety import Twitter
+   from tweety import TwitterAsync
 
-   app = Twitter("session")
-   app.sign_in(username, password)
+   async def main():
+       app = TwitterAsync("session")
+       await app.sign_in(username, password)
 
-   all_tweets = app.get_tweets("elonmusk")
-   for tweet in all_tweets:
-       print(tweet)
+       all_tweets = await app.get_tweets("elonmusk")
+       for tweet in all_tweets:
+           print(tweet)
 
 
 * Are you new here? Jump straight into :ref:`installation`!

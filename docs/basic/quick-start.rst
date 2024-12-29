@@ -7,17 +7,18 @@ has to offer.
 
 .. code-block:: python
 
-    from tweety import Twitter
+    from tweety import TwitterAsync
 
-    app = Twitter("session")
-    app.sign_in(username, password)
-    target_username = "elonmusk"
+    async def main():
+        app = TwitterAsync("session")
+        await app.sign_in(username, password)
+        target_username = "elonmusk"
 
-    user = app.get_user_info(target_username)
-    all_tweets = app.get_tweets(user)
+        user = await app.get_user_info(target_username)
+        all_tweets = await app.get_tweets(user)
 
-    for tweet in all_tweets:
-        print(tweet)
+        for tweet in all_tweets:
+            print(tweet)
 
 
 

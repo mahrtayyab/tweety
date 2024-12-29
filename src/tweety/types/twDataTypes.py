@@ -1,3 +1,4 @@
+import json
 import os.path
 import html
 import warnings
@@ -315,6 +316,7 @@ class Tweet(_TwType):
         self.is_liked = self._get_is_liked()
         self.is_retweeted = self._get_is_retweeted()
         self.can_reply = self._get_conversation_control()
+        self.grok_share = self._get_grok_share()
         self.comments = []
 
     def _get_article(self):
@@ -380,6 +382,21 @@ class Tweet(_TwType):
 
     def _get_has_moderated_replies(self):
         return self._tweet.get('hasModeratedReplies', False)
+
+    def _get_grok_share(self):
+        if not self._card or not self._card.get("legacy"):
+            return None
+
+        for value in self._card.get('legacy', {}).get('binding_values', []):
+            if value['key'] == "unified_card":
+                string_value = json.loads(value['value']['string_value'])
+                grok_share = find_objects(string_value, "type", "grok_share")
+                if not grok_share:
+                    return None
+
+                return GrokShare(self._client, grok_share)
+
+        return None
 
     def _get_pool(self):
         if not self._card or "poll" not in self._card.get('legacy', {}).get('name', ''):
@@ -1291,6 +1308,7 @@ class User(_TwType):
         self.possibly_sensitive = self._get_key("possibly_sensitive", default=False)
         self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
+        self.is_bot = self.is_automated = self._get_is_automated()
         self.is_blocked = self._get_is_blocked()
         self.blocked_by = self.has_blocked_me = self._get_blocked_by()
 
@@ -1306,6 +1324,16 @@ class User(_TwType):
         return "User(id={}, username={}, name={}, verified={})".format(
             self.id, self.username, self.name, self.verified
         )
+
+    async def search_tweets(
+            self,
+            keyword: str,
+            pages: int = 1,
+            filter_: str = None,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        return await self._client.search(f"from:{self.username} {keyword}", pages=pages, filter_=filter_, wait_time=wait_time, cursor=cursor)
 
     async def follow(self):
         return await self._client.follow_user(self.id)
@@ -1336,6 +1364,9 @@ class User(_TwType):
 
     async def remove_from_list(self, list_id):
         return await self._client.remove_list_member(list_id, self.id)
+
+    def _get_is_automated(self):
+        return True if find_objects(self._user, "userLabelType", "AutomatedLabel") else False
 
     def _get_birth_date(self):
         if not self._birthdate:
@@ -1570,6 +1601,7 @@ class List(_TwType):
 
         return User(self._client, self._list['user_results'])
 
+TwList = List
 
 class Gif(_TwType):
     def __init__(self, client, gif, *args, **kwargs):
@@ -1816,4 +1848,80 @@ class GrokShare(_TwType):
     def __init__(self, client, grok_share_json):
         self._raw = grok_share_json
         self._client = client
+        self._grok_share_data = self._raw.get("data") or self._raw
+        self.id = self._grok_share_data.get("id")
+        self.messages = [GrokShareMessage(self._client, i) for i in self._grok_share_data.get("conversation_preview", [])]
 
+    def __repr__(self):
+        return "GrokShare(id={}, messages={})".format(
+            self.id, len(self.messages)
+        )
+
+class GrokShareMessage(_TwType):
+    def __init__(self, client, message):
+        self._client = client
+        self._raw = message
+        self.message = self.text = self._raw.get("message")
+        self.mode = self._raw.get("grokMode")
+        self.sender = self._raw.get("sender")
+        self.media = self._raw.get("mediaUrls")
+
+    def is_grok_response(self):
+        return True if self.sender.lower() == "agent" else False
+
+    def __repr__(self):
+        return "GrokShareMessage(text={}, sender={}, mode={})".format(
+            self.text, self.sender, self.mode
+        )
+
+class GrokMessage(_TwType):
+    def __init__(self, client, message):
+        self._client = client
+        self._raw = message
+        self.id = self._raw.get("chat_item_id")
+        self.created_at = self.date = parse_time(self._raw.get("created_at_ms"))
+        self.message = self.text = self._raw.get("message")
+        self.mode = self._raw.get("grok_mode")
+        self.sender = self._raw.get("sender_type")
+        self.attachments = [GrokAttachment(self._client, i) for i in self._raw.get("file_attachments", [])]
+        self.cited_webpages = [GrokCitedWebPage(self._client, i) for i in self._raw.get("cited_web_results", [])]
+        self.tweets = [Tweet(self._client, i) for i in self._raw.get("post_ids_results", [])]
+        self.tweet_ids = self._raw.get("tweet_ids") or [i.id for i in self.tweets]
+
+    def is_grok_response(self):
+        return True if self.sender.lower() in ["agent", "assistant"] else False
+
+    def __repr__(self):
+        return "GrokMessage(text={}, sender={}, mode={})".format(
+            self.text, self.sender, self.mode
+        )
+
+class GrokAttachment(_TwType):
+    def __init__(self, client, attachment_json):
+        self._client = client
+        self._raw = attachment_json
+        self.filename = self._raw.get("file_name") or self._raw.get("fileName")
+        self.id = self._raw.get("media_id") or self._raw.get("mediaIdStr")
+        self.mime_type = self._raw.get("mime_type") or self._raw.get("mimeType")
+        self.url = f"https://ton.x.com/i/ton/data/grok-attachment/{self.id}"
+
+    def __repr__(self):
+        return "GrokAttachment(id={}, mime_type={}, filename={})".format(
+            self.id, self.mime_type, self.filename
+        )
+
+class GrokCitedWebPage(_TwType):
+    def __init__(self, client, cite_json):
+        self._client = client
+        self._raw = cite_json
+        self.favicon = self._raw.get("favicon")
+        self.favicon64 = self._raw.get("favicon_base64")
+        self.language = self._raw.get("language")
+        self.title = self._raw.get("title")
+        self.snippet = self._raw.get("snippet")
+        self.url = self._raw.get("url")
+
+    def __repr__(self):
+        return "GrokCitedWebPage(title={}, url={})".format(
+            self.title, self.url
+        )

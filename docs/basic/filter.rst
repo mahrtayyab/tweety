@@ -20,7 +20,7 @@ Filter Latest Tweets
 
         # Assuming `app` is Twitter Client Object
 
-        app.search("#pakistan", filter_=SearchFilters.Latest())
+        await app.search("#pakistan", filter_=SearchFilters.Latest())
         from tweet in tweets:
             print(tweet)
 
@@ -37,7 +37,7 @@ Filter Only Media Tweets
 
         # Assuming `app` is Twitter Client Object
 
-        app.search("#pakistan", filter_=SearchFilters.Media())
+        await app.search("#pakistan", filter_=SearchFilters.Media())
         from tweet in tweets:
             print(tweet.media)
 
@@ -55,7 +55,7 @@ Filter Only Users
 
         # Assuming `app` is Twitter Client Object
 
-        app.search("#pakistan", filter_=SearchFilters.Users())
+        await app.search("#pakistan", filter_=SearchFilters.Users())
         from user in users:
             print(user)
 
@@ -81,7 +81,7 @@ Filter Only People You Mention
 
         # Assuming `app` is Twitter Client Object
 
-        app.create_tweet("Hi", filter_=TweetConversationFilters.PeopleYouMention())
+        await app.create_tweet("Hi", filter_=TweetConversationFilters.PeopleYouMention())
 
 
 Filter Only People You Follow
@@ -97,8 +97,50 @@ Filter Only People You Follow
 
         # Assuming `app` is Twitter Client Object
 
-        app.create_tweet("Hi", filter_=TweetConversationFilters.PeopleYouFollow())
+        await app.create_tweet("Hi", filter_=TweetConversationFilters.PeopleYouFollow())
 
+===============
+Filter Community Tweets
+===============
+
+You can filter Community Tweet Timeline
+
+Filter Top Tweets
+--------------------------------
+
+.. py:class:: CommunityTweets.Top()
+
+    :reference: `tweety.filters.CommunityTweets.Top`
+
+    .. code-block:: python
+
+        from tweety.filters import CommunityTweets
+
+        # Assuming `app` is Twitter Client Object
+
+        await app.get_community_tweets("1234", filter_=CommunityTweets.Top())
+
+
+===============
+Filter Community Members
+===============
+
+You can filter Community Members List
+
+Filter Moderators Members
+--------------------------------
+
+.. py:class:: CommunityMembers.Moderators()
+
+    :reference: `tweety.filters.CommunityMembers.Moderators`
+
+    .. code-block:: python
+
+        from tweety.filters import CommunityMembers
+
+        # Assuming `app` is Twitter Client Object
+
+        await app.get_community_members("1234", filter_=CommunityMembers.Moderators())
 
 ===============
 Language
@@ -400,4 +442,4 @@ You can translate Tweet in different Language , get Language code from here.
 
         # Assuming `app` is Twitter Client Object
 
-        app.translate_tweet("1234", filter_=Language.English)
+        await app.translate_tweet("1234", language=Language.English)

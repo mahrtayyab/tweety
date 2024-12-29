@@ -45,7 +45,6 @@ Proxy
 
             Password required for authentication
 
-
 UserTweets
 ---------------------
 
@@ -88,6 +87,48 @@ UserTweets
 
             .. py:data:: Return
                 :type: None
+
+UserCommunities
+---------------------
+
+.. py:class:: UserCommunities
+
+    Bases : `BaseGeneratorClass`
+
+    :reference: `tweety.types.community.UserCommunities`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: communities
+            :type: list[Community]
+
+            List of User Community
+
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
+
+UserHighlights
+---------------------
+
+.. py:class:: UserHighlights
+
+    Bases : `BaseGeneratorClass`
+
+    :reference: `tweety.types.usertweet.UserHighlights`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet]
+
+            List of User Community
+
+        .. py:attribute:: user_id
+            :type: int
+
+            User ID of the user in question
 
 UserMedia
 ---------------------
@@ -139,6 +180,47 @@ SelfTimeline
             :type: int
 
             User ID of the user in question
+
+TweetHistory
+---------------------
+
+.. py:class:: TweetHistory
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.usertweet.TweetHistory`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[Tweet | SelfThread]
+
+            List of User Tweets
+
+        .. py:attribute:: latest
+            :type: Tweet
+
+            Latest Tweet
+
+ScheduledTweets
+---------------------
+
+.. py:class:: ScheduledTweets
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.usertweet.ScheduledTweets`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: tweets
+            :type: list[ScheduledTweet]
+
+            List of Scheduled Tweets
 
 TweetComments
 ---------------------
@@ -481,6 +563,24 @@ UserFollowings
 
             Users List
 
+UserSubscribers
+---------------------
+
+.. py:class:: UserSubscribers
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.follow.UserSubscribers`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: users
+            :type: list[User]
+
+            Users List
+
 MutualFollowers
 ---------------------
 
@@ -565,7 +665,8 @@ Inbox
 
     .. py:data:: Methods:
 
-        .. py:method:: get_conversation(conversation_id)
+        .. py:method:: get_conversation(conversation_id: Union[int, str])
+            :async:
 
             Get conversation of with specific User using its conversation id
 
@@ -578,6 +679,42 @@ Inbox
 
             .. py:data:: Return
                 :type: Conversation | None
+
+        .. py:method:: get_next_page(page_type: str)
+            :async:
+
+            Get Next Page of inbox
+
+            .. py:data:: Arguments:
+
+                .. py:data:: page_type
+                    :type: str
+
+                    Page Type to Get
+
+            .. py:data:: Return
+                :type: list[Conversation]
+
+        .. py:method:: get_page(page_type: str)
+            :async:
+
+            Get Specific Page of inbox
+
+
+            .. py:data:: Arguments:
+
+                .. py:data:: min_entry_id
+                    :type: str
+
+                    Cursor of Inbox to get conversation from
+
+                .. py:data:: page_type
+                    :type: str
+
+                    Page Type to Get
+
+            .. py:data:: Return
+                :type: list[Conversation]
 
 
 SelfThread
@@ -606,6 +743,7 @@ SelfThread
     .. py:data:: Methods:
 
         .. py:method:: expand()
+            :async:
 
             Try getting all the tweets of the thread (by default Twitter returns only 3 Tweets from Thread)
 
@@ -631,11 +769,12 @@ ConversationThread
         .. py:attribute:: parent
             :type: Tweet
 
-            Parnet Tweet
+            Parent Tweet
 
     .. py:data:: Methods:
 
         .. py:method:: expand()
+            :async:
 
             Try getting all the tweets of the thread (by default Twitter returns only 2 Tweets from Thread)
 
@@ -848,6 +987,11 @@ Tweet
 
             URL of the Tweet
 
+        .. py:attribute:: grok_share
+            :type: GrokShare
+
+            Grok Conversation Shared on Tweet
+
         .. py:attribute:: threads
             :type: list[Tweet]
 
@@ -861,7 +1005,9 @@ Tweet
     .. py:data:: Methods:
 
         .. py:method:: get_comments(pages=1, wait_time=2, cursor=None)
+            :async:
         .. py:method:: iter_comments(pages=1, wait_time=2, cursor=None)
+            :async:
 
             Get the comments / replies posted in response to this tweet
 
@@ -889,6 +1035,7 @@ Tweet
                 :type: list[Tweet]
 
         .. py:method:: like()
+            :async:
 
             Like the Tweet
 
@@ -896,6 +1043,7 @@ Tweet
                 :type: Bool
 
         .. py:method:: unlike()
+            :async:
 
             Un-Like the Tweet
 
@@ -903,6 +1051,7 @@ Tweet
                 :type: Bool
 
         .. py:method:: translate()
+            :async:
 
             Translate the Tweet
 
@@ -910,6 +1059,7 @@ Tweet
                 :type: TweetTranslate
 
         .. py:method:: delete()
+            :async:
 
             Delete the Tweet
 
@@ -917,6 +1067,7 @@ Tweet
                 :type: Bool
 
         .. py:method:: download_all_media(progress_callback: Callable[[str, int, int], None] = None)
+            :async:
 
             Download All Media from Tweet
 
@@ -928,6 +1079,7 @@ Tweet
                 [filename, total_size_in_bytes, downloaded_in_bytes]
 
         .. py:method:: retweet()
+            :async:
 
             Retweet the Tweet
 
@@ -935,6 +1087,7 @@ Tweet
                 :type: Bool
 
         .. py:method:: get_reply_to()
+            :async:
 
             Get the Tweet to which this Tweet was sent in reply
 
@@ -1003,6 +1156,7 @@ Media
     .. py:data:: Methods:
 
         .. py:method:: download(filename: str = None, progress_callback: Callable[[str, int, int], None] = None)
+            :async:
 
             Download the Media
 
@@ -1025,6 +1179,7 @@ Media
                 :type: filename | None
 
         .. py:method:: best_stream()
+            :async:
 
             Get Best available Media/Stream
 
@@ -1078,6 +1233,7 @@ Stream
     .. py:data:: Methods:
 
         .. py:method:: download(filename: str = None, progress_callback: Callable[[str, int, int], None] = None)
+            :async:
 
             Download the Media
 
@@ -1098,6 +1254,34 @@ Stream
 
             .. py:data:: Return
                 :type: filename | None
+
+MediaSize
+---------------------
+
+.. py:class:: ShortUser
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.MediaSize`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: name
+            :type: str
+
+            Name of media size
+
+        .. py:attribute:: width
+            :type: str
+
+            Width of media
+
+        .. py:attribute:: height
+            :type: str
+
+            Height of the media
 
 ShortUser
 ---------------------
@@ -1361,6 +1545,16 @@ User
 
             Bio / Description on User Profile
 
+        .. py:attribute:: is_automated
+            :type: bool
+
+            This user is automated using API
+
+        .. py:attribute:: birth_date
+            :type: datetime.datetime
+
+            Birthday of User
+
         .. py:attribute:: can_dm
             :type: bool
 
@@ -1486,6 +1680,7 @@ User
     .. py:data:: Methods:
 
         .. py:method:: follow()
+            :async:
 
             Follow the User
 
@@ -1493,6 +1688,7 @@ User
                 :type: User
 
         .. py:method:: unfollow()
+            :async:
 
             un-Follow the User
 
@@ -1500,6 +1696,7 @@ User
                 :type: User
 
         .. py:method:: enable_notifications()
+            :async:
 
             Enable new Tweet notification for this user
 
@@ -1507,6 +1704,7 @@ User
                 :type: bool
 
         .. py:method:: disable_notifications()
+            :async:
 
             Disable new Tweet notification for this user
 
@@ -1590,7 +1788,9 @@ Conversation
     .. py:data:: Methods:
 
         .. py:method:: get_all_messages(wait_time: int = 2, cursor: int = 0, till_date: datetime.datetime = None, count: int =None)
+            :async:
         .. py:method:: iter_all_messages(wait_time: int = 2, cursor: int = 0, till_date: datetime.datetime = None, count: int =None)
+            :async:
 
             Force get all the messages of the conversation (`iter` for Generator)
 
@@ -1620,6 +1820,7 @@ Conversation
                 :type: list[Message]
 
         .. py:method:: send_message(text)
+            :async:
 
             Send Message in this conversation
 
@@ -1637,6 +1838,181 @@ Conversation
 
             .. py:data:: Return
                 :type: Message
+
+        .. py:method:: get_page(cursor: str, till_date: datetime.datetime)
+            :async:
+
+            Get a specific page of messages in the conversation
+
+            .. py:data:: Arguments:
+
+                .. py:data:: cursor
+                    :type: str
+
+                    Cursor of conversation from where to get the messages
+
+                .. py:data:: till_date
+                    :type: datetime.datetime
+
+                    Date till which to get messages
+
+            .. py:data:: Return
+                :type: list[Union[Message, MessageParticipantUpdate, MessageNameUpdate, MessageConversationCreated, MessageConversationAvatarUpdate]], str, str
+
+
+        .. py:method:: get_next_page(till_date: datetime.datetime)
+            :async:
+
+            Get a next page of messages in the conversation
+
+            .. py:data:: Arguments:
+
+                .. py:data:: till_date
+                    :type: datetime.datetime
+
+                    Date till which to get messages
+
+            .. py:data:: Return
+                :type: list[Union[Message, MessageParticipantUpdate, MessageNameUpdate, MessageConversationCreated, MessageConversationAvatarUpdate]]
+
+
+MessageParticipantUpdate
+---------------------
+
+.. py:class:: MessageParticipantUpdate
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.inbox.MessageParticipantUpdate`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the message
+
+        .. py:attribute:: time
+            :type: datetime.datetime
+
+            Time at which the message was sent
+
+        .. py:attribute:: type
+            :type: str
+
+            Type of Update (`JOIN`, `LEAVE`)
+
+        .. py:attribute:: sender_id
+            :type: str
+
+            Sender ID of the User who have joined or left
+
+        .. py:attribute:: sender
+            :type: User
+
+            The User who have joined or left
+
+MessageNameUpdate
+---------------------
+
+.. py:class:: MessageNameUpdate
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.inbox.MessageNameUpdate`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the message
+
+        .. py:attribute:: time
+            :type: datetime.datetime
+
+            Time at which the message was sent
+
+        .. py:attribute:: name
+            :type: str
+
+            (New) Name of Conversation
+
+        .. py:attribute:: by_user_id
+            :type: str
+
+            User ID of the User who have changed the name
+
+        .. py:attribute:: by_user
+            :type: User
+
+            User who have changed the name
+
+MessageConversationCreated
+---------------------
+
+.. py:class:: MessageConversationCreated
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.inbox.MessageConversationCreated`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the message
+
+        .. py:attribute:: time
+            :type: datetime.datetime
+
+            Time at which the message was sent
+
+MessageConversationAvatarUpdate
+---------------------
+
+.. py:class:: MessageConversationAvatarUpdate
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.inbox.MessageConversationAvatarUpdate`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: int
+
+            Id of the message
+
+        .. py:attribute:: time
+            :type: datetime.datetime
+
+            Time at which the message was sent
+
+
+        .. py:attribute:: conversation_id
+            :type: str
+
+            Conversation Id of the message
+
+        .. py:attribute:: avatar_url
+            :type: str
+
+            Direct URL to Avatar Image
+
+        .. py:attribute:: by_user_id
+            :type: str
+
+            User ID of the User who have changed the avatar
 
 Message
 ---------------------
@@ -1695,6 +2071,79 @@ Message
             :type: Media | None
 
             Media in the message
+
+        .. py:attribute:: urls
+            :type: list[URL]
+
+            URLs in the message
+
+        .. py:attribute:: symbols
+            :type: list[Symbol]
+
+            Symbols in the message
+
+        .. py:attribute:: hashtags
+            :type: list[Hashtag]
+
+            Hashtags in the message
+
+        .. py:attribute:: user_mentions
+            :type: list[ShortUser]
+
+            User Mentioned in the message
+
+        .. py:attribute:: shared_tweet
+            :type: Tweet
+
+            Tweet Quoted in the message
+
+   .. py:data:: Methods:
+
+        .. py:method:: reply(text, file=None, audio_only=False, quote_tweet_id=None)
+            :async:
+
+            Reply to this message
+
+            .. py:data:: Arguments:
+
+                .. py:data:: text
+                    :type: str
+
+                    Content of the message to send
+
+                .. py:data:: file
+                    :type: str
+
+                    Media to send
+
+                .. py:data:: audio_only
+                    :type: bool
+
+                    Send Media as Audio Only
+
+                .. py:data:: quote_tweet_id
+                    :type: Union[str, int, Tweet]
+
+                    Quote a Tweet in Message
+
+            .. py:data:: Return
+                :type: Message
+
+
+        .. py:method:: react(reaction_emoji: str)
+            :async:
+
+            React to this message
+
+            .. py:data:: Arguments:
+
+                .. py:data:: reaction_emoji
+                    :type: str
+
+                    Emoji to react with
+
+            .. py:data:: Return
+                :type: bool
 
 NewMessage
 ---------------------
@@ -1762,6 +2211,7 @@ NewMessage
     .. py:data:: Methods:
 
         .. py:method:: respond(text)
+            :async:
 
             Send Message in this conversation
 
@@ -2303,3 +2753,514 @@ TweetAnalytics
             :type: int
 
             Cost Incurred per Follower
+
+Gif
+---------------------
+
+.. py:class:: Gif
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.Gif`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: provider
+            :type: str
+
+            Provider of Gif
+
+        .. py:attribute:: id
+            :type: int
+
+            ID of Gif
+
+        .. py:attribute:: alt_text
+            :type: str
+
+            Alt Text of Gif
+
+        .. py:attribute:: url
+            :type: str
+
+            Direct Download URL of Gif
+
+ScheduledTweet
+---------------------
+
+.. py:class:: ScheduledTweet
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.ScheduledTweet`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: str
+
+            ID of Tweet
+
+        .. py:attribute:: execute_at
+            :type: datetime.datetime
+
+            Time at which tweet is scheduled to be posted
+
+        .. py:attribute:: text
+            :type: str
+
+            Text of Tweet
+
+        .. py:attribute:: reply_to_tweet_id
+            :type: str
+
+            Replying to Tweet ID
+
+        .. py:attribute:: media
+            :type: list[Union[ApiImage, ApiVideo, ApiGif]]
+
+ApiVideo
+---------------------
+
+.. py:class:: ApiVideo
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.ApiVideo`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: duration_ms
+            :type: int
+
+            Duration of video in milliseconds
+
+        .. py:attribute:: alt_text
+            :type: str
+
+            Alt Text of Video
+
+        .. py:attribute:: preview_image
+            :type: ApiImage
+
+            Preview of Video
+
+        .. py:attribute:: aspect_ratio
+            :type: str
+
+            Aspect Ratio of Video
+
+        .. py:attribute:: variants
+            :type: list[ApiVideoVariant]
+
+            Available variants of Video
+
+    .. py:data:: Methods:
+
+        .. py:method:: best_stream()
+            :async:
+
+            Get Best Stream available
+
+            .. py:data:: Return
+                :type: ApiVideoVariant
+
+
+ApiGif
+---------------------
+
+.. py:class:: ApiGif
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.ApiGif`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: alt_text
+            :type: str
+
+            Alt Text of GIf
+
+        .. py:attribute:: preview_image
+            :type: ApiImage
+
+            Preview of GIf
+
+        .. py:attribute:: variants
+            :type: list[ApiVideoVariant]
+
+            Available variants of Gif
+
+    .. py:data:: Methods:
+
+        .. py:method:: best_stream()
+            :async:
+
+            Get Best Stream available
+
+            .. py:data:: Return
+                :type: ApiVideoVariant
+
+ApiVideoVariant
+---------------------
+
+.. py:class:: ApiVideoVariant
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.ApiVideoVariant`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: content_type
+            :type: str
+
+            Content Type of Video/Gif
+
+        .. py:attribute:: alt_text
+            :type: str
+
+            Alt Text of GIf
+
+        .. py:attribute:: url
+            :type: str
+
+            Direct Download URL
+
+ApiImage
+---------------------
+
+.. py:class:: ApiImage
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.ApiImage`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: alt_text
+            :type: str
+
+            Alt Text of Image
+
+        .. py:attribute:: width
+            :type: str
+
+            Width of Image
+
+        .. py:attribute:: height
+            :type: str
+
+            Height of Image
+
+        .. py:attribute:: url
+            :type: str
+
+            Direct Download URL
+
+Article
+---------------------
+
+.. py:class:: Article
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.Article`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: str
+
+            ID of Article
+
+        .. py:attribute:: created_at
+            :type: datetime.datetime
+
+            Time at which Article was created
+
+        .. py:attribute:: edited_at
+            :type: datetime.datetime
+
+            Time at which Article was edited
+
+        .. py:attribute:: title
+            :type: str
+
+            Title of Article
+
+        .. py:attribute:: text
+            :type: str
+
+            Text of Article
+
+        .. py:attribute:: cover_media
+            :type: Union[ApiImage, ApiVideo, ApiGif]
+
+            Header Cover Media of Article
+
+        .. py:attribute:: media
+            :type: list[Union[ApiImage, ApiVideo, ApiGif]]
+
+            Media of Article
+
+
+GrokShare
+---------------------
+
+.. py:class:: GrokShare
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.GrokShare`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: id
+            :type: str
+
+            ID of GrokShare
+
+        .. py:attribute:: messages
+            :type: list[GrokShareMessage]
+
+            Message responses of share
+
+GrokShareMessage
+---------------------
+
+.. py:class:: GrokShareMessage
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.GrokShareMessage`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+
+            Message text of response
+
+        .. py:attribute:: media
+            :type: list[str]
+
+            Direct URLs to Media
+
+        .. py:attribute:: sender
+            :type: str
+
+            Who is sender of this message (Agent=GROK)
+
+GrokMessage
+---------------------
+
+.. py:class:: GrokMessage
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.GrokMessage`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+
+            Message text of response
+
+        .. py:attribute:: created_at
+            :type: datetime.datetime
+
+            Time at which this response was generated
+
+        .. py:attribute:: attachments
+            :type: list[GrokAttachment]
+
+            Media available as response
+
+        .. py:attribute:: cited_webpages
+            :type: list[GrokCitedWebPage]
+
+            Webpages cited in response
+
+        .. py:attribute:: tweets
+            :type: list[Tweet]
+
+            Tweets cited in response
+
+        .. py:attribute:: tweets
+            :type: list[str]
+
+            IDs of Tweets cited in response
+
+GrokAttachment
+---------------------
+
+.. py:class:: GrokAttachment
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.GrokAttachment`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: filename
+            :type: str
+
+            Filename of attachment
+
+        .. py:attribute:: id
+            :type: str
+
+            ID of attachment
+
+        .. py:attribute:: mime_type
+            :type: str
+
+            Mime Type of attachment
+
+        .. py:attribute:: url
+            :type: str
+
+            Direct Download URL
+
+
+GrokCitedWebPage
+---------------------
+
+.. py:class:: GrokCitedWebPage
+
+    Bases : `dict`
+
+    .. note:: **This Object is JSON Serializable**
+
+    :reference: `tweety.types.twDataTypes.GrokCitedWebPage`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: favicon
+            :type: str
+
+            favicon url of webpage
+
+        .. py:attribute:: favicon64
+            :type: str
+
+            base64 favicon of webpage
+
+        .. py:attribute:: language
+            :type: str
+
+            Language of Webpage
+
+        .. py:attribute:: title
+            :type: str
+
+            Title of Webpage
+
+        .. py:attribute:: snippet
+            :type: str
+
+            Preview of Webpage
+
+        .. py:attribute:: url
+            :type: str
+
+            URL of Webpage
+
+GifSearch
+---------------------
+
+.. py:class:: GifSearch
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.gifs.GifSearch`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: gifs
+            :type: list[Gif]
+
+            List of Gif
+
+GrokConversation
+---------------------
+
+.. py:class:: GrokConversation
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.grok.GrokConversation`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: messages
+            :type: list[GrokMessage]
+
+            List of Responses in the Conversation
+
+    .. py:data:: Methods:
+
+        .. py:method:: get_new_response(prompt_text : str)
+            :async:
+
+            Generate new response from Grok against your prompt
+
+            .. py:data:: Return
+                :type: GrokMessage
+
+Places
+---------------------
+
+.. py:class:: Places
+
+    Bases : `BaseGeneratorClass`
+
+    .. note:: **This Object is JSON Serializable and Iterable**
+
+    :reference: `tweety.types.places.Places`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: results
+            :type: list[Place]
+
+            List of places
+
+        .. py:attribute:: lat
+            :type: str
+
+            Latitude of place
+
+        .. py:attribute:: long
+            :type: str
+
+            Longitude of place

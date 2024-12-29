@@ -758,6 +758,27 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
+    async def create_grok_conversation(self):
+        request_data = self._builder.create_grok_conversation()
+        response = await self.__get_response__(**request_data)
+        return response
+
+    async def get_grok_conversation_by_id(self, conversation_id, cursor):
+        request_data = self._builder.get_grok_conversation_by_id(conversation_id, cursor)
+        request_data["headers"]["referer"] = f"https://x.com/i/grok?conversation={conversation_id}"
+        response = await self.__get_response__(**request_data)
+        return response
+
+    async def get_new_grok_response(self, conversation_id, responses):
+        request_data = self._builder.get_grok_new_response(conversation_id, responses)
+        response = await self.__get_response__(is_document = True, **request_data)
+        return response
+
+    async def get_suggested_users(self):
+        request_data = self._builder.get_suggested_users()
+        response = await self.__get_response__(**request_data)
+        return response
+
     async def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
         headers = self._get_request_headers()

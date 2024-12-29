@@ -15,7 +15,7 @@ AuthenticationRequired
 
     :description: **This Exception is raised when you use a method which required the user to be authenticated.**
 
-    :reference: `tweety.exceptions_.AuthenticationRequired`
+    :reference: `tweety.exceptions.AuthenticationRequired`
 
     .. py:data:: Attributes:
 
@@ -51,7 +51,7 @@ UserNotFound
 
     :description: **This Exception is raised when you use a method which required the user to be authenticated.**
 
-    :reference: `tweety.exceptions_.UserNotFound`
+    :reference: `tweety.exceptions.UserNotFound`
 
     .. py:data:: Attributes:
 
@@ -88,7 +88,7 @@ InvalidTweetIdentifier
 
     :description: **This Exception is raised when the tweet which is begin queried is not Found / Invalid**.
 
-    :reference: `tweety.exceptions_.InvalidTweetIdentifier`
+    :reference: `tweety.exceptions.InvalidTweetIdentifier`
 
     .. py:data:: Attributes:
 
@@ -124,7 +124,7 @@ GuestTokenNotFound
 
     :description: **This Exception is raised when guest token couldn't be obtained.**
 
-    :reference: `tweety.exceptions_.GuestTokenNotFound`
+    :reference: `tweety.exceptions.GuestTokenNotFound`
 
     .. py:data:: Attributes:
 
@@ -160,7 +160,7 @@ UserProtected
 
     :description: **This Exception is raised when the user which is begin queried has private profile.This can be fixed by authenticating the request using cookies**
 
-    :reference: `tweety.exceptions_.UserProtected`
+    :reference: `tweety.exceptions.UserProtected`
 
     .. py:data:: Attributes:
 
@@ -196,7 +196,7 @@ InvalidCredentials
 
     :description: **This Exception is raised when the cookies provided for authentication are invalid**
 
-    :reference: `tweety.exceptions_.InvalidCredentials`
+    :reference: `tweety.exceptions.InvalidCredentials`
 
     .. py:data:: Attributes:
 
@@ -232,7 +232,7 @@ RateLimitReached
 
     :description: **This Exception is raised when you have exceeded the Twitter Rate Limit**
 
-    :reference: `tweety.exceptions_.RateLimitReached`
+    :reference: `tweety.exceptions.RateLimitReached`
 
     .. py:data:: Attributes:
 
@@ -268,7 +268,7 @@ DeniedLogin
 
     :description: **Exception Raised when the Twitter deny the login request , could be due to multiple login attempts (or failed attempts)**
 
-    :reference: `tweety.exceptions_.DeniedLogin`
+    :reference: `tweety.exceptions.DeniedLogin`
 
     .. py:data:: Attributes:
 
@@ -300,7 +300,7 @@ UnknownError
     Bases : `Exception`
 
     :description: **This Exception is raised when a error unknown to Tweety occurs**
-    :reference: `tweety.exceptions_.UnknownError`
+    :reference: `tweety.exceptions.UnknownError`
 
     .. py:data:: Attributes:
 
@@ -332,7 +332,7 @@ ActionRequired
     Bases : `Exception`
 
     :description: **This Exception is raised when an additional step is required for Logging-in**
-    :reference: `tweety.exceptions_.ActionRequired`
+    :reference: `tweety.exceptions.ActionRequired`
 
     .. py:data:: Attributes:
 
@@ -364,7 +364,7 @@ ListNotFound
     Bases : `Exception`
 
     :description: **This Exception is raised when List queried is not Found**
-    :reference: `tweety.exceptions_.ListNotFound`
+    :reference: `tweety.exceptions.ListNotFound`
 
     .. py:data:: Attributes:
 
@@ -396,13 +396,145 @@ ProtectedTweet
     Bases : `Exception`
 
     :description: **This Exception is raised when queried Tweet is protected, and you need authorization to access it**
-    :reference: `tweety.exceptions_.ProtectedTweet`
+    :reference: `tweety.exceptions.ProtectedTweet`
 
     .. py:data:: Attributes:
 
         .. py:attribute:: message
             :type: str
             :value: "Tweet is private/protected"
+
+            Main Exception Message / Description of the Action to be performed
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter
+
+ConversationNotFound
+---------------------
+
+.. py:class:: ConversationNotFound
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when queried conversation not Found**
+    :reference: `tweety.exceptions.ConversationNotFound`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+            :value: "Conversation Not Found"
+
+            Main Exception Message / Description of the Action to be performed
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter
+
+LockedAccount
+---------------------
+
+.. py:class:: LockedAccount
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when logged in account is Locked and might require to pass a CAPTCHA check**
+    :reference: `tweety.exceptions.LockedAccount`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+            :value: "Your Account is Locked"
+
+            Main Exception Message / Description of the Action to be performed
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter
+
+SuspendedAccount
+---------------------
+
+.. py:class:: SuspendedAccount
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when logged in account is suspended**
+    :reference: `tweety.exceptions.SuspendedAccount`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+            :value: "Your Account is Suspended"
+
+            Main Exception Message / Description of the Action to be performed
+
+        .. py:attribute:: error_code
+            :type: int
+
+            Exception Error Code
+
+        .. py:attribute:: error_name
+            :type: str
+
+            Twitter Internal Error Name
+
+        .. py:attribute:: response
+            :type: httpx.Response
+
+            Raw Response returned by the Twitter
+
+UploadFailed
+---------------------
+
+.. py:class:: UploadFailed
+
+    Bases : `Exception`
+
+    :description: **This Exception is raised when media upload fails**
+    :reference: `tweety.exceptions.UploadFailed`
+
+    .. py:data:: Attributes:
+
+        .. py:attribute:: message
+            :type: str
+            :value: "Unknown Error Occurred while uploading File"
 
             Main Exception Message / Description of the Action to be performed
 
@@ -429,7 +561,7 @@ ProxyParseError
     Bases : `Exception`
 
     :description: **This Exception is raised when Proxy Format is Irregular**
-    :reference: `tweety.exceptions_.ProxyParseError`
+    :reference: `tweety.exceptions.ProxyParseError`
 
     .. py:data:: Attributes:
 

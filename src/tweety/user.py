@@ -1,6 +1,7 @@
 import datetime
 from typing import Union, Tuple, List
 from .exceptions import ListNotFound, ConversationNotFound
+from .types.grok import GrokConversation
 from .types.inbox import Message, Conversation
 from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id, async_list
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
@@ -498,8 +499,8 @@ class UserMethods:
             file: Union[str, UploadedMedia] = None,
             in_group: bool = False,  # TODO : Find better way,
             reply_to_message_id: Union[int, str, Message] = None,
-            audio_only=False,
-            quote_tweet_id=None,
+            audio_only: bool =False,
+            quote_tweet_id : Union[str, int, Tweet] = None,
     ) -> Message:
 
         """
@@ -736,7 +737,7 @@ class UserMethods:
 
     async def get_list_member(
             self,
-            list_id: Union[str, int, List],
+            list_id: Union[str, int, TwList],
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
@@ -782,7 +783,7 @@ class UserMethods:
 
     async def get_list_tweets(
             self,
-            list_id: Union[str, int, List],
+            list_id: Union[str, int, TwList],
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
@@ -923,7 +924,7 @@ class UserMethods:
         response = await self.http.delete_bookmark_tweet(tweetId)
         return True if find_objects(response, "tweet_bookmark_delete", "Done") else False
 
-    async def follow_user(self, user_id):
+    async def follow_user(self, user_id: Union[str, int , User]):
         """
 
         :param user_id: User Id of the user you want to follow
@@ -935,7 +936,7 @@ class UserMethods:
         response['__typename'] = "User"
         return User(self, response)
 
-    async def unfollow_user(self, user_id):
+    async def unfollow_user(self, user_id: Union[str, int , User]):
         """
 
         :param user_id: User Id of the user you want to unfollow
@@ -948,7 +949,7 @@ class UserMethods:
         response['__typename'] = "User"
         return User(self, response)
 
-    async def block_user(self, user_id):
+    async def block_user(self, user_id: Union[str, int , User]):
         """
 
         :param user_id: User Id of the user you want to block
@@ -961,7 +962,7 @@ class UserMethods:
         response['__typename'] = "User"
         return User(self, response)
     
-    async def unblock_user(self, user_id):
+    async def unblock_user(self, user_id: Union[str, int , User]):
         """
 
         :param user_id: User Id of the user you want to unblock
@@ -1027,7 +1028,7 @@ class UserMethods:
         response['card']['legacy'] = response['card']
         return Poll(self, response['card'])
 
-    async def delete_tweet(self, tweet_id):
+    async def delete_tweet(self, tweet_id: Union[str, int, Tweet]):
         """
 
         :param tweet_id: (`str`, `int`, Tweet) Tweet to be deleted
@@ -1039,7 +1040,7 @@ class UserMethods:
         response = await self.http.delete_tweet(tweetId)
         return True if response.get('data', {}).get('delete_tweet') else False
 
-    async def enable_user_notification(self, user_id):
+    async def enable_user_notification(self, user_id: Union[str, int, User]):
         """
         Enable user notification on new tweet from specific user
 
@@ -1053,7 +1054,7 @@ class UserMethods:
 
         return True
 
-    async def disable_user_notification(self, user_id):
+    async def disable_user_notification(self, user_id: Union[str, int, User]):
         """
         Disable user notification on new tweet from specific user
 
@@ -1267,6 +1268,27 @@ class UserMethods:
 
         response = await self.http.unpin_tweet(tweetId)
         return True if find_objects(response, "message", "post unpinned successfully") else False
+
+    async def create_grok_conversation(self):
+        response = await self.http.create_grok_conversation()
+        return response.get("data", {}).get("create_grok_conversation", {}).get("conversation_id")
+
+    async def get_grok_conversation(self, conversation_id: Union[str, int]):
+        grok_conversation = GrokConversation(conversation_id, self, 1, 0, None)
+        return await async_list(grok_conversation)
+
+    async def get_grok_response(self, text, conversation_id: Union[str, int, GrokConversation] = None):
+        if not conversation_id:
+            conversation_id = await self.create_grok_conversation()
+
+        grok_conversation = await self.get_grok_conversation(conversation_id)
+        grok_new_message = await grok_conversation.get_new_response(text)
+        return grok_new_message, grok_conversation
+
+    async def get_suggested_users(self):
+        response = await self.http.get_suggested_users()
+        users = find_objects(response, "__typename", "User", none_value=[])
+        return [User(self, user) for user in users]
 
     async def upload_media(
             self,

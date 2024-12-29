@@ -217,3 +217,18 @@ Update 3.1
 - Added `get_tweet_analytics` method
 - Added `unlike_tweet` method
 - Added `translate_tweet` method
+
+Pypi release 2.0
+-------------------
+- Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 2.0
+- **Added Full Async Support**
+- `TwitterAsync` class should be used from now on
+* **Please do check the full documentation before upgrading**
+
+
+Pypi release 2.1
+-----------------
+- Module version on `PYPI Repository <https://pypi.org/project/tweety-ns/>`_ is bumped to 2.1
+- Added Grok related methods
+- Bug Fixes
+- Improvements and Optimizations
