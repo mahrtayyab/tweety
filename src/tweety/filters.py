@@ -20,6 +20,7 @@ class SearchFilters:
     Latest = _CallableString("Latest")
     Media = _CallableString("Media")
     Lists = _CallableString("Lists")
+    Top = _CallableString("Top")
 
 
 class TweetConversationFilters:
