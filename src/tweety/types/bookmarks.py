@@ -25,14 +25,12 @@ class Bookmarks(BaseGeneratorClass):
             try:
                 parsed = Tweet(self.client, entry, response)
                 if parsed:
-                    self.tweets.append(parsed)
                     _tweets.append(parsed)
             except:
                 pass
 
         cursor = self._get_cursor_(response)
         cursor_top = self._get_cursor_(response, "Top")
-
         return _tweets, cursor, cursor_top
 
     def to_xlsx(self, filename=None):

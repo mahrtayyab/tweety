@@ -7,7 +7,7 @@ from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
                     Topic, TopicTweets, MutualFollowers, ScheduledTweets, ScheduledTweet, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
-                    ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED, Community)
+                    ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED, Community, ListFollowers)
 from . import constants
 
 
@@ -492,6 +492,12 @@ class UserMethods:
         await self.http.update_conversation_avatar(conversation_id, file)
         return True
 
+    async def send_typing_indicator(self, conversation_id):
+        if isinstance(conversation_id, Conversation):
+            conversation_id = conversation_id.id
+
+        return await self.http.send_typing_indicator(conversation_id)
+
     async def send_message(
             self,
             username: Union[str, int, User, Conversation],
@@ -755,6 +761,52 @@ class UserMethods:
             list_id = list_id.id
 
         lists = ListMembers(list_id, self, pages, wait_time, cursor)
+        return await async_list(lists)
+
+    async def iter_list_followers(
+            self,
+            list_id: Union[str, int, List],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param list_id: List ID of which to get members of
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: (.types.lists.ListFollowers, list[.types.twDataTypes.User])
+        """
+
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        lists = ListFollowers(list_id, self, pages, wait_time, cursor)
+
+        async for result_tuple in lists.generator():
+            yield result_tuple
+
+    async def get_list_followers(
+            self,
+            list_id: Union[str, int, TwList],
+            pages: int = 1,
+            wait_time: Union[int, list, tuple] = 2,
+            cursor: str = None
+    ):
+        """
+
+        :param list_id: List ID of which to get members of
+        :param pages: (`int`) The number of pages to get
+        :param wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
+        :param cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
+        :return: .types.lists.ListFollowers
+        """
+
+        if isinstance(list_id, TwList):
+            list_id = list_id.id
+
+        lists = ListFollowers(list_id, self, pages, wait_time, cursor)
         return await async_list(lists)
 
     async def iter_list_tweets(

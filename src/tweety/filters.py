@@ -21,6 +21,10 @@ class SearchFilters:
     Media = _CallableString("Media")
     Lists = _CallableString("Lists")
 
+class TweetCommentFilters:
+    Likes = _CallableString("Likes")
+    Latest = _CallableString("Recency")
+    Relevant = Relevancy = _CallableString("Relevance")
 
 class TweetConversationFilters:
     """

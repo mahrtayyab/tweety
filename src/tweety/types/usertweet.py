@@ -1,6 +1,7 @@
 from .twDataTypes import SelfThread, ConversationThread, Tweet, Excel, ScheduledTweet
 from ..exceptions import UserProtected, UserNotFound
 from .base import BaseGeneratorClass, find_objects
+from ..filters import TweetCommentFilters
 
 
 class UserTweets(BaseGeneratorClass):
@@ -303,7 +304,7 @@ class TweetComments(BaseGeneratorClass):
     }
     _RESULT_ATTR = "tweets"
 
-    def __init__(self, tweet_id, client, get_hidden=False, pages=1, wait_time=2, cursor=None):
+    def __init__(self, tweet_id, client, get_hidden=False, filter_=TweetCommentFilters.Relevant, pages=1, wait_time=2, cursor=None):
         super().__init__()
         self.tweets = []
         self.cursor = cursor
@@ -312,6 +313,7 @@ class TweetComments(BaseGeneratorClass):
         self.client = client
         self.tweet_id = tweet_id
         self.pages = pages
+        self.filter=filter_
         self.wait_time = wait_time
         self.parent = None
 
@@ -326,7 +328,7 @@ class TweetComments(BaseGeneratorClass):
         if not self.parent:
             self.parent = await self._get_parent()
         _comments = []
-        response = await self.client.http.get_tweet_detail(self.tweet_id, cursor)
+        response = await self.client.http.get_tweet_detail(self.tweet_id, cursor, self.filter)
 
         entries = self._get_entries(response)
 
@@ -351,8 +353,8 @@ class TweetComments(BaseGeneratorClass):
         return _comments, cursor, cursor_top
 
     def __repr__(self):
-        return "TweetComments(tweet_id={}, count={}, parent={})".format(
-            self.tweet_id, len(self.tweets), self.parent
+        return "TweetComments(tweet_id={}, count={}, filter={} parent={})".format(
+            self.tweet_id, len(self.tweets), self.filter, self.parent
         )
 
 

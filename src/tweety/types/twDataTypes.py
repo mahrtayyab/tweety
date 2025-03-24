@@ -8,6 +8,7 @@ import openpyxl
 import dateutil
 from ..constants import MEDIA_TYPE_VIDEO, MEDIA_TYPE_GIF, MEDIA_TYPE_IMAGE
 from ..exceptions import UserNotFound, UserProtected, ProtectedTweet
+from ..filters import TweetCommentFilters
 from ..utils import *
 
 
@@ -242,11 +243,11 @@ class Tweet(_TwType):
                     pass
         return _threads
 
-    async def get_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
-        return await self._client.get_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
+    async def get_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False, filter_=TweetCommentFilters.Relevant):
+        return await self._client.get_tweet_comments(self.id, pages, wait_time, cursor, get_hidden, filter_)
 
-    async def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False):
-        return await self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden)
+    async def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False, filter_=TweetCommentFilters.Relevant):
+        return await self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden, filter_)
 
     def _check_if_protected(self):
         is_protected = is_tweet_protected(self._raw)
@@ -489,19 +490,22 @@ class Tweet(_TwType):
         if not self.is_reply:
             return None
 
-        tweet_id = self._original_tweet['in_reply_to_status_id_str']
+        replied_to_tweet_id = self._original_tweet['in_reply_to_status_id_str']
         if not self._full_http_response:
-            response = await self._client.http.get_tweet_detail(tweet_id)
+            response = await self._client.http.get_tweet_detail(replied_to_tweet_id)
         else:
             response = self._full_http_response
 
         try:
             entries = find_objects(response, "entries", None, none_value=[])
             for entry in entries:
-                if str(entry['entryId']).split("-")[0] == "tweet" and str(
-                        entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
-                    raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                    return Tweet(self._client, raw_tweet)
+                this_tweet = Tweet(self._client, entry)
+                if str(this_tweet.id) == str(replied_to_tweet_id):
+                    return this_tweet
+                # if str(entry['entryId']).split("-")[0] == "tweet" and str(
+                #         entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
+                #     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
+                #     return Tweet(self._client, raw_tweet)
         except:
             pass
 
@@ -1311,6 +1315,7 @@ class User(_TwType):
         self.is_bot = self.is_automated = self._get_is_automated()
         self.is_blocked = self._get_is_blocked()
         self.blocked_by = self.has_blocked_me = self._get_blocked_by()
+        self.is_parody_account = self._get_is_parody()
 
     def __eq__(self, other):
         if isinstance(other, (User, ShortUser)):
@@ -1364,6 +1369,9 @@ class User(_TwType):
 
     async def remove_from_list(self, list_id):
         return await self._client.remove_list_member(list_id, self.id)
+
+    def _get_is_parody(self):
+        return True if find_objects(self._user, "has_parody_profile_label", True) else False
 
     def _get_is_automated(self):
         return True if find_objects(self._user, "userLabelType", "AutomatedLabel") else False

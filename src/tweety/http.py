@@ -318,7 +318,7 @@ class Request:
         user = User(self._client, response)
 
         if user is None:
-                raise InvalidCredentials(None, None, response)
+            raise InvalidCredentials(None, None, response)
 
         self.username = user.username
         self.set_user(user)
@@ -396,9 +396,9 @@ class Request:
         response = await self.__get_response__(**request)
         return response
 
-    async def get_tweet_detail(self, tweetId, cursor=None):
+    async def get_tweet_detail(self, tweetId, cursor=None, filter_="Relevance"):
         if self.user:
-            response = await self.__get_response__(**self._builder.tweet_detail(tweetId, cursor))
+            response = await self.__get_response__(**self._builder.tweet_detail(tweetId, cursor, filter_))
         else:
             response = await self.__get_response__(**self._builder.tweet_detail_as_guest(tweetId))
         return response
@@ -475,6 +475,11 @@ class Request:
         request_data = self._builder.update_conversation_group_avatar(conversation_id, avatar_id)
         request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
         response = await self.__get_response__(ignore_none_data=True, **request_data)
+        return response
+
+    async def send_typing_indicator(self, conversation_id):
+        request_data = self._builder.send_typing_indicator(conversation_id)
+        response = await self.__get_response__(**request_data)
         return response
 
     async def send_message(self, conversation_id, text, media_id, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
@@ -688,6 +693,11 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
+    async def get_list_followers(self, list_id, cursor):
+        request_data = self._builder.get_list_followers(list_id, cursor)
+        response = await self.__get_response__(**request_data)
+        return response
+
     async def get_list_tweets(self, list_id, cursor):
         request_data = self._builder.get_list_tweets(list_id, cursor)
         response = await self.__get_response__(**request_data)
@@ -776,6 +786,11 @@ class Request:
 
     async def get_suggested_users(self):
         request_data = self._builder.get_suggested_users()
+        response = await self.__get_response__(**request_data)
+        return response
+
+    async def get_friendship(self, source_user_id, target_user_id):
+        request_data = self._builder.get_friendship(source_user_id, target_user_id)
         response = await self.__get_response__(**request_data)
         return response
 

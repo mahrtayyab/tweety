@@ -141,3 +141,46 @@ class ListMembers(BaseGeneratorClass):
         return "ListMembers(id={}, count={})".format(
             self.list_id, self.__len__()
         )
+
+class ListFollowers(BaseGeneratorClass):
+    _RESULT_ATTR = "users"
+
+    def __init__(self, list_id, client, pages=1, wait_time=2, cursor=None):
+        super().__init__()
+        self.users = []
+        self.cursor = cursor
+        self.cursor_top = cursor
+        self.is_next_page = True
+        self.client = client
+        self.list_id = list_id
+        self.pages = pages
+        self.wait_time = wait_time
+
+    @staticmethod
+    def _get_users(response):
+        all_users = find_objects(response, "__typename", "User", none_value=[])
+        return [all_users] if not isinstance(all_users, list) else all_users
+
+    async def get_page(self, cursor):
+        _users = []
+        response = await self.client.http.get_list_followers(self.list_id, cursor=cursor)
+
+        response_users = self._get_users(response)
+
+        for response_user in response_users:
+            try:
+                parsed = User(self.client, response_user, None)
+                if parsed:
+                    _users.append(parsed)
+            except:
+                pass
+
+        cursor = self._get_cursor_(response)
+        cursor_top = self._get_cursor_(response, "Top")
+
+        return _users, cursor, cursor_top
+
+    def __repr__(self):
+        return "ListFollowers(id={}, count={})".format(
+            self.list_id, self.__len__()
+        )

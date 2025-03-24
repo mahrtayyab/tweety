@@ -182,12 +182,12 @@ class AuthMethods:
                 raise ActionRequired(0, "ActionRequired", response, message)
 
             if subtask == "ArkoseLogin":
-                if self._captcha_solver is None:
-                    raise ArkoseLoginRequired(response=response)
+                # if self._captcha_solver is None:
+                raise ArkoseLoginRequired(response=response)
 
-                token = await self.request.solve_captcha(websiteUrl="https://iframe.arkoselabs.com")
+                # token = await self.request.solve_captcha(websiteUrl="https://iframe.arkoselabs.com")
                 # token = self.request.solve_captcha(websiteUrl="https://twitter.com/i/flow/login", blob_data=data[0])
-                self._captcha_token = token
+                # self._captcha_token = token
 
             if subtask == "DenyLoginSubtask":
                 reason = self._get_action_text(self._last_json)

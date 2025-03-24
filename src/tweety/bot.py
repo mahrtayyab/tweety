@@ -11,6 +11,7 @@ from .exceptions import *
 from .session import Session, MemorySession, FileSession
 from .http import Request
 from .captcha.base import BaseCaptchaSolver
+from .filters import TweetCommentFilters
 
 
 class BotMethods:
@@ -774,7 +775,8 @@ class BotMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None,
-            get_hidden: bool = False
+            get_hidden: bool = False,
+            filter_: str = TweetCommentFilters.Relevant
     ):
         """
 
@@ -783,12 +785,13 @@ class BotMethods:
         :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :param: get_hidden: (`bool`) get the hidden comments (most likely offensive comments)
-        :return: .types.likes.TweetLikes
+        :param: filter_: (`str`) Filter Tweet Comments
+        :return: .types.usertweet.TweetComments
         """
 
         tweetId = get_tweet_id(tweet_id)
 
-        comments = TweetComments(tweetId, self, get_hidden, pages, wait_time, cursor)
+        comments = TweetComments(tweetId, self, get_hidden, filter_, pages, wait_time, cursor)
         return await async_list(comments)
 
     @AuthRequired
@@ -798,7 +801,8 @@ class BotMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None,
-            get_hidden: bool = False
+            get_hidden: bool = False,
+            filter_: str = TweetCommentFilters.Relevant
     ):
         """
 
@@ -807,13 +811,14 @@ class BotMethods:
         :param: wait_time: (`int`, `list`, `tuple`) seconds to wait between multiple requests
         :param: cursor: (`str`) Pagination cursor if you want to get the pages from that cursor up-to (This cursor is different from actual API cursor)
         :param: get_hidden: (`bool`) get the hidden comments (most likely offensive comments)
+        :param: filter_: (`str`) Filter Tweet Comments
 
-        :return: (.types.likes.TweetLikes, list[.types.twDataTypes.User])
+        :return: (.types.usertweet.TweetComments, list[.types.twDataTypes.ConversationThread])
         """
 
         tweetId = get_tweet_id(tweet_id)
 
-        comments = TweetComments(tweetId, self, get_hidden, pages, wait_time, cursor)
+        comments = TweetComments(tweetId, self, get_hidden, filter_, pages, wait_time, cursor)
 
         async for result_tuple in comments.generator():
             yield result_tuple

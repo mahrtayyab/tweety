@@ -84,6 +84,7 @@ class UrlBuilder:
     URL_AUSER_GET_LISTS = "https://x.com/i/api/graphql/xoietOOE63W0cH9LFt4yRA/ListsManagementPageTimeline"  # noqa
     URL_AUSER_GET_LIST = "https://x.com/i/api/graphql/zNcfphEciDXgu0vdIMhSaA/ListByRestId"  # noqa
     URL_AUSER_GET_LIST_MEMBER = "https://x.com/i/api/graphql/WWxrex_8HmKW2dzlPnwtTg/ListMembers"  # noqa
+    URL_AUSER_GET_LIST_FOLLOWER = "https://x.com/i/api/graphql/ckZnnV20QqmMFm9riJ3FtQ/ListSubscribers"  # noqa
     URL_AUSER_GET_LIST_TWEETS = "https://x.com/i/api/graphql/TXyJ3x6-VnEbkV09UzebUQ/ListLatestTweetsTimeline"  # noqa
     URL_AUSER_ADD_LIST_MEMBER = "https://x.com/i/api/graphql/sw71TVciw1b2nRwV6eDZNA/ListAddMember"  # noqa
     URL_AUSER_DELETE_LIST_MEMBER = "https://x.com/i/api/graphql/kHdBGndqf_JX3ef1T1931A/ListRemoveMember"  # noqa
@@ -103,6 +104,8 @@ class UrlBuilder:
     URL_GROK_CONVERSATION_BY_ID = "https://x.com/i/api/graphql/MSTjAM_LGNJM6oU0N2CcHg/GrokConversationItemsByRestId"
     URL_NEW_GROK_RESPONSE = "https://api.x.com/2/grok/add_response.json"
     URL_SUGGESTED_USERS = "https://x.com/i/api/graphql/OzfGv4kkFvmAYD1Egj3OVQ/ConnectTabTimeline"
+    URL_TYPING_INDICATOR = "https://x.com/i/api/graphql/HL96-xZ3Y81IEzAdczDokg/useTypingNotifierMutation"
+    URL_GET_FRIENDSHIP = "https://api.twitter.com/1.1/friendships/show.json"
 
     def get_guest_token(self):
         return "POST", self.URL_GUEST_TOKEN
@@ -142,7 +145,7 @@ class UrlBuilder:
                     "responsive_web_graphql_timeline_navigation_enabled": True,
                     "subscriptions_feature_can_gift_premium": True}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_SELF_USER, params
 
@@ -171,7 +174,7 @@ class UrlBuilder:
                     "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
                     "responsive_web_graphql_timeline_navigation_enabled": True, "rweb_tipjar_consumption_enabled": True}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_USER_BY_USER_IDS, params
 
@@ -201,7 +204,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_USER_MEDIAS, params
 
@@ -225,7 +228,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_USER_HIGHLIGHTS, params
 
@@ -251,7 +254,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_USER_LIKES, params
 
@@ -386,7 +389,7 @@ class UrlBuilder:
 
         if filter_:
             variables['product'] = filter_
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_SEARCH, urlencode(params, safe='"()%', quote_via=urllib.parse.quote_plus)
 
@@ -424,39 +427,37 @@ class UrlBuilder:
         }
         return "GET", self.URL_SEARCH_TYPEHEAD, params
 
-    def tweet_detail(self, tweet_id, cursor=None):
-        variables = {"focalTweetId": str(tweet_id), "with_rux_injections": False,
+    def tweet_detail(self, tweet_id, cursor=None, filter_="Relevance"):
+        variables = {"focalTweetId": tweet_id, "with_rux_injections": True, "rankingMode": filter_,
                      "includePromotedContent": True, "withCommunity": True,
-                     "withQuickPromoteEligibilityTweetFields": True, "withBirdwatchNotes": True, "withVoice": True,
-                     "withV2Timeline": True}
+                     "withQuickPromoteEligibilityTweetFields": True, "withBirdwatchNotes": True, "withVoice": True}
 
-        features = {"c9s_tweet_anatomy_moderator_badge_enabled": True,
-                    "creator_subscriptions_quote_tweet_preview_enabled": True,
-                    "articles_preview_enabled": True,
-                    "communities_web_enable_tweet_community_results_fetch": True,
-                    "rweb_video_timestamps_enabled": True,
-                    "rweb_tipjar_consumption_enabled": True, "rweb_lists_timeline_redesign_enabled": True,
-                    "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": True,
-                    "creator_subscriptions_tweet_preview_api_enabled": True,
+        features = {"profile_label_improvements_pcf_label_in_post_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "responsive_web_graphql_exclude_directive_enabled": True,
+                    "verified_phone_label_enabled": True, "creator_subscriptions_tweet_preview_api_enabled": True,
                     "responsive_web_graphql_timeline_navigation_enabled": True,
-                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                    "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
+                    "premium_content_api_read_enabled": True,
+                    "communities_web_enable_tweet_community_results_fetch": True,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True,
+                    "responsive_web_grok_analyze_button_fetch_trends_enabled": True,
+                    "responsive_web_grok_analyze_post_followups_enabled": True,
+                    "responsive_web_grok_share_attachment_enabled": True, "articles_preview_enabled": True,
+                    "responsive_web_edit_tweet_api_enabled": True,
                     "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
                     "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
                     "responsive_web_twitter_article_tweet_consumption_enabled": True,
-                    "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
-                    "standardized_nudges_misinfo": True,
+                    "tweet_awards_web_tipping_enabled": True, "creator_subscriptions_quote_tweet_preview_enabled": True,
+                    "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
                     "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
-                    "longform_notetweets_rich_text_read_enabled": True,
-                    "longform_notetweets_inline_media_enabled": True,
-                    "responsive_web_media_download_video_enabled": True, "responsive_web_enhance_cards_enabled": False}
+                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True, "responsive_web_enhance_cards_enabled": True}
         fieldToggles = {"withArticleRichContentState": True, "withArticlePlainText": True, "withGrokAnalyze": True}
 
         if cursor:
             variables['cursor'], variables['referrer'] = cursor, "tweet"
-
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
-                  'fieldToggles': str(json.dumps(fieldToggles))}
+        params = {"variables": utils.json_stringify(variables), "features": utils.json_stringify(features),
+                  "fieldToggles": utils.json_stringify(fieldToggles)}
 
         return "GET", self.URL_TWEET_DETAILS, params
 
@@ -478,7 +479,7 @@ class UrlBuilder:
                     "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
                     "immersive_video_status_linkable_timestamps": True,
                     "super_follow_exclusive_tweet_notifications_enabled": True}
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_TWEET_DETAILS_BY_IDs, params
 
@@ -520,7 +521,7 @@ class UrlBuilder:
             "responsive_web_enhance_cards_enabled": False
         }
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_TWEET_DETAILS_AS_GUEST, params
 
     def tweet_edit_history(self, tweet_id):
@@ -543,7 +544,7 @@ class UrlBuilder:
                     "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
                     "responsive_web_enhance_cards_enabled": False}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_TWEET_HISTORY, params
 
     def get_tweet_analytics(self, tweet_id):
@@ -554,7 +555,7 @@ class UrlBuilder:
                      "requested_promoted_metrics": ["DetailExpands", "Engagements", "Follows", "Impressions",
                                                     "LinkClicks", "ProfileVisits", "CostPerFollower"]}
         features = {"responsive_web_tweet_analytics_m3_enabled": False}
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_TWEET_ANALYTICS, params
 
     def get_blocked_users(self, cursor=None):
@@ -580,7 +581,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_BLOCKED_USERS, params
 
     def get_mentions(self, cursor=None):
@@ -858,8 +859,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features)),
-                  'fieldToggles': str(json.dumps(fieldToggles))}
+        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
 
         return "GET", self.URL_AUSER_BOOKMARK, params
 
@@ -898,6 +898,16 @@ class UrlBuilder:
         data = {'avatar_id': avatar_id}
         url = self.URL_AUSER_UPDATE_GROUP_AVATAR.format(conversation_id)
         return "POST", url, None, None, data
+
+    def send_typing_indicator(self, conversation_id):
+        json_data = {
+            'variables': {
+                'conversationId': conversation_id,
+            },
+            'queryId': utils.create_query_id(),
+        }
+
+        return "POST", self.URL_TYPING_INDICATOR, None, json_data
 
     def send_message(self, conversation_id, text, media_id=None, reply_to_message_id=None, audio_only=False,
                      quote_tweet_id=None):
@@ -1335,7 +1345,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_AUSER_TWEET_FAVOURITERS, params
 
@@ -1360,7 +1370,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_AUSER_TWEET_RETWEETERS, params
 
@@ -1576,7 +1586,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_USER_FOLLOWERS, params
 
     def get_user_followings(self, user_id, cursor=None):
@@ -1604,7 +1614,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_USER_FOLLOWINGS, params
 
     def get_user_subscribers(self, user_id, cursor=None):
@@ -1632,7 +1642,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_USER_SUBSCRIBERS, params
 
     def get_user_communities(self, user_id):
@@ -1654,7 +1664,7 @@ class UrlBuilder:
                     "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
                     "longform_notetweets_inline_media_enabled": True, "responsive_web_enhance_cards_enabled": False}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_AUSER_GET_COMMUNITIES, params
 
@@ -1664,7 +1674,7 @@ class UrlBuilder:
                     "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
                     "responsive_web_graphql_timeline_navigation_enabled": True, "verified_phone_label_enabled": True}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_AUSER_GET_COMMUNITY, params
 
@@ -1693,7 +1703,7 @@ class UrlBuilder:
         else:
             url = self.URL_AUSER_GET_COMMUNITY_TWEETS
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", url, params
 
@@ -1701,7 +1711,7 @@ class UrlBuilder:
         variables = {"communityId": community_id, "cursor": cursor}
         features = {"responsive_web_graphql_timeline_navigation_enabled": True}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         if filter_ and filter_.lower() == "mods":
             url = self.URL_AUSER_GET_COMMUNITY_MEMBERS_MODERATOR
@@ -1792,7 +1802,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_LISTS, params
 
     def get_list(self, list_id):
@@ -1801,7 +1811,7 @@ class UrlBuilder:
                     "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
                     "responsive_web_graphql_timeline_navigation_enabled": True}
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_LIST, params
 
     def get_list_member(self, list_id, cursor=None):
@@ -1824,8 +1834,39 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_LIST_MEMBER, params
+
+    def get_list_followers(self, list_id, cursor=None):
+        variables = {"listId": str(list_id), "count": 50, "withSafetyModeUserFields": True}
+        features = {"profile_label_improvements_pcf_label_in_post_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "responsive_web_graphql_exclude_directive_enabled": True,
+                    "verified_phone_label_enabled": True, "creator_subscriptions_tweet_preview_api_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
+                    "premium_content_api_read_enabled": True,
+                    "communities_web_enable_tweet_community_results_fetch": True,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True,
+                    "responsive_web_grok_analyze_button_fetch_trends_enabled": True,
+                    "responsive_web_grok_analyze_post_followups_enabled": True, "responsive_web_jetfuel_frame": True,
+                    "responsive_web_grok_share_attachment_enabled": True, "articles_preview_enabled": True,
+                    "responsive_web_edit_tweet_api_enabled": True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
+                    "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled": True,
+                    "tweet_awards_web_tipping_enabled": True, "responsive_web_grok_analysis_button_from_backend": True,
+                    "creator_subscriptions_quote_tweet_preview_enabled": True,
+                    "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_grok_image_annotation_enabled": True, "responsive_web_enhance_cards_enabled": True}
+
+        if cursor:
+            variables['cursor'] = cursor
+
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
+        return "GET", self.URL_AUSER_GET_LIST_FOLLOWER, params
 
     def get_list_tweets(self, list_id, cursor=None):
         variables = {"listId": str(list_id), "count": 50}
@@ -1847,7 +1888,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_AUSER_GET_LIST_TWEETS, params
 
     def create_list(self, name, description, is_private):
@@ -1957,7 +1998,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
         return "GET", self.URL_AUSER_GET_MUTUAL_FRIENDS, params
 
@@ -1982,7 +2023,7 @@ class UrlBuilder:
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': str(json.dumps(variables)), 'features': str(json.dumps(features))}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_TOPIC_LANDING, params
 
     def pin_tweet(self, tweet_id):
@@ -2006,7 +2047,7 @@ class UrlBuilder:
         return "POST", self.URL_UnPIN_TWEET, None, json_data
 
     def get_scheduled_tweet(self):
-        params = {'variables': str(json.dumps({"ascending": True}))}
+        params = {'variables': utils.json_stringify({"ascending": True})}
         return "GET", self.URL_GET_SCHEDULED_TWEETS, params
 
     def delete_scheduled_tweet(self, tweet_id):
@@ -2055,11 +2096,12 @@ class UrlBuilder:
         params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_GROK_CONVERSATION_BY_ID, params
 
-    def get_grok_new_response(self, conversation_id, previous_and_current_response, grok_model="grok-2a"):
+    def get_grok_new_response(self, conversation_id, previous_and_current_response, grok_model="grok-3"):
         json_data = {"responses": previous_and_current_response, "systemPromptName": "",
                      "grokModelOptionId": grok_model, "conversationId": conversation_id, "returnSearchResults": True,
                      "returnCitations": True, "promptMetadata": {"promptSource": "NATURAL", "action": "INPUT"},
-                     "imageGenerationCount": 4, "requestFeatures": {"eagerTweets": True, "serverHistory": True}}
+                     "imageGenerationCount": 4, "requestFeatures": {"eagerTweets": True, "serverHistory": True},
+                     "enableSideBySide":True,"toolOverrides":{},"isDeepsearch":False,"isReasoning":False}
 
         return "POST", self.URL_NEW_GROK_RESPONSE, None, json_data
 
@@ -2087,6 +2129,19 @@ class UrlBuilder:
 
         params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
         return "GET", self.URL_SUGGESTED_USERS, params
+
+    def get_friendship(self, source_user_id, target_user_id):
+        params = {}
+        if str(source_user_id).isnumeric():
+            params["source_id"] = source_user_id
+        else:
+            params["source_screen_name"] = source_user_id
+        if str(target_user_id).isnumeric():
+            params["target_id"] = target_user_id
+        else:
+            params["target_screen_name"] = target_user_id
+
+        return "GET", self.URL_GET_FRIENDSHIP, params
 
 
 class FlowData:

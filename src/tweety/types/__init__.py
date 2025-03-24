@@ -47,7 +47,7 @@ from .likes import TweetLikes
 from .retweets import TweetRetweets
 from .community import CommunityTweets, CommunityMembers, UserCommunities
 from .notification import TweetNotifications
-from .lists import Lists, ListMembers, ListTweets
+from .lists import Lists, ListMembers, ListTweets, ListFollowers
 from .follow import UserFollowers, UserFollowings, MutualFollowers, BlockedUsers, UserSubscribers
 from .gifs import GifSearch
 from .topic import TopicTweets

@@ -288,6 +288,8 @@ class Conversation(dict):
             return MessageConversationCreated(entry['conversation_create'], self._inbox, self._client)
         elif entry.get('conversation_avatar_update') and str(entry['conversation_avatar_update']['conversation_id']) == str(self.id):
             return MessageConversationAvatarUpdate(entry["conversation_avatar_update"], self._inbox, self._client)
+        elif entry.get('trust_conversation') and str(entry['trust_conversation']['conversation_id']) == str(self.id):
+            return MessageTrustConversation(entry["trust_conversation"], self._client)
 
         return None
 
@@ -363,6 +365,19 @@ class Conversation(dict):
             self.id, self.muted, self.nsfw, self.participants
         )
 
+class MessageTrustConversation(dict):
+    def __init__(self, update, client):
+        super().__init__()
+        self._raw = update
+        self._client = client
+        self.id = self["id"] = self._raw["id"]
+        self.time = self['time'] = parse_time(self._raw.get('time'))
+        self.reason = self["reason"] = self._raw.get("reason")
+
+    def __repr__(self):
+        return "MessageTrustConversation(id={}, time={}, reason={})".format(
+            self.id, self.time, self.reason
+        )
 
 class MessageParticipantUpdate(dict):
     def __init__(self, update_type, update, _inbox, client):
@@ -472,6 +487,24 @@ class MessageConversationAvatarUpdate(dict):
             self.id, self.by_user_id
         )
 
+class MessageReaction(dict):
+    def __init__(self, reaction_message, client):
+        super().__init__()
+        self._raw = reaction_message
+        self._client = client
+        self.id = self["id"] = self._raw.get("id")
+        self.time = self["time"] = parse_time(self._raw.get("time"))
+        self.conversation_id = self["conversation_id"] = self._raw.get("conversation_id")
+        self.reaction_to_message_id = self["reaction_to_message_id"] = self._raw.get("message_id")
+        self.reaction_key = self["reaction_key"] = self._raw.get("reaction_key")
+        self.emoji_reaction = self["emoji_reaction"] = self._raw.get("emoji_reaction")
+        self.sender_id = self["sender_id"] = self._raw.get("sender_id")
+
+    def __repr__(self):
+        return "MessageReaction(id={}, time={}, reaction_key={}, emoji_reaction={}, sender_id={})".format(
+            self.id,self.time, self.reaction_key, self.emoji_reaction, self.sender_id
+        )
+
 
 class Message(dict):
     def __init__(self, message, _inbox, client):
@@ -497,6 +530,8 @@ class Message(dict):
         self.user_mentions = self['user_mentions'] = self._get_user_mentions()
         self.shared_tweet = self._get_shared_tweet()
         self.reply_to = self._get_reply_to()
+        self.edit_count = self._get_message_data("edit_count", 0)
+        self.reactions = [MessageReaction(reaction, self._client) for reaction in self._raw.get("message_reactions", [])]
 
     async def reply(self, text, file=None, audio_only=False, quote_tweet_id=None):
         return await self._client.send_message(self.conversation_id, text=text, file=file, audio_only=audio_only, quote_tweet_id=quote_tweet_id, reply_to_message_id=self.id)
@@ -550,7 +585,9 @@ class Message(dict):
         if not reply_data:
             return None
 
-        return Message(reply_data, self._raw, self._client)
+        message = Message(reply_data, self._inbox, self._client)
+        message.conversation_id = self.conversation_id
+        return message
 
     def _get_shared_tweet(self):
         attachment = self._get_message_data("attachment")
@@ -614,6 +651,7 @@ class SendMessage:
         self._quote_tweet_id = quote_tweet_id
 
     async def send(self):
+        await self._client.send_typing_indicator(self._conv)
         response = await self._client.http.send_message(self._conv, self._text, self._file, self._reply_to_message_id, self._audio_only, self._quote_tweet_id)
         messages = [Message(i["message"], response, self._client) for i in response.get("entries", [])]
         return messages[0] if len(messages) == 1 else messages
