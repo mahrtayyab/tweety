@@ -15,7 +15,7 @@ install_requires = [
 setup(
     name='tweety-ns',
     packages=['tweety', 'tweety.types', 'tweety.events', 'tweety.captcha'],
-    version='2.2',
+    version='2.3',
     license='MIT',
     description='An easy Twitter Scraper',
     author='Tayyab Kharl',
@@ -27,7 +27,6 @@ setup(
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
-        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3'
     ],
 )

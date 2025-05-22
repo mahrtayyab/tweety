@@ -1,3 +1,5 @@
+import traceback
+
 from .twDataTypes import SelfThread, ConversationThread, Tweet, Excel, ScheduledTweet
 from ..exceptions import UserProtected, UserNotFound
 from .base import BaseGeneratorClass, find_objects
@@ -313,7 +315,7 @@ class TweetComments(BaseGeneratorClass):
         self.client = client
         self.tweet_id = tweet_id
         self.pages = pages
-        self.filter=filter_
+        self.filter= filter_
         self.wait_time = wait_time
         self.parent = None
 
@@ -325,9 +327,10 @@ class TweetComments(BaseGeneratorClass):
         return self.tweet_id if isinstance(self.tweet_id, Tweet) else await self.client.tweet_detail(self.tweet_id)
 
     async def get_page(self, cursor):
+        _comments = []
         if not self.parent:
             self.parent = await self._get_parent()
-        _comments = []
+
         response = await self.client.http.get_tweet_detail(self.tweet_id, cursor, self.filter)
 
         entries = self._get_entries(response)
@@ -339,7 +342,7 @@ class TweetComments(BaseGeneratorClass):
                 if object_type is None:
                     continue
 
-                entry = [i for i in entry['content']['items']]
+                entry = [i for i in entry.get('content', {}).get('items', [])]
 
                 if len(entry) > 0:
                     parsed = object_type(self.client, self.parent, entry)
@@ -353,7 +356,7 @@ class TweetComments(BaseGeneratorClass):
         return _comments, cursor, cursor_top
 
     def __repr__(self):
-        return "TweetComments(tweet_id={}, count={}, filter={} parent={})".format(
+        return "TweetComments(tweet_id={}, count={}, filter={}, parent={})".format(
             self.tweet_id, len(self.tweets), self.filter, self.parent
         )
 

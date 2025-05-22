@@ -9,6 +9,7 @@ import subprocess
 import sys
 import uuid
 import warnings
+from functools import wraps
 from io import BytesIO
 from dateutil import parser as date_parser
 from urllib.parse import urlparse, parse_qs
@@ -39,7 +40,26 @@ WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'l
                     'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
 
 SENSITIVE_MEDIA_TAGS = ['adult_content', 'graphic_violence', 'other']
+def Warn(text, category=DeprecationWarning):
+    this_text = text
+    this_category = category
 
+    def decorator(method):
+        if inspect.iscoroutinefunction(method):
+            @wraps(method)
+            async def async_wrapper(self, *args, **kwargs):
+                warnings.warn(message=this_text, category=this_category)
+                return await method(self, *args, **kwargs)
+
+            return async_wrapper
+        else:
+            @wraps(method)
+            def sync_wrapper(self, *args, **kwargs):
+                warnings.warn(message=this_text, category=this_category)
+                return method(self, *args, **kwargs)
+
+            return sync_wrapper
+    return decorator
 
 def DictRequestData(cls):
 
@@ -518,3 +538,99 @@ def tweet_id_to_datetime(tweet_id: int):
 
 def json_stringify(json_data):
     return str(json.dumps(json_data, separators=(",", ":")))
+
+def create_search_query(
+        search_term=None,
+        from_users=None,
+        to_users=None,
+        mentioning_these_users=None,
+        exact_word=None,
+        none_of_these_words=None,
+        language=None,
+        include_replies=True,
+        only_replies=False,
+        include_links=True,
+        only_links=False,
+        minimum_replies=None,
+        minimum_likes=None,
+        minimum_reposts=None,
+        from_date=None,
+        to_date=None
+):
+    date_format = "%Y-%m-%d"
+    new_search_term = ""
+
+    if search_term:
+        new_search_term += f" {search_term} "
+
+    if exact_word:
+        new_search_term += f' "{exact_word}" '
+
+    if from_users:
+        if not isinstance(from_users, list):
+            from_users = [from_users]
+
+        from_users = [f"from:{i}" for i in from_users]
+        from_users = " OR ".join(from_users)
+        new_search_term += f" ({from_users}) "
+
+    if to_users:
+        if not isinstance(to_users, list):
+            to_users = [to_users]
+
+        to_users = [f"to:{i}" for i in to_users]
+        to_users = " OR ".join(to_users)
+        new_search_term += f" ({to_users}) "
+
+    if mentioning_these_users:
+        if not isinstance(mentioning_these_users, list):
+            mentioning_these_users = [mentioning_these_users]
+
+        mentioning_these_users = [f"@{i}" for i in mentioning_these_users]
+        mentioning_these_users = " OR ".join(mentioning_these_users)
+        new_search_term += f" ({mentioning_these_users}) "
+
+    if none_of_these_words:
+        if not isinstance(none_of_these_words, list):
+            none_of_these_words = [none_of_these_words]
+
+        none_of_these_words = ",".join(none_of_these_words)
+        new_search_term += f" -{none_of_these_words} "
+
+    if language:
+        new_search_term += f" lang:{language} "
+
+    if not include_replies:
+        new_search_term += " -filter:replies "
+    elif include_replies and only_replies:
+        new_search_term += " filter:replies "
+
+    if not include_links:
+        new_search_term += " -filter:links "
+    elif include_links and only_links:
+        new_search_term += " filter:links "
+
+    if minimum_likes:
+        new_search_term += f" min_faves:{minimum_likes} "
+
+    if minimum_replies:
+        new_search_term += f" min_replies:{minimum_replies} "
+
+    if minimum_reposts:
+        new_search_term += f" min_retweets:{minimum_reposts} "
+
+    if from_date:
+        if isinstance(from_date, (datetime.datetime, datetime.date)):
+            from_date = from_date.strftime(date_format)
+        elif isinstance(from_date, str):
+            from_date = parse_time(from_date).strftime(date_format)
+        new_search_term += f" since:{from_date} "
+
+    if to_date:
+        if isinstance(to_date, (datetime.datetime, datetime.date)):
+            to_date = to_date.strftime(date_format)
+        elif isinstance(to_date, str):
+            to_date = parse_time(to_date).strftime(date_format)
+        new_search_term += f" until:{to_date} "
+
+    return new_search_term

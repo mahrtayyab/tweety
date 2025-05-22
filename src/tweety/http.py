@@ -4,6 +4,7 @@ import os
 import random
 import re
 import traceback
+import uuid
 import warnings
 from typing import Callable
 from urllib.parse import quote, urlparse
@@ -12,7 +13,7 @@ import httpx
 from .exceptions import GuestTokenNotFound, TwitterError, UserNotFound, InvalidCredentials
 from .types import User
 from .types.n_types import GenericError
-from .utils import custom_json, GUEST_TOKEN_REGEX, get_random_string, MIGRATION_REGEX
+from .utils import custom_json, GUEST_TOKEN_REGEX, get_random_string, MIGRATION_REGEX, Warn
 from .builder import UrlBuilder
 from .transaction import TransactionGenerator
 from . import constants
@@ -95,7 +96,8 @@ class Request:
             'x-csrf-token': self._get_csrf(),
             'x-twitter-active-user': 'yes',
             'x-twitter-client-language': 'en',
-            'priority': 'u=1, i'
+            'priority': 'u=1, i',
+            'x-client-uuid': str(uuid.uuid4())
         }
 
         session_headers = self._session.headers
@@ -572,8 +574,13 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
+    @Warn("`get_audio_stream` is depreciated and will be removed in next releases, use `get_stream` instead")
     async def get_audio_stream(self, media_key):
-        request_data = self._builder.get_audio_stream(media_key)
+        return await self.get_stream(media_key)
+
+
+    async def get_stream(self, media_key):
+        request_data = self._builder.get_stream(media_key)
         response = await self.__get_response__(**request_data)
         return response
 
@@ -616,6 +623,12 @@ class Request:
         request_data = self._builder.get_community_members(community_id, filter_, cursor)
         response = await self.__get_response__(**request_data)
         return response
+
+    async def get_notifications(self, cursor):
+        request_data = self._builder.get_notifications(cursor)
+        response = await self.__get_response__(**request_data)
+        return response
+
 
     async def get_tweet_notifications(self, cursor):
         request_data = self._builder.get_new_user_tweet_notification(cursor)

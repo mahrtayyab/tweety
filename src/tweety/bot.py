@@ -6,7 +6,7 @@ from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_twee
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
                     CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
                     ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places,
-                    UserSubscribers, UserCommunities)
+                    UserSubscribers, UserCommunities, Broadcast, LiveStreamPayload)
 from .exceptions import *
 from .session import Session, MemorySession, FileSession
 from .http import Request
@@ -912,3 +912,10 @@ class BotMethods:
         places = Places(self, lat, long, search_term)
         await places.get_page()
         return places
+
+    async def get_stream(self, media_key):
+        if isinstance(media_key, (Broadcast, AudioSpace)):
+            media_key = media_key.media_key
+
+        response = await self.http.get_stream(media_key)
+        return LiveStreamPayload(self, response)

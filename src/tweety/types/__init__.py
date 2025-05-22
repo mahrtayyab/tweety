@@ -5,7 +5,6 @@ from .twDataTypes import (
     Tweet,
     Media,
     Stream,
-    deprecated,
     Trends,
     RichText,
     RichTag,
@@ -32,7 +31,8 @@ from .twDataTypes import (
     ScheduledTweet,
     GrokMessage,
     GrokShare,
-    GrokShareMessage
+    GrokShareMessage,
+    LiveStreamPayload
 )
 from .n_types import (
     UploadedMedia,

@@ -12,25 +12,6 @@ from ..filters import TweetCommentFilters
 from ..utils import *
 
 
-def deprecated(func):
-    """
-
-    This is a decorator which can be used to mark functions
-    as deprecated. It will result in a warning being emitted
-    when the function is used.
-
-    """
-
-    def new_func(*args, **kwargs):
-        warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning)
-        return func(*args, **kwargs)
-
-    new_func.__name__ = func.__name__
-    new_func.__doc__ = func.__doc__
-    new_func.__dict__.update(func.__dict__)
-    return new_func
-
-
 class _TwType(dict):
     def __new__(cls, client, data, *args, **kwargs):
         if not data:
@@ -50,10 +31,7 @@ class _TwType(dict):
 
             for k, v in vars(self).items():
                 if not k.startswith("_"):
-                    if isinstance(v, int):
-                        self[k] = str(v)
-                    else:
-                        self[k] = v
+                    self[k] = v
 
         cls.__init__ = new_init
 
@@ -158,6 +136,17 @@ class EditControl(_TwType):
             self._parent, self.is_latest
         )
 
+class TweetWarning(_TwType):
+    def __init__(self, client, context):
+        self._raw = context
+        self._client = client
+        self.type = self._raw.get("displayType")
+        self.text = self._raw.get("text", {}).get("text", "")
+
+    def __repr__(self):
+        return "ContextualTweetInterstitial(type={}, text={})".format(
+            self.type, self.text
+        )
 
 class Tweet(_TwType):
     def __init__(self, client, tweet, full_http_response=None, *args, **kwargs):  # noqa
@@ -255,7 +244,7 @@ class Tweet(_TwType):
         if is_protected and is_protected.get('reason') == "Protected":
             raise ProtectedTweet(403, "TweetUnavailable", response=self._raw)
         elif is_protected and is_protected.get('reason') == "NsfwLoggedOut":
-            raise AuthenticationRequired(401, "NsfwLoggedOut", response=self._raw, message="This Tweet is flagged as NSFW, make sure you are logged-in and brithday is updated in your account.")
+            raise AuthenticationRequired(401, "NsfwLoggedOut", response=self._raw, message="This Tweet is flagged as NSFW, make sure you are logged-in and birthday is updated in your account.")
         elif is_protected and is_protected.get('reason') == "Suspended":
             raise UserProtected(error_code="UserSuspended", response=self._raw, message="The Author of this Tweet is Suspended")
         elif is_protected and is_protected.get("tombstone"):
@@ -274,6 +263,8 @@ class Tweet(_TwType):
 
         self._card = self._tweet.get('card')
         self._original_tweet = self._get_original_tweet()
+        self._tweet_interstitial = find_objects(self._raw, "tweetInterstitial", None, none_value={})
+        self.warning = self._get_tweet_warning()
         self.id = self._get_id()
         self.created_on = self.date = self._get_date()
         self.author = self._get_author()
@@ -319,6 +310,12 @@ class Tweet(_TwType):
         self.can_reply = self._get_conversation_control()
         self.grok_share = self._get_grok_share()
         self.comments = []
+
+    def _get_tweet_warning(self):
+        context = find_objects(self._raw, "__typename", "ContextualTweetInterstitial", none_value=None)
+        if context:
+            return TweetWarning(self._client, context)
+        return None
 
     def _get_article(self):
         article_raw = self._tweet.get("article")
@@ -417,7 +414,7 @@ class Tweet(_TwType):
 
     def _get_community_note(self):
         if self._tweet.get("birdwatch_pivot"):
-            text = self._tweet['birdwatch_pivot']['subtitle']['text']
+            text = self._tweet['birdwatch_pivot'].get('subtitle', {}).get('text', '')
             # entities = self._tweet['birdwatch_pivot']['subtitle'].get('entities', [])
             # for entity in entities:
             #     text = replace_between_indexes(text, entity['fromIndex'], entity['toIndex'], entity['ref']['url'])
@@ -502,10 +499,6 @@ class Tweet(_TwType):
                 this_tweet = Tweet(self._client, entry)
                 if str(this_tweet.id) == str(replied_to_tweet_id):
                     return this_tweet
-                # if str(entry['entryId']).split("-")[0] == "tweet" and str(
-                #         entry['content']['itemContent']['tweet_results']['result']['rest_id']) == str(tweet_id):
-                #     raw_tweet = entry['content']['itemContent']['tweet_results']['result']
-                #     return Tweet(self._client, raw_tweet)
         except:
             pass
 
@@ -588,8 +581,26 @@ class Tweet(_TwType):
         if self.is_retweet and self.retweeted_tweet:
             return self.retweeted_tweet.media
 
-        return [Media(self._client, media) for media in
-                self._original_tweet.get("extended_entities", {}).get("media", [])]
+        media = []
+        media.extend(Media(self._client, media) for media in self._original_tweet.get("extended_entities", {}).get("media", []))
+        media.extend(self._get_media_from_card())
+        return media
+
+    def _get_media_from_card(self):
+        if not self._card or not self._card.get("legacy"):
+            return []
+
+        for value in self._card.get('legacy', {}).get('binding_values', []):
+            if value['key'] == "unified_card":
+                string_value = json.loads(value['value']['string_value'])
+                image_carousel_website = find_objects(string_value, "type", "image_carousel_website")
+                if not image_carousel_website:
+                    return []
+
+                media_entities = image_carousel_website.get("media_entities", {})
+                return [Media(self._client, media) for media in media_entities.values()]
+
+        return []
 
     def _get_tweet_mentions(self):
         users = [ShortUser(self._client, user) for user in
@@ -871,6 +882,7 @@ class Media(_TwType):
         self.original_info = self._raw.get("original_info")
         self.file_format = self._get_file_format()
         self.source_user = self._get_source_user()
+        self.tagged_users = self.tags = [ShortUser(self._client, i) for i in find_objects(self.features, "tags", None, none_value=[])]
         self.streams = []
 
         if self.type in (MEDIA_TYPE_VIDEO, MEDIA_TYPE_GIF):
@@ -991,7 +1003,7 @@ class ShortUser(_TwType):
         self._client = client
         self.__raw = user_dict
         self._indices = self.__raw.get("indices")
-        self.id = self.__raw.get("id_str")
+        self.id = self.__raw.get("id_str") or self.__raw.get("user_id")
         self.name = self.__raw.get("name")
         self.screen_name = self.username = self.__raw.get("screen_name")
         self.url = "https://twitter.com/{}".format(self.username)
@@ -1108,6 +1120,9 @@ class Broadcast(_TwType):
         elif isinstance(self._broadcast['binding_values'], dict):
             parsed = self._broadcast['binding_values']
         return parsed
+
+    async def get_stream_link(self):
+        return await self._client.get_stream(self.media_key)
 
     def __repr__(self):
         return "Broadcast(id={}, title={}, state={}, broadcaster_username={})".format(
@@ -1278,44 +1293,47 @@ class User(_TwType):
         self._original_user = self._user['legacy'] if self._user.get('legacy') else self._user
         self._social_context = self._user.get('social_context', {})
         self._birthdate = find_objects(self._user, "birthdate", None, none_value=None)
-        self.id = self.rest_id = self.get_id()
-        self.created_at = self.date = self.get_created_at()
-        self.entities = self._get_key("entities")
+        self._parody_commentary_fan_label = self._user.get("parody_commentary_fan_label", "")
+        self.id = self.rest_id = str(self._user["rest_id"])
+        self.created_at = self.date = self._original_user.get("created_at")
+        self.entities = self._original_user.get("entities")
         self.birth_date = self._get_birth_date()
-        self.description = self.bio = self._get_key("description")
-        self.fast_followers_count = self._get_key("fast_followers_count", default=0)
-        self.favourites_count = self._get_key("favourites_count", default=0)
-        self.followers_count = self._get_key("followers_count", default=0)
-        self.friends_count = self._get_key("friends_count", default=0)
-        self.has_custom_timelines = self._get_key("has_custom_timelines", default=False)
-        self.is_translator = self._get_key("is_translator", default=False)
-        self.listed_count = self._get_key("listed_count", default=0)
-        self.location = self._get_key("location")
-        self.media_count = self._get_key("media_count", default=0)
-        self.name = self._get_key("name")
-        self.normal_followers_count = self._get_key("normal_followers_count", default=0)
-        self.subscriptions_count = self._get_key("creator_subscriptions_count", default=0)
-        self.profile_banner_url = self._get_key("profile_banner_url")
-        self.profile_image_url_https = self._get_key("profile_image_url_https")
-        self.profile_interstitial_type = self._get_key("profile_interstitial_type")
-        self.protected = self._get_key("protected", default=False)
-        self.screen_name = self.username = self._get_key("screen_name")
-        self.statuses_count = self._get_key("statuses_count", default=0)
-        self.translator_type = self._get_key("translator_type")
+        self.description = self.bio = self._original_user.get("description")
+        self.fast_followers_count = self._original_user.get("fast_followers_count", 0)
+        self.favourites_count = self._original_user.get("favourites_count", 0)
+        self.followers_count = self._original_user.get("followers_count", 0)
+        self.friends_count = self._original_user.get("friends_count", 0)
+        self.has_custom_timelines = self._original_user.get("has_custom_timelines", False)
+        self.is_translator = self._original_user.get("is_translator", False)
+        self.listed_count = self._original_user.get("listed_count", 0)
+        self.location = self._user.get("location")
+        self.media_count = self._original_user.get("media_count",0)
+        self.name = self._original_user.get("name")
+        self.normal_followers_count = self._original_user.get("normal_followers_count", 0)
+        self.subscriptions_count = self._user.get("creator_subscriptions_count", 0)
+        self.profile_banner_url = self._original_user.get("profile_banner_url")
+        self.profile_image_url_https = self.profile_image_url = self._original_user.get("profile_image_url_https")
+        self.profile_interstitial_type = self._original_user.get("profile_interstitial_type")
+        self.protected = self._user.get("privacy", {}).get("protected", False)
+        self.screen_name = self.username = self._original_user.get("screen_name")
+        self.statuses_count = self._original_user.get("statuses_count", 0)
+        self.translator_type = self._original_user.get("translator_type")
         self.verified = self._get_verified()
-        self.can_dm = self._get_key("can_dm")
-        self.following = self._get_key("following", False)
-        self.followed_by = self._get_key("followed_by", False)
-        self.community_role = self._get_key("community_role", None)
+        self.can_dm = self._original_user.get("can_dm", False)
+        self.following = self._original_user.get("following", False)
+        self.followed_by = self._original_user.get("followed_by", False)
+        self.community_role = self._original_user.get("community_role", None)
         self.notifications_enabled = self.notifications = self._get_key("notifications", False)
         # self.verified_type = self._get_key("verified_type")
-        self.possibly_sensitive = self._get_key("possibly_sensitive", default=False)
-        self.pinned_tweets = self._get_key("pinned_tweet_ids_str")
+        self.possibly_sensitive = self._original_user.get("possibly_sensitive", False)
+        self.pinned_tweets = self._original_user.get("pinned_tweet_ids_str", [])
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
         self.is_bot = self.is_automated = self._get_is_automated()
         self.is_blocked = self._get_is_blocked()
         self.blocked_by = self.has_blocked_me = self._get_blocked_by()
-        self.is_parody_account = self._get_is_parody()
+        self.is_parody_account = self._get_commentary_label("Parody")
+        self.is_fan_account = self._get_commentary_label("Fan")
+        self.is_commentary_account = self._get_commentary_label("Commentary")
 
     def __eq__(self, other):
         if isinstance(other, (User, ShortUser)):
@@ -1370,8 +1388,8 @@ class User(_TwType):
     async def remove_from_list(self, list_id):
         return await self._client.remove_list_member(list_id, self.id)
 
-    def _get_is_parody(self):
-        return True if find_objects(self._user, "has_parody_profile_label", True) else False
+    def _get_commentary_label(self, label):
+        return self._parody_commentary_fan_label.lower() == label.lower()
 
     def _get_is_automated(self):
         return True if find_objects(self._user, "userLabelType", "AutomatedLabel") else False
@@ -1475,11 +1493,29 @@ class AudioSpace(_TwType):
         return [PeriScopeUser(self._client, user) for user in self._participants[participant]]
 
     async def get_stream_link(self):
-        return await self._client.http.get_audio_stream(self.media_key)
+        return await self._client.get_stream(self.media_key)
 
     def __repr__(self):
         return "AudioSpace(id={}, title={}, state={}, tweet={})".format(
             self.id, self.title, self.state, self.tweet
+        )
+
+class LiveStreamPayload(_TwType):
+    def __init__(self, client , live_stream, *args, **kwargs):
+        self._raw = live_stream
+        self._client = client
+        self._source = self._raw.get("source", {})
+        self.direct_url = self._source.get("noRedirectPlaybackUrl") or self._source.get("location")
+        self.status = self._source.get("status")
+        self.type = self._source.get("streamType")
+        self.session_id = self._raw.get("sessionId")
+        self.chat_token = self._raw.get("chatToken")
+        self.lifecycle_token = self._raw.get("lifecycleToken")
+        self.share_url = self._raw.get("shareUrl")
+
+    def __repr__(self):
+        return "LiveStreamPayload(status={}, type={}, session_id={})".format(
+            self.status, self.type, self.session_id
         )
 
 

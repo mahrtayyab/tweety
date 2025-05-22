@@ -1,6 +1,6 @@
 import asyncio
 from .utils import get_running_loop
-
+from .events.base import BaseUpdateMethod
 
 class UpdateMethods:
 
@@ -12,6 +12,9 @@ class UpdateMethods:
         return decorator
 
     def add_event_handler(self, callback, event):
+        if not isinstance(event, BaseUpdateMethod):
+            event = event()
+
         self._event_builders.append((event, callback))
 
     async def _run_until_disconnected(self):

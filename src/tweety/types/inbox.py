@@ -434,7 +434,7 @@ class MessageNameUpdate(dict):
         self.id = self['id'] = self._raw['id']
         self.time = self['time'] = parse_time(self._raw.get('time'))
         self.name = self['name'] = self._raw['conversation_name']
-        self.by_user_id = self['by_user_id'] = self._raw.get('by_user_id')
+        self.by_user_id = self.sender_id = self['by_user_id'] = self._raw.get('by_user_id')
         self.by_user = self['by_user'] = self._get_by_user()
         self.receiver = None
 
@@ -476,7 +476,7 @@ class MessageConversationAvatarUpdate(dict):
         self._raw = update
         self._inbox = _inbox
         self._client = client
-        self.by_user_id = self["by_user_id"] = self._raw.get("by_user_id")
+        self.by_user_id = self.sender_id = self["by_user_id"] = self._raw.get("by_user_id")
         self.id = self['id'] = self._raw['id']
         self.time = self['time'] = parse_time(self._raw.get('time'))
         self.conversation_id = self["conversation_id"] = self._raw.get("conversation_id")
