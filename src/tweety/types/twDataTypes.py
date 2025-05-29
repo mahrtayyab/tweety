@@ -434,7 +434,7 @@ class Tweet(_TwType):
         return self._tweet.get('rest_id')
 
     def _get_community(self):
-        return Community(self._client, self._tweet.get('community_results'))
+        return Community(self._client, self._tweet.get("author_community_relationship") or self._tweet.get('community_results'))
 
     def _get_author(self):
         if self._tweet.get("core"):
@@ -1329,6 +1329,7 @@ class User(_TwType):
         self.pinned_tweets = self._original_user.get("pinned_tweet_ids_str", [])
         self.profile_url = "https://twitter.com/{}".format(self.screen_name)
         self.is_bot = self.is_automated = self._get_is_automated()
+        self.automated_by = self._get_automated_by()
         self.is_blocked = self._get_is_blocked()
         self.blocked_by = self.has_blocked_me = self._get_blocked_by()
         self.is_parody_account = self._get_commentary_label("Parody")
@@ -1393,6 +1394,15 @@ class User(_TwType):
 
     def _get_is_automated(self):
         return True if find_objects(self._user, "userLabelType", "AutomatedLabel") else False
+
+    def _get_automated_by(self):
+        if not self.is_automated:
+            return None
+
+        automation_object = find_objects(self._user, "affiliates_highlighted_label", None)
+        user = find_objects(automation_object, "__typename", "User")
+        return User(self._client, user)
+
 
     def _get_birth_date(self):
         if not self._birthdate:
@@ -1559,10 +1569,10 @@ class Community(_TwType):
         return self._community.get('moderator_count')
 
     def _get_admin(self):
-        return User(self._client, self._community['admin_results'])
+        return User(self._client, self._community.get('admin_results'))
 
     def _get_creator(self):
-        return User(self._client, self._community['creator_results'])
+        return User(self._client, self._community.get('creator_results'))
 
     def _get_rules(self):
         return [rule['name'] for rule in self._community.get('rules', [])]

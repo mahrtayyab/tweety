@@ -12,7 +12,7 @@ class BaseGeneratorClass(dict):
         return cursor.get("value", None)
 
     def _has_next_page(self, new_cursor):
-        if new_cursor == self.cursor:
+        if new_cursor == self.cursor or new_cursor is None or not new_cursor:
             return False
 
         self.cursor = new_cursor

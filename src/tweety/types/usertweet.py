@@ -352,6 +352,9 @@ class TweetComments(BaseGeneratorClass):
 
         cursor = self._get_cursor_(response)
         cursor_top = self._get_cursor_(response, "Top")
+        cursor_spam = self._get_cursor_(response, "ShowMoreThreadsPrompt")
+        if cursor == self.cursor and self.get_hidden and cursor_spam:
+            cursor = cursor_spam
 
         return _comments, cursor, cursor_top
 

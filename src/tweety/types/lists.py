@@ -113,20 +113,15 @@ class ListMembers(BaseGeneratorClass):
         self.pages = pages
         self.wait_time = wait_time
 
-    @staticmethod
-    def _get_users(response):
-        all_users = find_objects(response, "__typename", "User", none_value=[])
-        return [all_users] if not isinstance(all_users, list) else all_users
-
     async def get_page(self, cursor):
         _users = []
         response = await self.client.http.get_list_members(self.list_id, cursor=cursor)
 
-        response_users = self._get_users(response)
+        entries = self._get_entries(response)
 
-        for response_user in response_users:
+        for entry in entries:
             try:
-                parsed = User(self.client, response_user, None)
+                parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
             except:
