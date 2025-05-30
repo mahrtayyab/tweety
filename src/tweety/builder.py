@@ -107,6 +107,7 @@ class UrlBuilder:
     URL_TYPING_INDICATOR = "https://x.com/i/api/graphql/HL96-xZ3Y81IEzAdczDokg/useTypingNotifierMutation"
     URL_GET_FRIENDSHIP = "https://api.x.com/1.1/friendships/show.json"
     URL_GET_NOTIFICATIONS = "https://x.com/i/api/2/notifications/all.json"
+    URL_GET_HIDDEN_COMMENTS = "https://x.com/i/api/graphql/fhjTxNKPimLfNohgWdXSiQ/ModeratedTimeline"
 
     def get_guest_token(self):
         return "POST", self.URL_GUEST_TOKEN
@@ -464,8 +465,38 @@ class UrlBuilder:
             variables['cursor'], variables['referrer'] = cursor, "tweet"
         params = {"variables": utils.json_stringify(variables), "features": utils.json_stringify(features),
                   "fieldToggles": utils.json_stringify(fieldToggles)}
-
         return "GET", self.URL_TWEET_DETAILS, params
+
+    def get_hidden_comments(self, tweet_id, cursor=None):
+        variables = {"rootTweetId":str(tweet_id),"count":20,"includePromotedContent":False}
+        features = {"rweb_video_screen_enabled":True,"profile_label_improvements_pcf_label_in_post_enabled":True,
+                    "rweb_tipjar_consumption_enabled":True,"verified_phone_label_enabled":True,
+                    "creator_subscriptions_tweet_preview_api_enabled":True,
+                    "responsive_web_graphql_timeline_navigation_enabled":True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled":True,
+                    "premium_content_api_read_enabled":True,"communities_web_enable_tweet_community_results_fetch":True,
+                    "c9s_tweet_anatomy_moderator_badge_enabled":True,
+                    "responsive_web_grok_analyze_button_fetch_trends_enabled":True,
+                    "responsive_web_grok_analyze_post_followups_enabled":True,"responsive_web_jetfuel_frame":True,
+                    "responsive_web_grok_share_attachment_enabled":True,"articles_preview_enabled":True,
+                    "responsive_web_edit_tweet_api_enabled":True,
+                    "graphql_is_translatable_rweb_tweet_is_translatable_enabled":True,
+                    "view_counts_everywhere_api_enabled":True,"longform_notetweets_consumption_enabled":True,
+                    "responsive_web_twitter_article_tweet_consumption_enabled":True,
+                    "tweet_awards_web_tipping_enabled":True,"responsive_web_grok_show_grok_translated_post":True,
+                    "responsive_web_grok_analysis_button_from_backend":True,
+                    "creator_subscriptions_quote_tweet_preview_enabled":True,
+                    "freedom_of_speech_not_reach_fetch_enabled":True,"standardized_nudges_misinfo":True,
+                    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":True,
+                    "longform_notetweets_rich_text_read_enabled":True,"longform_notetweets_inline_media_enabled":True,
+                    "responsive_web_grok_image_annotation_enabled":True,"responsive_web_enhance_cards_enabled":True}
+
+        if cursor:
+            variables["cursor"] = cursor
+
+        params = {"variables": utils.json_stringify(variables), "features": utils.json_stringify(features)}
+        return "GET", self.URL_GET_HIDDEN_COMMENTS, params
+
 
     def tweet_detail_by_ids(self, tweet_ids):
         if isinstance(tweet_ids, (str, int)):

@@ -303,6 +303,7 @@ class SelfTimeline(BaseGeneratorClass):
 class TweetComments(BaseGeneratorClass):
     OBJECTS_TYPES = {
         "conversationthread": ConversationThread,
+        "tweet": Tweet,
     }
     _RESULT_ATTR = "tweets"
 
@@ -330,8 +331,10 @@ class TweetComments(BaseGeneratorClass):
         _comments = []
         if not self.parent:
             self.parent = await self._get_parent()
-
-        response = await self.client.http.get_tweet_detail(self.tweet_id, cursor, self.filter)
+        if self.get_hidden:
+            response = await self.client.http.get_hidden_comments(self.tweet_id, cursor)
+        else:
+            response = await self.client.http.get_tweet_detail(self.tweet_id, cursor, self.filter)
 
         entries = self._get_entries(response)
 
@@ -341,8 +344,12 @@ class TweetComments(BaseGeneratorClass):
             try:
                 if object_type is None:
                     continue
+                if "Tweet" in str(object_type):
+                    entry = [entry]
+                    object_type = ConversationThread
+                else:
+                    entry = [i for i in entry.get('content', {}).get('items', [])]
 
-                entry = [i for i in entry.get('content', {}).get('items', [])]
 
                 if len(entry) > 0:
                     parsed = object_type(self.client, self.parent, entry)
@@ -353,7 +360,7 @@ class TweetComments(BaseGeneratorClass):
         cursor = self._get_cursor_(response)
         cursor_top = self._get_cursor_(response, "Top")
         cursor_spam = self._get_cursor_(response, "ShowMoreThreadsPrompt")
-        if cursor == self.cursor and self.get_hidden and cursor_spam:
+        if cursor == self.cursor and cursor_spam:
             cursor = cursor_spam
 
         return _comments, cursor, cursor_top

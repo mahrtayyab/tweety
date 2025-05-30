@@ -405,6 +405,11 @@ class Request:
             response = await self.__get_response__(**self._builder.tweet_detail_as_guest(tweetId))
         return response
 
+    async def get_hidden_comments(self, tweet_id, cursor=None):
+        request_data = self._builder.get_hidden_comments(tweet_id, cursor)
+        response = await self.__get_response__(**request_data)
+        return response
+
     async def get_tweet_analytics(self, tweet_id):
         request = self._builder.get_tweet_analytics(tweet_id)
         response = await self.__get_response__(**request)
@@ -577,7 +582,6 @@ class Request:
     @Warn("`get_audio_stream` is depreciated and will be removed in next releases, use `get_stream` instead")
     async def get_audio_stream(self, media_key):
         return await self.get_stream(media_key)
-
 
     async def get_stream(self, media_key):
         request_data = self._builder.get_stream(media_key)
