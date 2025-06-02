@@ -264,6 +264,7 @@ class Tweet(_TwType):
         self._card = self._tweet.get('card')
         self._original_tweet = self._get_original_tweet()
         self._tweet_interstitial = find_objects(self._raw, "tweetInterstitial", None, none_value={})
+        self._limited_actions = self._get_limited_actions()
         self.warning = self._get_tweet_warning()
         self.id = self._get_id()
         self.created_on = self.date = self._get_date()
@@ -307,7 +308,7 @@ class Tweet(_TwType):
         self.threads = self.get_threads()
         self.is_liked = self._get_is_liked()
         self.is_retweeted = self._get_is_retweeted()
-        self.can_reply = self._get_conversation_control()
+        self.can_reply = not "Reply" in self._limited_actions
         self.grok_share = self._get_grok_share()
         self.comments = []
 
@@ -324,6 +325,12 @@ class Tweet(_TwType):
 
         article_raw = article_raw.get("article_results", {}).get("result")
         return Article(self._client, article_raw)
+
+    def _get_limited_actions(self):
+        actions = find_objects(self._raw, "limited_actions", None, none_value=[])
+        all_actions = [i.get("action", "") for i in actions]
+        return all_actions
+
 
     def _get_conversation_control(self):
         if not self._original_tweet.get('conversation_control') or self.author == self._client.me:

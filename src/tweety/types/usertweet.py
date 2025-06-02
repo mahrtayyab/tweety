@@ -319,6 +319,7 @@ class TweetComments(BaseGeneratorClass):
         self.filter= filter_
         self.wait_time = wait_time
         self.parent = None
+        self.ignore_empty_list = False
 
     def _get_target_object(self, tweet):
         entry_type = str(tweet['entryId']).split("-")[0]
@@ -359,8 +360,8 @@ class TweetComments(BaseGeneratorClass):
 
         cursor = self._get_cursor_(response)
         cursor_top = self._get_cursor_(response, "Top")
-        cursor_spam = self._get_cursor_(response, "ShowMoreThreadsPrompt")
-        if cursor == self.cursor and cursor_spam:
+        cursor_spam = self._get_cursor_(response, "ShowMoreThreadsPrompt") or self._get_cursor_(response, "ShowMoreThreads")
+        if cursor_spam:
             cursor = cursor_spam
 
         return _comments, cursor, cursor_top

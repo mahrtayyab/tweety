@@ -1,6 +1,7 @@
 import warnings
 from typing import Union, Type
 from httpx._config import Proxy as httpxProxy
+from .constants import LIKES_ARE_PRIVATE_NOW_WARNING
 from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang,
                     is_tweet_protected, async_list)
 from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
@@ -285,6 +286,8 @@ class BotMethods:
         """
 
         user_id = await self._get_user_id(username)
+        if str(user_id) != str(self.me.id):
+            warnings.warn(LIKES_ARE_PRIVATE_NOW_WARNING)
 
         userLikes = UserLikes(user_id, self, pages, replies, wait_time, cursor)
 
@@ -312,6 +315,8 @@ class BotMethods:
         """
 
         user_id = await self._get_user_id(username)
+        if str(user_id) != str(self.me.id):
+            warnings.warn(LIKES_ARE_PRIVATE_NOW_WARNING)
 
         userLikes = UserLikes(user_id, self, pages, replies, wait_time, cursor)
 
