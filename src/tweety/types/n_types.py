@@ -160,6 +160,10 @@ class UploadedMedia:
         self._media_category = self._get_media_category(media_category)
         self.md5_hash = calculate_md5(self._file)
 
+    @property
+    def id(self):
+        return self.media_id
+
     def _get_source_url(self):
         if isinstance(self._file, Gif):
             return self._file.url
@@ -169,6 +173,9 @@ class UploadedMedia:
         return None
 
     def _get_media_category(self, category):
+        if not category:
+            return None
+
         media_for = category.split("_")[0]
         media_type = self.mime_type.split("/")[0]
         return f"{media_for}_{media_type}" if "gif" not in self.mime_type else f"{media_for}_gif"
@@ -204,7 +211,7 @@ class UploadedMedia:
 
         if not media_id:
             error = response["error"] if response.get("error") else response
-            raise ValueError(f"Unable to Initiate the Media Upload: {error}")
+            raise UploadFailed(response=response, message=f"Unable to Initiate the Media Upload: {error}")
 
         return media_id
 

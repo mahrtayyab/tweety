@@ -3,6 +3,7 @@ import inspect
 import os
 import random
 import re
+import time
 import traceback
 import uuid
 import warnings
@@ -51,6 +52,7 @@ class Request:
         self._builder = UrlBuilder()
         self._transaction = None
         self._guest_token = None
+        self._periscope_cookie = None
 
     @property
     def session(self):
@@ -326,6 +328,36 @@ class Request:
         self.set_user(user)
         return user
 
+    async def authenticate_periscope(self):
+        request = self._builder.authenticate_periscope()
+        response = await self.__get_response__(**request)
+        return response
+
+    async def get_login_token_periscope(self, jwt):
+        request = self._builder.get_login_token_periscope(jwt)
+        request["headers"].update({
+            'x-attempt': '1',
+            'x-idempotence': str(int(time.time() * 1000)),
+            'x-periscope-user-agent': 'Twitter/m5'
+        })
+        response = await self.__get_response__(**request)
+        return response
+
+    async def get_periscope_cookie(self):
+        periscope_jwt_res = await self.authenticate_periscope()
+        periscope_jwt = periscope_jwt_res.get("data", {}).get("authenticate_periscope")
+
+        if not periscope_jwt:
+            raise TwitterError(500, "PeriScopeTokenFetchFailed", periscope_jwt_res, f"Unable to Get Periscope JWT Token: {periscope_jwt_res}")
+
+        periscope_cookie_res = await self.get_login_token_periscope(periscope_jwt)
+        periscope_cookie = periscope_cookie_res.get("cookie")
+        if not periscope_cookie:
+            raise TwitterError(500, "PeriScopeCookieFetchFailed", periscope_cookie_res,
+                               f"Unable to Get Periscope Cookie: {periscope_cookie_res}")
+
+        return periscope_cookie
+
     async def get_user_state(self):
         request = self._builder.get_user_state()
         response = await self.__get_response__(**request)
@@ -520,7 +552,7 @@ class Request:
             pool = response.get('card_uri')
 
         if len(text) > 280:
-            request_data = self._builder.create_note_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, community_id, post_on_timeline)
+            request_data = self._builder.create_note_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline)
         else:
             request_data = self._builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline)
         response = await self.__get_response__(**request_data)
@@ -810,6 +842,31 @@ class Request:
         request_data = self._builder.get_friendship(source_user_id, target_user_id)
         response = await self.__get_response__(**request_data)
         return response
+
+    async def get_suggested_audio_spaces(self, languages):
+        if not self._periscope_cookie:
+            self._periscope_cookie = await self.get_periscope_cookie()
+
+        request_data = self._builder.get_suggested_audio_space(self._periscope_cookie, languages)
+        request_data["headers"].update({
+            "authorization": None,
+            "cookie": None
+        })
+        response = await self.__get_response__(**request_data)
+        return response
+
+    async def update_profile_image(self, media_id):
+        request_data = self._builder.update_profile_image(media_id)
+        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        response = await self.__get_response__(**request_data)
+        return response
+
+    async def update_profile_banner(self, media_id):
+        request_data = self._builder.update_profile_banner(media_id)
+        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        response = await self.__get_response__(**request_data)
+        return response
+
 
     async def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename

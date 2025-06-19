@@ -13,14 +13,13 @@ class UrlBuilder:
     URL_API_INIT = "https://x.com/i/api/1.1/branch/init.json"
     URL_GET_USER_STATE = "https://api.x.com/help-center/forms/api/prod/user_state.json"
     URL_SELF_USER = "https://api.x.com/graphql/851wLy502Jw3dVkLYkyC2Q/ViewerUserQuery"
-    # URL_USER_BY_SCREEN_NAME = "https://x.com/i/api/graphql/laYnJPCAcVo0o6pzcnlVxQ/UserByScreenName"
-    URL_USER_BY_SCREEN_NAME = "https://api.x.com/graphql/rDqpmDM1PbobgbmcmFKjug/UserByScreenName"
-    URL_USER_BY_USER_IDS = "https://x.com/i/api/graphql/lc85bOG5T3IIS4u485VtBg/UsersByRestIds"
-    URL_USER_TWEETS = "https://x.com/i/api/graphql/Tg82Ez_kxVaJf7OPbUdbCg/UserTweets"
-    URL_USER_MEDIAS = "https://x.com/i/api/graphql/HaouMjBviBKKTYZGV_9qtg/UserMedia"
-    URL_USER_HIGHLIGHTS = "https://x.com/i/api/graphql/Ei7DpEm7kboTr2zY_9kiqQ/UserHighlightsTweets"
+    URL_USER_BY_SCREEN_NAME = "https://api.x.com/graphql/jUKA--0QkqGIFhmfRZdWrQ/UserByScreenName"
+    URL_USER_BY_USER_IDS = "https://x.com/i/api/graphql/kCBEQ-OvWNVtotaYmqG0aw/UsersByRestIds"
+    URL_USER_TWEETS = "https://x.com/i/api/graphql/2ItQrd86P8C0pDU6td3Z7Q/UserTweets"
+    URL_USER_MEDIAS = "https://x.com/i/api/graphql/ZfjwHi7mxOP6-jPcZbqRhw/UserMedia"
+    URL_USER_HIGHLIGHTS = "https://x.com/i/api/graphql/Im_6geU-6_M5mqC-ncKP6g/UserHighlightsTweets"
     URL_USER_LIKES = "https://x.com/i/api/graphql/32OdaXdMRRC5hslSEJYFdQ/Likes"
-    URL_USER_TWEETS_WITH_REPLIES = "https://x.com/i/api/graphql/Tg82Ez_kxVaJf7OPbUdbCg/UserTweets"
+    URL_USER_TWEETS_WITH_REPLIES = "https://x.com/i/api/graphql/Z9gIrY5Gq-2K7HXhIimlyQ/UserTweetsAndReplies"
     URL_TRENDS = "https://x.com/i/api/2/guide.json"
     URL_SEARCH = "https://x.com/i/api/graphql/nKAncKPF1fV1xltvF3UUlw/SearchTimeline"
     URL_SEARCH_TYPEHEAD = "https://x.com/i/api/1.1/search/typeahead.json"
@@ -49,7 +48,7 @@ class UrlBuilder:
     URL_AUSER_SEND_MESSAGE_REACTION = "https://x.com/i/api/graphql/VyDyV9pC2oZEj6g52hgnhA/useDMReactionMutationAddMutation"  # noqa
     URL_AUSER_CONVERSATION = "https://x.com/i/api/1.1/dm/conversation/{}.json"  # noqa
     URL_AUSER_CREATE_TWEET = "https://x.com/i/api/graphql/znq7jUAqRjmPj7IszLem5Q/CreateTweet"  # noqa
-    URL_AUSER_CREATE_NOTE_TWEET = "https://x.com/i/api/graphql/3Wu3Na3lrBzHKWJylOmaSg/CreateNoteTweet"  # noqa
+    URL_AUSER_CREATE_NOTE_TWEET = "https://x.com/i/api/graphql/tpdAMySdKScjio4NcCChLg/CreateNoteTweet"  # noqa
     URL_AUSER_DELETE_TWEET = "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet"  # noqa
     URL_AUSER_CREATE_POOL = "https://caps.x.com/v2/cards/create.json"  # noqa
     URL_AUSER_VOTE_POOL = "https://caps.x.com/v2/capi/passthrough/1"  # noqa
@@ -108,6 +107,11 @@ class UrlBuilder:
     URL_GET_FRIENDSHIP = "https://api.x.com/1.1/friendships/show.json"
     URL_GET_NOTIFICATIONS = "https://x.com/i/api/2/notifications/all.json"
     URL_GET_HIDDEN_COMMENTS = "https://x.com/i/api/graphql/fhjTxNKPimLfNohgWdXSiQ/ModeratedTimeline"
+    URL_AUTHENTICATE_PERISCOPE = "https://x.com/i/api/graphql/r7VUmxbfqNkx7uwjgONSNw/AuthenticatePeriscope?variables=%7B%7D"
+    URL_GET_LOGIN_TOKEN_PERISCOPE = "https://proxsee.pscp.tv/api/v2/loginTwitterToken"
+    URL_GET_AUDIO_SPACE_SUGGESTION = "https://proxsee.pscp.tv/api/v2/audioFeed"
+    URL_UPDATE_PROFILE_IMAGE = "https://api.x.com/1.1/account/update_profile_image.json"
+    URL_UPDATE_PROFILE_BANNER = "https://api.x.com/1.1/account/update_profile_banner.json"
 
     def get_guest_token(self):
         return "POST", self.URL_GUEST_TOKEN
@@ -120,6 +124,19 @@ class UrlBuilder:
 
     def build_flow(self, _url):
         return "POST", _url
+
+    def authenticate_periscope(self):
+        return "GET", self.URL_AUTHENTICATE_PERISCOPE
+
+    def get_login_token_periscope(self, jwt):
+        json_data = {
+            'jwt': jwt,
+            'vendor_id': 'm5-proxsee-login-a2011357b73e',
+            'create_user': False,
+            'direct': True,
+        }
+
+        return "POST", self.URL_GET_LOGIN_TOKEN_PERISCOPE, None, json_data
 
     def get_user_state(self):
         return "GET", self.URL_GET_USER_STATE
@@ -153,7 +170,8 @@ class UrlBuilder:
 
     def user_by_screen_name(self, username):
         variables = {"screen_name": str(username)}
-        features = {"hidden_profile_subscriptions_enabled": True,
+        features = {"responsive_web_grok_bio_auto_translation_is_enabled": True,
+                    "hidden_profile_subscriptions_enabled": True, "payments_enabled": True,
                     "profile_label_improvements_pcf_label_in_post_enabled": True,
                     "rweb_tipjar_consumption_enabled": True, "verified_phone_label_enabled": True,
                     "subscriptions_verification_info_is_identity_verified_enabled": True,
@@ -173,7 +191,8 @@ class UrlBuilder:
         variables = {"userIds": user_ids, "withSafetyModeUserFields": True}
         features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": True,
                     "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
-                    "responsive_web_graphql_timeline_navigation_enabled": True, "rweb_tipjar_consumption_enabled": True}
+                    "responsive_web_graphql_timeline_navigation_enabled": True, "rweb_tipjar_consumption_enabled": True,
+                    "payments_enabled": True, "profile_label_improvements_pcf_label_in_post_enabled": True}
 
         params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
 
@@ -183,53 +202,72 @@ class UrlBuilder:
         variables = {"userId": str(user_id), "count": 20, "includePromotedContent": False,
                      "withClientEventToken": False,
                      "withBirdwatchNotes": True, "withVoice": True, "withV2Timeline": True}
-        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": True,
+        features = {"rweb_video_screen_enabled": True, "payments_enabled": True,
+                    "profile_label_improvements_pcf_label_in_post_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "verified_phone_label_enabled": True,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
                     "responsive_web_graphql_timeline_navigation_enabled": True,
-                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                    "c9s_tweet_anatomy_moderator_badge_enabled": True, "tweetypie_unmention_optimization_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
+                    "premium_content_api_read_enabled": True,
+                    "communities_web_enable_tweet_community_results_fetch": True,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True,
+                    "responsive_web_grok_analyze_button_fetch_trends_enabled": True,
+                    "responsive_web_grok_analyze_post_followups_enabled": True, "responsive_web_jetfuel_frame": True,
+                    "responsive_web_grok_share_attachment_enabled": True, "articles_preview_enabled": True,
                     "responsive_web_edit_tweet_api_enabled": True,
                     "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
                     "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
                     "responsive_web_twitter_article_tweet_consumption_enabled": True,
-                    "tweet_awards_web_tipping_enabled": True, "freedom_of_speech_not_reach_fetch_enabled": True,
-                    "standardized_nudges_misinfo": True,
+                    "tweet_awards_web_tipping_enabled": True, "responsive_web_grok_show_grok_translated_post": True,
+                    "responsive_web_grok_analysis_button_from_backend": True,
+                    "creator_subscriptions_quote_tweet_preview_enabled": True,
+                    "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
                     "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
-                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_rich_text_read_enabled": True,
                     "longform_notetweets_inline_media_enabled": True,
-                    "responsive_web_media_download_video_enabled": True, "responsive_web_enhance_cards_enabled": False,
-                    "rweb_tipjar_consumption_enabled": True, "articles_preview_enabled": True,
-                    "communities_web_enable_tweet_community_results_fetch": True,
-                    "creator_subscriptions_quote_tweet_preview_enabled": True}
+                    "responsive_web_grok_image_annotation_enabled": True, "responsive_web_enhance_cards_enabled": True}
+        field_toggle = {"withArticlePlainText": True}
 
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features),
+                  "fieldToggles": utils.json_stringify(field_toggle)}
 
         return "GET", self.URL_USER_MEDIAS, params
 
     def user_highlights(self, user_id, cursor=None):
         variables = {"userId": str(user_id), "count": 20, "includePromotedContent": True, "withVoice": True}
-        features = {"responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": True,
+        features = {"rweb_video_screen_enabled": True, "payments_enabled": True,
+                    "profile_label_improvements_pcf_label_in_post_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "verified_phone_label_enabled": True,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
                     "responsive_web_graphql_timeline_navigation_enabled": True,
-                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                    "c9s_tweet_anatomy_moderator_badge_enabled": True, "tweetypie_unmention_optimization_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
+                    "premium_content_api_read_enabled": True,
+                    "communities_web_enable_tweet_community_results_fetch": True,
+                    "c9s_tweet_anatomy_moderator_badge_enabled": True,
+                    "responsive_web_grok_analyze_button_fetch_trends_enabled": True,
+                    "responsive_web_grok_analyze_post_followups_enabled": True, "responsive_web_jetfuel_frame": True,
+                    "responsive_web_grok_share_attachment_enabled": True, "articles_preview_enabled": True,
                     "responsive_web_edit_tweet_api_enabled": True,
                     "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
                     "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
                     "responsive_web_twitter_article_tweet_consumption_enabled": True,
-                    "tweet_awards_web_tipping_enabled": True, "freedom_of_speech_not_reach_fetch_enabled": True,
-                    "standardized_nudges_misinfo": True,
+                    "tweet_awards_web_tipping_enabled": True, "responsive_web_grok_show_grok_translated_post": True,
+                    "responsive_web_grok_analysis_button_from_backend": True,
+                    "creator_subscriptions_quote_tweet_preview_enabled": True,
+                    "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
                     "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
-                    "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
-                    "longform_notetweets_inline_media_enabled": True, "responsive_web_enhance_cards_enabled": False}
-
+                    "longform_notetweets_rich_text_read_enabled": True,
+                    "longform_notetweets_inline_media_enabled": True,
+                    "responsive_web_grok_image_annotation_enabled": True, "responsive_web_enhance_cards_enabled": True}
+        field_toggles = {"withAuxiliaryUserLabels": True}
         if cursor:
             variables['cursor'] = cursor
 
-        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features),
+                  "fieldToggles": utils.json_stringify(field_toggles)}
 
         return "GET", self.URL_USER_HIGHLIGHTS, params
 
@@ -272,52 +310,60 @@ class UrlBuilder:
         if not replies:
             variables = {"userId": str(user_id), "count": 20, "includePromotedContent": True,
                          "withQuickPromoteEligibilityTweetFields": True, "withVoice": True, "withV2Timeline": True}
-            features = {"rweb_tipjar_consumption_enabled": True, "rweb_lists_timeline_redesign_enabled": True,
-                        "blue_business_profile_image_shape_enabled": True,
-                        "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": True,
+            features = {"rweb_video_screen_enabled": True, "payments_enabled": True,
+                        "profile_label_improvements_pcf_label_in_post_enabled": True,
+                        "rweb_tipjar_consumption_enabled": True, "verified_phone_label_enabled": True,
                         "creator_subscriptions_tweet_preview_api_enabled": True,
                         "responsive_web_graphql_timeline_navigation_enabled": True,
-                        "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                        "tweetypie_unmention_optimization_enabled": True, "vibe_api_enabled": True,
-                        "responsive_web_edit_tweet_api_enabled": True,
+                        "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
+                        "premium_content_api_read_enabled": True,
+                        "communities_web_enable_tweet_community_results_fetch": True,
+                        "c9s_tweet_anatomy_moderator_badge_enabled": True,
+                        "responsive_web_grok_analyze_button_fetch_trends_enabled": True,
+                        "responsive_web_grok_analyze_post_followups_enabled": True,
+                        "responsive_web_jetfuel_frame": True, "responsive_web_grok_share_attachment_enabled": True,
+                        "articles_preview_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
                         "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
                         "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
-                        "tweet_awards_web_tipping_enabled": True, "freedom_of_speech_not_reach_fetch_enabled": True,
-                        "standardized_nudges_misinfo": True,
-                        "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": False,
-                        "interactive_text_enabled": True, "responsive_web_text_conversations_enabled": False,
-                        "longform_notetweets_rich_text_read_enabled": True,
-                        "longform_notetweets_inline_media_enabled": False,
-                        "responsive_web_enhance_cards_enabled": False,
-                        "c9s_tweet_anatomy_moderator_badge_enabled": True,
-                        "communities_web_enable_tweet_community_results_fetch": True,
                         "responsive_web_twitter_article_tweet_consumption_enabled": True,
-                        "rweb_video_timestamps_enabled": True,
+                        "tweet_awards_web_tipping_enabled": True, "responsive_web_grok_show_grok_translated_post": True,
+                        "responsive_web_grok_analysis_button_from_backend": True,
                         "creator_subscriptions_quote_tweet_preview_enabled": True,
-                        "articles_preview_enabled": True}
+                        "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
+                        "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
+                        "longform_notetweets_rich_text_read_enabled": True,
+                        "longform_notetweets_inline_media_enabled": True,
+                        "responsive_web_grok_image_annotation_enabled": True,
+                        "responsive_web_enhance_cards_enabled": True}
             url = self.URL_USER_TWEETS
         else:
             variables = {"userId": str(user_id), "count": 20, "includePromotedContent": True, "withCommunity": True,
                          "withVoice": True, "withV2Timeline": True}
-            features = {"rweb_tipjar_consumption_enabled": True, "rweb_lists_timeline_redesign_enabled": True,
-                        "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": True,
+            features = {"rweb_video_screen_enabled": True, "payments_enabled": True,
+                        "profile_label_improvements_pcf_label_in_post_enabled": True,
+                        "rweb_tipjar_consumption_enabled": True, "verified_phone_label_enabled": True,
                         "creator_subscriptions_tweet_preview_api_enabled": True,
                         "responsive_web_graphql_timeline_navigation_enabled": True,
-                        "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
-                        "tweetypie_unmention_optimization_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
+                        "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
+                        "premium_content_api_read_enabled": True,
+                        "communities_web_enable_tweet_community_results_fetch": True,
+                        "c9s_tweet_anatomy_moderator_badge_enabled": True,
+                        "responsive_web_grok_analyze_button_fetch_trends_enabled": True,
+                        "responsive_web_grok_analyze_post_followups_enabled": True,
+                        "responsive_web_jetfuel_frame": True, "responsive_web_grok_share_attachment_enabled": True,
+                        "articles_preview_enabled": True, "responsive_web_edit_tweet_api_enabled": True,
                         "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
                         "view_counts_everywhere_api_enabled": True, "longform_notetweets_consumption_enabled": True,
                         "responsive_web_twitter_article_tweet_consumption_enabled": True,
-                        "tweet_awards_web_tipping_enabled": False, "freedom_of_speech_not_reach_fetch_enabled": True,
-                        "standardized_nudges_misinfo": True,
+                        "tweet_awards_web_tipping_enabled": True, "responsive_web_grok_show_grok_translated_post": True,
+                        "responsive_web_grok_analysis_button_from_backend": True,
+                        "creator_subscriptions_quote_tweet_preview_enabled": True,
+                        "freedom_of_speech_not_reach_fetch_enabled": True, "standardized_nudges_misinfo": True,
                         "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
                         "longform_notetweets_rich_text_read_enabled": True,
                         "longform_notetweets_inline_media_enabled": True,
-                        "responsive_web_media_download_video_enabled": True,
-                        "responsive_web_enhance_cards_enabled": False,
-                        "creator_subscriptions_quote_tweet_preview_enabled": True,
-                        "c9s_tweet_anatomy_moderator_badge_enabled": True, "rweb_video_timestamps_enabled": True,
-                        "articles_preview_enabled": True, "communities_web_enable_tweet_community_results_fetch": True}
+                        "responsive_web_grok_image_annotation_enabled": True,
+                        "responsive_web_enhance_cards_enabled": True}
             url = self.URL_USER_TWEETS_WITH_REPLIES
 
         fieldToggles = {"withArticleRichContentState": True, "withGrokAnalyze": True,
@@ -1132,6 +1178,7 @@ class UrlBuilder:
             quote_tweet_url=None,
             pool=None,
             geo=None,
+            batch_compose=False,
             community_id=None,
             post_on_timeline=False
     ):
@@ -1147,29 +1194,35 @@ class UrlBuilder:
         }
 
         features = {
-            "communities_web_enable_tweet_community_results_fetch": True,
-            "c9s_tweet_anatomy_moderator_badge_enabled": True,
-            "tweetypie_unmention_optimization_enabled": True,
-            "responsive_web_edit_tweet_api_enabled": True,
-            "graphql_is_translatable_rweb_tweet_is_translatable_enabled": True,
-            "view_counts_everywhere_api_enabled": True,
-            "longform_notetweets_consumption_enabled": True,
-            "responsive_web_twitter_article_tweet_consumption_enabled": True,
-            "tweet_awards_web_tipping_enabled": True,
-            "creator_subscriptions_quote_tweet_preview_enabled": True,
-            "longform_notetweets_rich_text_read_enabled": True,
-            "longform_notetweets_inline_media_enabled": True,
-            "articles_preview_enabled": True,
-            "rweb_video_timestamps_enabled": True,
-            "rweb_tipjar_consumption_enabled": True,
-            "responsive_web_graphql_exclude_directive_enabled": True,
-            "verified_phone_label_enabled": True,
-            "freedom_of_speech_not_reach_fetch_enabled": True,
-            "standardized_nudges_misinfo": True,
-            "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
-            "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True,
-            "responsive_web_graphql_timeline_navigation_enabled": True,
-            "responsive_web_enhance_cards_enabled": True
+            'premium_content_api_read_enabled': True,
+            'communities_web_enable_tweet_community_results_fetch': True,
+            'c9s_tweet_anatomy_moderator_badge_enabled': True,
+            'responsive_web_grok_analyze_button_fetch_trends_enabled': True,
+            'responsive_web_grok_analyze_post_followups_enabled': True,
+            'responsive_web_jetfuel_frame': True,
+            'responsive_web_grok_share_attachment_enabled': True,
+            'responsive_web_edit_tweet_api_enabled': True,
+            'graphql_is_translatable_rweb_tweet_is_translatable_enabled': True,
+            'view_counts_everywhere_api_enabled': True,
+            'longform_notetweets_consumption_enabled': True,
+            'responsive_web_twitter_article_tweet_consumption_enabled': True,
+            'tweet_awards_web_tipping_enabled': True,
+            'responsive_web_grok_show_grok_translated_post': True,
+            'responsive_web_grok_analysis_button_from_backend': True,
+            'creator_subscriptions_quote_tweet_preview_enabled': True,
+            'longform_notetweets_rich_text_read_enabled': True,
+            'longform_notetweets_inline_media_enabled': True,
+            'profile_label_improvements_pcf_label_in_post_enabled': True,
+            'rweb_tipjar_consumption_enabled': True,
+            'verified_phone_label_enabled': True,
+            'articles_preview_enabled': True,
+            'responsive_web_graphql_skip_user_profile_image_extensions_enabled': True,
+            'freedom_of_speech_not_reach_fetch_enabled': True,
+            'standardized_nudges_misinfo': True,
+            'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled': True,
+            'responsive_web_grok_image_annotation_enabled': True,
+            'responsive_web_graphql_timeline_navigation_enabled': True,
+            'responsive_web_enhance_cards_enabled': True,
         }
 
         fieldToggles = {
@@ -1185,6 +1238,9 @@ class UrlBuilder:
 
         if quote_tweet_url:
             variables['attachment_url'] = quote_tweet_url
+
+        if batch_compose:
+            variables['batch_compose'] = 'BatchFirst' if not reply_to else 'BatchSubsequent'
 
         if filter_:
             variables['conversation_control'] = {"mode": filter_}
@@ -1286,8 +1342,11 @@ class UrlBuilder:
             'command': 'INIT',
             'total_bytes': str(int(size)),
             'media_type': mime_type,
-            'media_category': media_category,
+            'enable_1080p_variant': "true"
         }
+
+        if media_category:
+            params['media_category'] = media_category
 
         if source_url:
             del params['total_bytes']
@@ -1373,8 +1432,7 @@ class UrlBuilder:
         return "GET", url, params
 
     def get_tweet_likes(self, tweet_id, cursor=None):
-        variables = {"tweetId": tweet_id, "count": 20,
-                     "includePromotedContent": True}
+        variables = {"tweetId": tweet_id, "count": 20, "includePromotedContent": True}
         features = {"rweb_lists_timeline_redesign_enabled": True,
                     "responsive_web_graphql_exclude_directive_enabled": True, "verified_phone_label_enabled": True,
                     "creator_subscriptions_tweet_preview_api_enabled": True,
@@ -2106,7 +2164,10 @@ class UrlBuilder:
                     "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": True,
                     "rweb_video_timestamps_enabled": True, "longform_notetweets_rich_text_read_enabled": True,
                     "longform_notetweets_inline_media_enabled": True,
-                    "responsive_web_media_download_video_enabled": True, "responsive_web_enhance_cards_enabled": False}
+                    "responsive_web_media_download_video_enabled": True, "responsive_web_enhance_cards_enabled": False,
+                    "articles_preview_enabled": True, "creator_subscriptions_quote_tweet_preview_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True,
+                    "communities_web_enable_tweet_community_results_fetch": True}
 
         if cursor:
             variables['cursor'] = cursor
@@ -2230,6 +2291,55 @@ class UrlBuilder:
             params["target_screen_name"] = target_user_id
 
         return "GET", self.URL_GET_FRIENDSHIP, params
+
+    def get_suggested_audio_space(self, cookie, languages):
+        json_data = {
+            "filter_supported": False,
+            "preferred_languages": languages,
+            "cookie": cookie
+        }
+
+        return "POST", self.URL_GET_AUDIO_SPACE_SUGGESTION, None, json_data
+
+    def update_profile_image(self, media_id):
+        data = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'return_user': 'true',
+            'media_id': str(media_id),
+        }
+
+        return "POST", self.URL_UPDATE_PROFILE_IMAGE, None, None, data
+
+    def update_profile_banner(self, media_id):
+        data = {
+            'include_profile_interstitial_type': '1',
+            'include_blocking': '1',
+            'include_blocked_by': '1',
+            'include_followed_by': '1',
+            'include_want_retweets': '1',
+            'include_mute_edge': '1',
+            'include_can_dm': '1',
+            'include_can_media_tag': '1',
+            'include_ext_is_blue_verified': '1',
+            'include_ext_verified_type': '1',
+            'include_ext_profile_image_shape': '1',
+            'skip_status': '1',
+            'return_user': 'true',
+            'media_id': str(media_id),
+        }
+
+        return "POST", self.URL_UPDATE_PROFILE_BANNER, None, None, data
 
 
 class FlowData:

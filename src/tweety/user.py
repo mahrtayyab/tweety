@@ -9,6 +9,7 @@ from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Boo
                     Topic, TopicTweets, MutualFollowers, ScheduledTweets, ScheduledTweet, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
                     ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED, Community, ListFollowers)
 from . import constants
+from .filters import Language
 
 
 @AuthRequired
@@ -1341,6 +1342,22 @@ class UserMethods:
         response = await self.http.get_suggested_users()
         users = find_objects(response, "__typename", "User", none_value=[])
         return [User(self, user) for user in users]
+
+    async def get_suggested_audio_spaces(self, languages: List[str] =[Language.ENGLISH]):
+        response = await self.http.get_suggested_audio_spaces(languages)
+        return response
+
+    async def update_profile_image(self, image_file_path):
+        media = await self.upload_media(image_file_path, None)
+        media_id = media[0].media_id
+        await self.http.update_profile_image(media_id)
+        return True
+
+    async def update_profile_banner(self, image_file_path):
+        media = await self.upload_media(image_file_path, "banner_image")
+        media_id = media[0].media_id
+        await self.http.update_profile_banner(media_id)
+        return True
 
     async def upload_media(
             self,

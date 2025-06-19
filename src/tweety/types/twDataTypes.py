@@ -1302,7 +1302,7 @@ class User(_TwType):
         self._social_context = self._user.get('social_context', {})
         self._birthdate = find_objects(self._user, "birthdate", None, none_value=None)
         self._parody_commentary_fan_label = self._user.get("parody_commentary_fan_label", "")
-        self.id = self.rest_id = str(self._user["rest_id"])
+        self.id = self.rest_id = str(self.get_id())
         self.created_at = self.date = parse_time(self._original_user.get("created_at")) or  parse_time(self._core.get("created_at"))
         self.entities = self._original_user.get("entities")
         self.birth_date = self._get_birth_date()
@@ -1447,7 +1447,7 @@ class User(_TwType):
         if not str(raw_id).isdigit():
             raw_id = decodeBase64(raw_id).split(":")[-1]
 
-        return int(raw_id)
+        return raw_id
 
     def get_created_at(self):
         return parse_time(self._original_user.get('created_at'))
