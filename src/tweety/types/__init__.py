@@ -32,7 +32,9 @@ from .twDataTypes import (
     GrokMessage,
     GrokShare,
     GrokShareMessage,
-    LiveStreamPayload
+    LiveStreamPayload,
+    CommunityNote,
+    BirdWatch
 )
 from .n_types import (
     UploadedMedia,

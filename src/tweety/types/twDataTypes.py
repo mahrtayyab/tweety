@@ -148,6 +148,64 @@ class TweetWarning(_TwType):
             self.type, self.text
         )
 
+class CommunityNote(_TwType):
+    def __init__(self, client, note, *args, **kwargs):
+        self._raw = note
+        self._client = client
+        self.id = self._raw.get("note", {}).get("rest_id")
+        self.url = self._raw.get("destinationUrl")
+        self.title = self._raw.get("title")
+        self.short_title = self._raw.get("subtitle")
+        self.text = self._raw.get("subtitle", {}).get("text")
+        self.entities = self._raw.get("subtitle", {}).get("entities", [])
+        self._translated_text = None
+
+    async def translate(self):
+        if not self._translated_text:
+            response = await self._client.http.get_birdwatch_translation(self.id)
+            self._translated_text = response.get("data", {}).get("birdwatch_note_by_rest_id", {}).get("translated_summary", {}).get("text")
+        return self._translated_text
+
+    def __repr__(self):
+        return "CommunityNote(id={}, url={})".format(
+            self.id, self.url
+        )
+
+class BirdWatch(_TwType):
+    def __init__(self, client, note, *args, **kwargs):
+        self._raw = note
+        self._client = client
+        self._data_v1 = self._raw.get("data_v1")
+        self.id = self._raw.get("rest_id")
+        self.appeal_status = self._raw.get("appeal_status")
+        self.can_appeal = self._raw.get("can_appeal")
+        self.created_at = self.date = parse_time(self._raw.get("created_at"))
+        self.decided_by = self._raw.get("decided_by")
+        self.helpful_tags = self._raw.get("helpful_tags")
+        self.rating_status = self._raw.get("rating_status")
+        self.is_visible = self.rating_status == "CurrentlyRatedHelpful"
+        self.rating_survey_url = self._raw.get("rating_survey", {}).get("url")
+        self.tweet_id = self._raw.get("tweet_results", {}).get("result",{}).get("rest_id")
+        self.classification = self._data_v1.get("classification")
+        self.misleading_tags = self._data_v1.get("misleading_tags")
+        self.not_misleading_tags = self._data_v1.get("not_misleading_tags")
+        self.trustworthy_sources = self._data_v1.get("trustworthy_sources")
+        self.text = self._data_v1.get("summary", {}).get("text")
+        self.entities = self._data_v1.get("summary", {}).get("entities", [])
+        self._translated_text = None
+
+    async def translate(self):
+        if not self._translated_text:
+            response = await self._client.http.get_birdwatch_translation(self.id)
+            self._translated_text = response.get("data", {}).get("birdwatch_note_by_rest_id", {}).get("translated_summary", {}).get("text")
+        return self._translated_text
+
+    def __repr__(self):
+        return "BirdWatch(id={}, date={}, tweet_id={}, is_visible={})".format(
+            self.id, self.date, self.tweet_id, self.is_visible
+        )
+
+
 class Tweet(_TwType):
     def __init__(self, client, tweet, full_http_response=None, *args, **kwargs):  # noqa
         self._comments_cursor = None
@@ -237,6 +295,9 @@ class Tweet(_TwType):
 
     async def iter_comments(self, pages=1, wait_time=2, cursor=None, get_hidden=False, filter_=TweetCommentFilters.Relevant):
         return await self._client.iter_tweet_comments(self.id, pages, wait_time, cursor, get_hidden, filter_)
+
+    async def get_all_community_notes(self):
+        return await self._client.get_all_community_notes(self.id)
 
     def _check_if_protected(self):
         is_protected = is_tweet_protected(self._raw)
@@ -420,14 +481,7 @@ class Tweet(_TwType):
         return None
 
     def _get_community_note(self):
-        if self._tweet.get("birdwatch_pivot"):
-            text = self._tweet['birdwatch_pivot'].get('subtitle', {}).get('text', '')
-            # entities = self._tweet['birdwatch_pivot']['subtitle'].get('entities', [])
-            # for entity in entities:
-            #     text = replace_between_indexes(text, entity['fromIndex'], entity['toIndex'], entity['ref']['url'])
-            return text
-
-        return None
+        return CommunityNote(self._client, self._tweet.get("birdwatch_pivot"))
 
     def _get_date(self):
         date = self._original_tweet.get("created_at")
@@ -1479,7 +1533,6 @@ class PeriScopeUser(_TwType):
         self.display_name = self.name = self._raw.get('display_name')
         self.is_verified = self._raw.get('is_verified')
         self.twitter_id = self._raw['user_results'].get('rest_id')
-
 
 class AudioSpace(_TwType):
     def __init__(self, client, audio_space, *args, **kwargs):

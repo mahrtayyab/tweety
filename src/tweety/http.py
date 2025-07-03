@@ -855,6 +855,21 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
+    async def get_audio_space_from_following(self):
+        request_data = self._builder.get_audio_space_from_following()
+        response = await self.__get_response__(**request_data)
+        return response
+
+    async def get_birdwatch_translation(self, note_id):
+        request_data = self._builder.get_birdwatch_translation(note_id)
+        response = await self.__get_response__(**request_data)
+        return response
+
+    async def get_all_birdwatch(self, tweet_id):
+        request_data = self._builder.get_all_birdwatch(tweet_id)
+        response = await self.__get_response__(**request_data)
+        return response
+
     async def update_profile_image(self, media_id):
         request_data = self._builder.update_profile_image(media_id)
         request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"

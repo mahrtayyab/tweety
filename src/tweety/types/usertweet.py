@@ -244,7 +244,6 @@ class UserMedia(BaseGeneratorClass):
                 if parsed:
                     _tweets.append(parsed)
             except:
-                traceback.print_exc()
                 pass
 
         cursor = self._get_cursor_(response)

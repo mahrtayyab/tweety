@@ -7,7 +7,7 @@ from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet
 from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
                     TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
                     Topic, TopicTweets, MutualFollowers, ScheduledTweets, ScheduledTweet, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
-                    ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED, Community, ListFollowers)
+                    ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED, Community, ListFollowers, BirdWatch)
 from . import constants
 from .filters import Language
 
@@ -382,17 +382,18 @@ class UserMethods:
         async for result_tuple in inbox.generator():
             yield result_tuple
 
-    async def get_conversation(self, conversation_id: Union[int, str, Conversation, User], max_id=None):
+    # TODO: Find a way to identify Group ID
+    async def get_conversation(self, conversation_id: Union[int, str, Conversation, User], max_id=None, is_group=False):
         """
             Get a conversation using its ID
 
         :param conversation_id: Conversation ID
         :param max_id: cursor from which onward you want to get messages
+        :param is_group: Either we are looking for group or DM
         :return:
         """
 
-        conversation_id = await self.get_conversation_id(conversation_id)
-
+        conversation_id = await self.get_conversation_id(conversation_id, is_group)
         res = await self.http.get_conversation(conversation_id, max_id)
         _conversation_timeline = res.get("conversation_timeline", {})
         this_conv = find_objects(_conversation_timeline, conversation_id, None, recursive=False, none_value=None)
@@ -537,7 +538,7 @@ class UserMethods:
             conversation_id = await self.get_conversation_id(username, in_group)
 
         if file:
-            file = await self._upload_media(file, "dm_image")
+            file = await self._upload_media(file, constants.UploadTypes.DM_IMAGE)
             file = file[0].media_id
 
         if isinstance(quote_tweet_id, Tweet):
@@ -1354,7 +1355,7 @@ class UserMethods:
         return True
 
     async def update_profile_banner(self, image_file_path):
-        media = await self.upload_media(image_file_path, "banner_image")
+        media = await self.upload_media(image_file_path, constants.UploadTypes.BANNER_IMAGE)
         media_id = media[0].media_id
         await self.http.update_profile_banner(media_id)
         return True
@@ -1362,7 +1363,7 @@ class UserMethods:
     async def upload_media(
             self,
             files=Union[str, List[Union[str, tuple]]],
-            upload_type=constants.UPLOAD_TYPE_TWEET_IMAGE
+            upload_type=constants.UploadTypes.TWEET_IMAGE
     ):
         """
             Upload a file to Twitter
@@ -1374,7 +1375,35 @@ class UserMethods:
 
         return await self._upload_media(files, upload_type)
 
-    async def _upload_media(self, files, _type=constants.UPLOAD_TYPE_TWEET_IMAGE):
+    async def get_audio_space_from_following(self):
+        """
+            Get the Audio Space Currently Live from the Users the authenticated User is Following
+        :return: List[AudioSpace]
+        """
+        response = await self.http.get_audio_space_from_following()
+        spaces = []
+        for thread in response.get("threads", []):
+            broadcast_id = find_objects(thread, "broadcast_id", None)
+            if broadcast_id:
+                this_space = await self.get_audio_space(broadcast_id)
+                spaces.append(this_space)
+
+        return spaces
+
+    async def get_all_community_notes(self, tweet_id):
+        """
+        Get All Community Notes on a Tweet
+
+        :param tweet_id: Tweet ID
+        :return: List[BirdWatch]
+        """
+        response = await self.http.get_all_birdwatch(tweet_id)
+        not_misleading_birdwatch_notes = find_objects(response, "not_misleading_birdwatch_notes", None, none_value={})
+        misleading_birdwatch_notes = find_objects(response, "misleading_birdwatch_notes", None, none_value={})
+        notes = [*not_misleading_birdwatch_notes.get("notes", []), *misleading_birdwatch_notes.get("notes", [])]
+        return [BirdWatch(self, note) for note in notes]
+
+    async def _upload_media(self, files, _type=constants.UploadTypes.TWEET_IMAGE):
         if not isinstance(files, constants.ITERABLE_TYPES):
             files = [files]
 

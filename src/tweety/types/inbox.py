@@ -290,6 +290,11 @@ class Conversation(dict):
             return MessageConversationAvatarUpdate(entry["conversation_avatar_update"], self._inbox, self._client)
         elif entry.get('trust_conversation') and str(entry['trust_conversation']['conversation_id']) == str(self.id):
             return MessageTrustConversation(entry["trust_conversation"], self._client)
+        elif entry.get("end_av_broadcast") and str(entry['end_av_broadcast']['conversation_id']) == str(self.id):
+            return Call(entry["end_av_broadcast"], self._client)
+        elif entry.get("conversation_read") and str(entry['conversation_read']['conversation_id']) == str(self.id):
+            return MessageConversationRead(entry['conversation_read'], self._client)
+
 
         return None
 
@@ -364,6 +369,41 @@ class Conversation(dict):
         return "Conversation(id={}, muted={}, nsfw={}, participants={})".format(
             self.id, self.muted, self.nsfw, self.participants
         )
+
+class MessageConversationRead(dict):
+    def __init__(self, update, client):
+        super().__init__()
+        self._client = client
+        self._raw = update
+        self.id = self["id"] = self._raw["id"]
+        self.time = self["time"] = parse_time(self._raw.get("time"))
+        self.last_read_event_id = self["last_read_event_id"] = self._raw.get("last_read_event_id")
+        self.request_id = self["request_id"] = self._raw.get("request_id")
+
+    def __repr__(self):
+        return "MessageConversationRead(id={}, time={}, last_read_event_id={})".format(
+            self.id, self.time, self.last_read_event_id
+        )
+
+class Call(dict):
+    def __init__(self, update, client):
+        super().__init__()
+        self._client = client
+        self._raw = update
+        self.id = self["id"] = self._raw["id"]
+        self.type = self["type"] = self._raw.get("call_type")
+        self.end_reason = self["end_reason"] = self._raw.get("end_reason")
+        self.ended_at = self["ended_at"] = parse_time(self._raw.get("ended_at_ms"))
+        self.started_at = self["started_at"] = parse_time(self._raw.get("started_at_ms"))
+        self.time = self["time"] = parse_time(self._raw.get("time"))
+        self.is_caller = self["is_caller"] = self._raw.get("is_caller")
+
+    def __repr__(self):
+        return "Call(id={}, time={}, end_reason={}, type={}, is_caller={})".format(
+            self.id, self.time, self.end_reason, self.type, self.is_caller
+        )
+
+
 
 class MessageTrustConversation(dict):
     def __init__(self, update, client):

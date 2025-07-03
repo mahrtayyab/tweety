@@ -112,6 +112,9 @@ class UrlBuilder:
     URL_GET_AUDIO_SPACE_SUGGESTION = "https://proxsee.pscp.tv/api/v2/audioFeed"
     URL_UPDATE_PROFILE_IMAGE = "https://api.x.com/1.1/account/update_profile_image.json"
     URL_UPDATE_PROFILE_BANNER = "https://api.x.com/1.1/account/update_profile_banner.json"
+    URL_GET_AUDIO_SPACE_FROM_FOLLOWINGS = "https://x.com/i/api/fleets/v1/fleetline"
+    URL_GET_BIRDWATCH_TRANSLATION = "https://x.com/i/api/graphql/w4Wq8NC-oh1-_2g9Lp1MUA/BirdwatchFetchNoteTranslation"
+    URL_GET_ALL_BIRDWATCH = "https://x.com/i/api/graphql/gXjOYGbw1BteeEo8tOUWjA/BirdwatchFetchNotes"
 
     def get_guest_token(self):
         return "POST", self.URL_GUEST_TOKEN
@@ -2340,6 +2343,36 @@ class UrlBuilder:
         }
 
         return "POST", self.URL_UPDATE_PROFILE_BANNER, None, None, data
+
+    def get_audio_space_from_following(self):
+        params = {
+            'only_spaces': 'True',
+        }
+        return "GET", self.URL_GET_AUDIO_SPACE_FROM_FOLLOWINGS, params
+
+    def get_birdwatch_translation(self, note_id):
+        variables = {"note_id": note_id}
+        features = {"responsive_web_birdwatch_translation_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True, "payments_enabled": False,
+                    "profile_label_improvements_pcf_label_in_post_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "verified_phone_label_enabled": False,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
+        return "GET", self.URL_GET_BIRDWATCH_TRANSLATION, params
+
+    def get_all_birdwatch(self, tweet_id):
+        variables = {"tweet_id": tweet_id}
+        features = {"responsive_web_birdwatch_enforce_author_user_quotas": True,
+                    "responsive_web_birdwatch_media_notes_enabled": True,
+                    "responsive_web_birdwatch_url_notes_enabled": True,
+                    "responsive_web_birdwatch_translation_enabled": True,
+                    "responsive_web_birdwatch_fast_notes_badge_enabled": True,
+                    "responsive_web_graphql_timeline_navigation_enabled": True, "payments_enabled": True,
+                    "profile_label_improvements_pcf_label_in_post_enabled": True,
+                    "rweb_tipjar_consumption_enabled": True, "verified_phone_label_enabled": True,
+                    "responsive_web_graphql_skip_user_profile_image_extensions_enabled": True}
+        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
+        return "GET", self.URL_GET_ALL_BIRDWATCH, params
 
 
 class FlowData:
