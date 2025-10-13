@@ -27,7 +27,7 @@ class UploadTypes:
     DM_IMAGE = "dm_image"
     BANNER_IMAGE = "banner_image"
 
-REQUEST_USER_AGENT = 'TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)'
+REQUEST_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 REQUEST_USER_AGENT_CH = '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"'
 REQUEST_PLATFORMS = ['Linux']
 DEFAULT_BEARER_TOKEN = 'Bearer AAAAAAAAAAAAAAAAAAAAAFXzAwAAAAAAMHCxpeSDG1gLNLghVe8d74hl6k4%3DRUMF4xAQLsbeBhTSRrCiQpJtxoGWeyHrDb5te2jpGskWDFW82F'
