@@ -273,131 +273,62 @@ class Request:
         last_error = None
         _sessions = cloudscraper.create_scraper()
         _sessions.headers = headers
-        if new_request.get('json') is None and new_request.get('params'):
-            for retry in range(self._retries):
-                try:
-                    if new_request.get('json') is not None:
-                        if att != '':
-                            self._session.headers['att'] = att
-                            _sessions.headers['att'] = att
-                        response = _sessions.request(**new_request)
-                    else:
-                        pass
-                    if response is not None:
-                        if response.status_code == 200:
-                            break
-                except Exception as request_failed:
-                    print(request_failed)
-                    last_error = request_failed
-                    continue
+        for retry in range(self._retries):
+            try:
+                if att != '':
+                    _sessions.headers['att'] = att
+                response = _sessions.request(**new_request)
+                if response is not None:
+                    if response.status_code == 200:
+                        break
+            except Exception as request_failed:
+                last_error = request_failed
+                continue
 
-            if not response:
-                print(response, new_request)
-                raise last_error
+        if not response:
+            raise last_error
 
-            await self._update_rate_limit(response, inspect.stack()[1][3])
-            await self._update_cookies(response)
+        await self._update_rate_limit(response, inspect.stack()[1][3])
+        await self._update_cookies(response)
 
-            if is_document:
-                return response
+        if is_document:
+            return response
 
-            response_json = response.json()  # noqa
-            if ignore_none_data and len(response.text) == 0:
-                return None
+        response_json = response.json()  # noqa
+        if ignore_none_data and len(response.text) == 0:
+            return None
 
-            if (
-                    not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
-                response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
-            elif not response_json and response.status_code in [403, 401]:
-                response_json = {"errors": [{"code": 32, "message": "Couldn't authenticate you"}]}
+        if (not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
+            response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
+        elif not response_json and response.status_code in [403, 401]:
+            response_json = {"errors": [{"code": 32, "message": "Couldn't authenticate you"}]}
 
-            if not response_json:
-                raise TwitterError(
-                    error_code=response.status_code,
-                    error_name="Server Error",
-                    response=response,
-                    message="Unknown Error Occurs on Twitter"
-                )
+        if not response_json:
+            raise TwitterError(
+                error_code=response.status_code,
+                error_name="Server Error",
+                response=response,
+                message="Unknown Error Occurs on Twitter"
+            )
 
-            if response_json.get("errors") and not response_json.get('data'):
-                error = response_json['errors'][0]
+        if response_json.get("errors") and not response_json.get('data'):
+            error = response_json['errors'][0]
 
-                error_code = error.get("code", 0)
-                error_message = error.get("message")
+            error_code = error.get("code", 0)
+            error_message = error.get("message")
 
-                # Twitter Captcha solving is a bit unstable , removing it till fixed
+            # Twitter Captcha solving is a bit unstable , removing it till fixed
 
-                # if int(error_code) in [326] and self._captcha_solver:
-                #    self.solve_captcha()
-                #    return self.__get_response__(return_raw, ignore_none_data, is_document, **request_data)
+            # if int(error_code) in [326] and self._captcha_solver:
+            #    self.solve_captcha()
+            #    return self.__get_response__(return_raw, ignore_none_data, is_document, **request_data)
 
-                return GenericError(response, error_code, error_message)
+            return GenericError(response, error_code, error_message)
 
-            if return_raw:
-                return response
+        if return_raw:
+            return response
 
-            return response_json
-        elif new_request.get('json') is not None:
-            for retry in range(self._retries):
-                try:
-                    if att != '':
-                        _sessions.headers['att'] = att
-                    response = _sessions.request(**new_request)
-                    if response is not None:
-                        if response.status_code == 200:
-                            break
-                except Exception as request_failed:
-                    last_error = request_failed
-                    continue
-
-            if not response:
-                print(response, new_request)
-                raise last_error
-
-            await self._update_rate_limit(response, inspect.stack()[1][3])
-            await self._update_cookies(response)
-
-            if is_document:
-                return response
-
-            response_json = response.json()  # noqa
-            if ignore_none_data and len(response.text) == 0:
-                return None
-
-            if (not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
-                response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
-            elif not response_json and response.status_code in [403, 401]:
-                response_json = {"errors": [{"code": 32, "message": "Couldn't authenticate you"}]}
-
-            if not response_json:
-                raise TwitterError(
-                    error_code=response.status_code,
-                    error_name="Server Error",
-                    response=response,
-                    message="Unknown Error Occurs on Twitter"
-                )
-
-            if response_json.get("errors") and not response_json.get('data'):
-                error = response_json['errors'][0]
-
-                error_code = error.get("code", 0)
-                error_message = error.get("message")
-
-                # Twitter Captcha solving is a bit unstable , removing it till fixed
-
-                # if int(error_code) in [326] and self._captcha_solver:
-                #    self.solve_captcha()
-                #    return self.__get_response__(return_raw, ignore_none_data, is_document, **request_data)
-
-                return GenericError(response, error_code, error_message)
-
-            if return_raw:
-                return response
-
-            return response_json
-        else:
-            print(new_request)
-            return
+        return response_json
 
     def solve_captcha(self, websiteUrl="https://twitter.com/", blob_data=None):
         if self.user is None:
