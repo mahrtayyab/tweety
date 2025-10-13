@@ -187,47 +187,6 @@ class Request:
 
         self.cookies = cookies
 
-    class _sessions(httpx.AsyncClient):
-        def __init__(self):
-            super().__init__()
-            self.headers  = {
-            'Authorization': constants.DEFAULT_BEARER_TOKEN,
-            'User-Agent': constants.REQUEST_USER_AGENT,
-            'Content-Type': 'application/json',
-            'Sec-Ch-Ua-Platform': 'Android',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
-            'Priority': 'u=1, i',
-            'X-Twitter-Active-User': 'yes',
-            'X-Twitter-Client-Language': 'ja',
-            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')
-        }
-
-        async def request(
-        self,
-        method: str,
-        url: URL | str,
-        *,
-        content: RequestContent | None = None,
-        data: RequestData | None = None,
-        files: RequestFiles | None = None,
-        json: typing.Any | None = None,
-        params: QueryParamTypes | None = None,
-        headers: HeaderTypes | None = None,
-        cookies: CookieTypes | None = None,
-        auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT,
-        follow_redirects: bool | UseClientDefault = USE_CLIENT_DEFAULT,
-        timeout: TimeoutTypes | UseClientDefault = USE_CLIENT_DEFAULT,
-        extensions: RequestExtensions | None = None,
-    ) -> Response:
-
-            session = cloudscraper.create_scraper()
-            session.headers = self.headers
-            return session.request(method=method, data=data, url=url, cookies=cookies, json=json, params=params, headers=headers)
-
-
     async def __get_response__(self, return_raw=False, ignore_none_data=False, is_document=False, att='', **request_data):
         if not self._transaction or not self._guest_token:
             await self._init_local_api()
@@ -257,13 +216,11 @@ class Request:
 
         response = None
         last_error = None
-        _sessions = cloudscraper.create_scraper()
-        _sessions.headers = headers
         for retry in range(self._retries):
             try:
                 if att != '':
-                    _sessions.headers['att'] = att
-                response = _sessions.request(**new_request)
+                    self._session.headers['att'] = att
+                response = self._session.request(**new_request)
                 if response.status_code == 200:
                     break
             except Exception as request_failed:
