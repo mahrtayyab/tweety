@@ -44,19 +44,22 @@ class Request:
         self._captcha_solver = captcha_solver
         self._limits = {}
         self._guest_token = None
-        self._session = httpx.AsyncClient(
-            headers={
-                'user-agent': constants.REQUEST_USER_AGENT,
-                'sec-ch-ua-platform': f'"{random.choice(constants.REQUEST_PLATFORMS)}"',
-                'x-twitter-client-language': 'en',
-                'origin': 'https://x.com'
-            },
-            http2=True,
-            proxy=proxy,
-            timeout=timeout,
-            follow_redirects=True,
-            **kwargs
-        )
+        headers = {
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            "Content-Type": "application/json",
+            "User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)",
+            "X-Twitter-API-Version": '5',
+            "X-Twitter-Client": "TwitterAndroid",
+            "X-Twitter-Client-Version": "10.21.0-release.0",
+            "OS-Version": "28",
+            "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
+            "X-Twitter-Active-User": "yes",
+            "X-Guest-Token": requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
+            "X-Twitter-Client-DeviceID": ""
+        }
+        _sessions = cloudscraper.create_scraper()
+        _sessions.headers = headers
+        self._session = _sessions
         self._builder = UrlBuilder()
         self._transaction = None
         self._guest_token = None
@@ -104,9 +107,7 @@ class Request:
             'Priority': 'u=1, i',
             'X-Twitter-Active-User': 'yes',
             'X-Twitter-Client-Language': 'ja',
-            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json',
-                                           headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()[
-                'guest_token']
+            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')
         }
 
         session_headers = self._session.headers
@@ -201,7 +202,7 @@ class Request:
             'Priority': 'u=1, i',
             'X-Twitter-Active-User': 'yes',
             'X-Twitter-Client-Language': 'ja',
-            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()['guest_token']
+            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')
         }
 
         async def request(
@@ -230,20 +231,6 @@ class Request:
     async def __get_response__(self, return_raw=False, ignore_none_data=False, is_document=False, att='', **request_data):
         if not self._transaction or not self._guest_token:
             await self._init_local_api()
-        """headers = {
-            'Authorization': constants.DEFAULT_BEARER_TOKEN,
-            'User-Agent': constants.REQUEST_USER_AGENT,
-            'Content-Type': 'application/json',
-            'Sec-Ch-Ua-Platform': 'Android',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
-            'Priority': 'u=1, i',
-            'X-Twitter-Active-User': 'yes',
-            'X-Twitter-Client-Language': 'ja',
-            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()['guest_token']
-        }"""
         headers = {
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
             "Content-Type": "application/json",
@@ -260,14 +247,13 @@ class Request:
 
         new_request = request_data
         new_request["headers"] = headers
-        # new_request["headers"]["User-Agent"] = "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)"
-        # new_request["cookies"] = self._cookie
+        new_request["cookies"] = self._cookie
 
         transaction_id = self._transaction.generate_transaction_id(
             new_request["method"],
             urlparse(new_request["url"]).path,
         )
-        # new_request["headers"]["x-client-transaction-id"] = transaction_id
+        new_request["headers"]["x-client-transaction-id"] = transaction_id
 
         response = None
         last_error = None
@@ -278,9 +264,8 @@ class Request:
                 if att != '':
                     _sessions.headers['att'] = att
                 response = _sessions.request(**new_request)
-                if response is not None:
-                    if response.status_code == 200:
-                        break
+                if response.status_code == 200:
+                    break
             except Exception as request_failed:
                 last_error = request_failed
                 continue
@@ -403,7 +388,7 @@ class Request:
             'X-Twitter-Client-Language': 'ja',
         }
         try:
-            token = requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()['guest_token']  # noqa
+            token = requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')  # noqa
         except:
             pass
 
@@ -985,11 +970,21 @@ class Request:
 
     async def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
-        headers = self._get_request_headers()
-
+        headers = {
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            "Content-Type": "application/json",
+            "User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)",
+            "X-Twitter-API-Version": '5',
+            "X-Twitter-Client": "TwitterAndroid",
+            "X-Twitter-Client-Version": "10.21.0-release.0",
+            "OS-Version": "28",
+            "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
+            "X-Twitter-Active-User": "yes",
+            "X-Guest-Token": requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
+            "X-Twitter-Client-DeviceID": ""
+        }
         if media_url.startswith("https://ton.twitter.com") or media_url.startswith("https://ton.x.com"):
             headers['referer'] = "https://x.com/"
-
         async with self._session.stream('GET', media_url, follow_redirects=True, headers=headers, timeout=600) as response:
             response.raise_for_status()
 
