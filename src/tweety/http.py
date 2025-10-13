@@ -5,12 +5,20 @@ import random
 import re
 import time
 import traceback
+import typing
 import uuid
+import cloudscraper
+import requests
 import warnings
 from typing import Callable
 from urllib.parse import quote, urlparse
 import bs4
 import httpx
+from httpx import URL, USE_CLIENT_DEFAULT, Response
+from httpx._client import UseClientDefault
+from httpx._types import RequestContent, RequestData, RequestFiles, QueryParamTypes, HeaderTypes, CookieTypes, \
+    AuthTypes, TimeoutTypes, RequestExtensions
+
 from .exceptions import GuestTokenNotFound, TwitterError, UserNotFound, InvalidCredentials
 from .types import User
 from .types.n_types import GenericError
@@ -85,35 +93,33 @@ class Request:
             custom_headers = {}
 
         default_headers = {
-            'accept': '*/*',
-            'accept-language': 'en-PK,en;q=0.9',
-            'content-type': 'application/x-www-form-urlencoded',
-            'referer': 'https://x.com/',
-            'authorization': constants.DEFAULT_BEARER_TOKEN,
-            'sec-ch-ua': constants.REQUEST_USER_AGENT_CH,
-            'sec-ch-ua-mobile': '?0',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
-            'x-csrf-token': self._get_csrf(),
-            'x-twitter-active-user': 'yes',
-            'x-twitter-client-language': 'en',
-            'priority': 'u=1, i',
-            'x-client-uuid': str(uuid.uuid4())
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            'User-Agent': constants.REQUEST_USER_AGENT,
+            'Content-Type': 'application/json',
+            'Sec-Ch-Ua-Platform': 'Android',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
+            'Priority': 'u=1, i',
+            'X-Twitter-Active-User': 'yes',
+            'X-Twitter-Client-Language': 'ja',
+            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json',
+                                           headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()[
+                'guest_token']
         }
 
         session_headers = self._session.headers
         default_headers.update(session_headers)
 
         if self._guest_token or self._cookie:
-            default_headers['content-type'] = 'application/json'
             default_headers['sec-fetch-site'] = 'same-origin'
 
             if self._cookie:
-                default_headers['x-twitter-auth-type'] = 'OAuth2Session'
+                default_headers['X-Twitter-Auth-Type'] = 'OAuth2Session'
 
             if self._guest_token and not self._cookie:
-                default_headers['x-guest-token'] = self._guest_token
+                default_headers['X-Guest-Token'] = self._guest_token
 
         default_headers.update(custom_headers)
 
@@ -180,75 +186,218 @@ class Request:
 
         self.cookies = cookies
 
-    async def __get_response__(self, return_raw=False, ignore_none_data=False, is_document=False, **request_data):
+    class _sessions(httpx.AsyncClient):
+        def __init__(self):
+            super().__init__()
+            self.headers  = {
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            'User-Agent': constants.REQUEST_USER_AGENT,
+            'Content-Type': 'application/json',
+            'Sec-Ch-Ua-Platform': 'Android',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
+            'Priority': 'u=1, i',
+            'X-Twitter-Active-User': 'yes',
+            'X-Twitter-Client-Language': 'ja',
+            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()['guest_token']
+        }
+
+        async def request(
+        self,
+        method: str,
+        url: URL | str,
+        *,
+        content: RequestContent | None = None,
+        data: RequestData | None = None,
+        files: RequestFiles | None = None,
+        json: typing.Any | None = None,
+        params: QueryParamTypes | None = None,
+        headers: HeaderTypes | None = None,
+        cookies: CookieTypes | None = None,
+        auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT,
+        follow_redirects: bool | UseClientDefault = USE_CLIENT_DEFAULT,
+        timeout: TimeoutTypes | UseClientDefault = USE_CLIENT_DEFAULT,
+        extensions: RequestExtensions | None = None,
+    ) -> Response:
+
+            session = cloudscraper.create_scraper()
+            session.headers = self.headers
+            return session.request(method=method, data=data, url=url, cookies=cookies, json=json, params=params, headers=headers)
+
+
+    async def __get_response__(self, return_raw=False, ignore_none_data=False, is_document=False, att='', **request_data):
         if not self._transaction or not self._guest_token:
             await self._init_local_api()
+        """headers = {
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            'User-Agent': constants.REQUEST_USER_AGENT,
+            'Content-Type': 'application/json',
+            'Sec-Ch-Ua-Platform': 'Android',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
+            'Priority': 'u=1, i',
+            'X-Twitter-Active-User': 'yes',
+            'X-Twitter-Client-Language': 'ja',
+            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()['guest_token']
+        }"""
+        headers = {
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            "Content-Type": "application/json",
+            "User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)",
+            "X-Twitter-API-Version": '5',
+            "X-Twitter-Client": "TwitterAndroid",
+            "X-Twitter-Client-Version": "10.21.0-release.0",
+            "OS-Version": "28",
+            "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
+            "X-Twitter-Active-User": "yes",
+            "X-Guest-Token": requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
+            "X-Twitter-Client-DeviceID": ""
+        }
 
         new_request = request_data
-        new_request["headers"] = self._get_request_headers(request_data.get("headers", {}))
-        new_request["cookies"] = self._cookie
+        new_request["headers"] = headers
+        # new_request["headers"]["User-Agent"] = "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)"
+        # new_request["cookies"] = self._cookie
 
         transaction_id = self._transaction.generate_transaction_id(
             new_request["method"],
             urlparse(new_request["url"]).path,
         )
-        new_request["headers"]["x-client-transaction-id"] = transaction_id
+        # new_request["headers"]["x-client-transaction-id"] = transaction_id
 
         response = None
         last_error = None
+        _sessions = cloudscraper.create_scraper()
+        _sessions.headers = headers
+        if new_request.get('json') is None and new_request.get('params'):
+            for retry in range(self._retries):
+                try:
+                    if new_request.get('json') is not None:
+                        if att != '':
+                            self._session.headers['att'] = att
+                            _sessions.headers['att'] = att
+                        response = _sessions.request(**new_request)
+                    else:
+                        pass
+                    if response is not None:
+                        if response.status_code == 200:
+                            break
+                except Exception as request_failed:
+                    print(request_failed)
+                    last_error = request_failed
+                    continue
 
-        for retry in range(self._retries):
-            try:
-                response = await self._session.request(**new_request)
-                break
-            except Exception as request_failed:
-                last_error = request_failed
-                pass
+            if not response:
+                print(response, new_request)
+                raise last_error
 
-        if not response:
-            raise last_error
+            await self._update_rate_limit(response, inspect.stack()[1][3])
+            await self._update_cookies(response)
 
-        await self._update_rate_limit(response, inspect.stack()[1][3])
-        await self._update_cookies(response)
+            if is_document:
+                return response
 
-        if is_document:
-            return response
+            response_json = response.json()  # noqa
+            if ignore_none_data and len(response.text) == 0:
+                return None
 
-        response_json = response.json()  # noqa
-        if ignore_none_data and len(response.text) == 0:
-            return None
+            if (
+                    not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
+                response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
+            elif not response_json and response.status_code in [403, 401]:
+                response_json = {"errors": [{"code": 32, "message": "Couldn't authenticate you"}]}
 
-        if (not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
-            response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
-        elif not response_json and response.status_code in [403, 401]:
-            response_json = {"errors": [{"code": 32, "message": "Couldn't authenticate you"}]}
+            if not response_json:
+                raise TwitterError(
+                    error_code=response.status_code,
+                    error_name="Server Error",
+                    response=response,
+                    message="Unknown Error Occurs on Twitter"
+                )
 
-        if not response_json:
-            raise TwitterError(
-                error_code=response.status_code,
-                error_name="Server Error",
-                response=response,
-                message="Unknown Error Occurs on Twitter"
-            )
+            if response_json.get("errors") and not response_json.get('data'):
+                error = response_json['errors'][0]
 
-        if response_json.get("errors") and not response_json.get('data'):
-            error = response_json['errors'][0]
+                error_code = error.get("code", 0)
+                error_message = error.get("message")
 
-            error_code = error.get("code", 0)
-            error_message = error.get("message")
-            
-            # Twitter Captcha solving is a bit unstable , removing it till fixed 
-            
-            # if int(error_code) in [326] and self._captcha_solver:
-            #    self.solve_captcha()
-            #    return self.__get_response__(return_raw, ignore_none_data, is_document, **request_data)
+                # Twitter Captcha solving is a bit unstable , removing it till fixed
 
-            return GenericError(response, error_code, error_message)
+                # if int(error_code) in [326] and self._captcha_solver:
+                #    self.solve_captcha()
+                #    return self.__get_response__(return_raw, ignore_none_data, is_document, **request_data)
 
-        if return_raw:
-            return response
+                return GenericError(response, error_code, error_message)
 
-        return response_json
+            if return_raw:
+                return response
+
+            return response_json
+        elif new_request.get('json') is not None:
+            for retry in range(self._retries):
+                try:
+                    if att != '':
+                        _sessions.headers['att'] = att
+                    response = _sessions.request(**new_request)
+                    if response is not None:
+                        if response.status_code == 200:
+                            break
+                except Exception as request_failed:
+                    last_error = request_failed
+                    continue
+
+            if not response:
+                print(response, new_request)
+                raise last_error
+
+            await self._update_rate_limit(response, inspect.stack()[1][3])
+            await self._update_cookies(response)
+
+            if is_document:
+                return response
+
+            response_json = response.json()  # noqa
+            if ignore_none_data and len(response.text) == 0:
+                return None
+
+            if (not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
+                response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
+            elif not response_json and response.status_code in [403, 401]:
+                response_json = {"errors": [{"code": 32, "message": "Couldn't authenticate you"}]}
+
+            if not response_json:
+                raise TwitterError(
+                    error_code=response.status_code,
+                    error_name="Server Error",
+                    response=response,
+                    message="Unknown Error Occurs on Twitter"
+                )
+
+            if response_json.get("errors") and not response_json.get('data'):
+                error = response_json['errors'][0]
+
+                error_code = error.get("code", 0)
+                error_message = error.get("message")
+
+                # Twitter Captcha solving is a bit unstable , removing it till fixed
+
+                # if int(error_code) in [326] and self._captcha_solver:
+                #    self.solve_captcha()
+                #    return self.__get_response__(return_raw, ignore_none_data, is_document, **request_data)
+
+                return GenericError(response, error_code, error_message)
+
+            if return_raw:
+                return response
+
+            return response_json
+        else:
+            print(new_request)
+            return
 
     def solve_captcha(self, websiteUrl="https://twitter.com/", blob_data=None):
         if self.user is None:
@@ -259,30 +408,46 @@ class Request:
 
     async def get_home_html(self):
         home_page = None
-        headers = self._get_request_headers()
+        headers = {
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            'User-Agent': constants.REQUEST_USER_AGENT,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Sec-Ch-Ua-Platform': 'Android',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'sec-fetch-dest': 'empty',
+            'Referer': 'https://x.com/',
+            'X-Twitter-Auth-Type': 'OAuth2Session',
+            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
+            'Priority':'u=1, i',
+            'X-Twitter-Active-User': 'yes',
+            'X-Twitter-Client-Language': 'ja',
+        }
+        session = cloudscraper.create_scraper()
+        session.headers = headers
         if headers.get("authorization"):
             del headers["authorization"]
         try:
-            response = await self._session.request(method="GET", url="https://x.com/?mx=2", headers=headers)
+            response = session.request(method="GET", url="https://x.com/?mx=2")
 
             if response.status_code not in range(200, 300):
-                response = await self._session.request(method="GET", url=self._builder.URL_HOME_PAGE, headers=headers)
-
-            home_page = bs4.BeautifulSoup(response.content, 'lxml')
+                response = session.request(method="GET", url=self._builder.URL_HOME_PAGE)
+            home_page = bs4.BeautifulSoup(response.content, 'html5lib')
             migration_url = home_page.select_one("meta[http-equiv='refresh']")
             migration_redirection_url = re.search(MIGRATION_REGEX, str(migration_url)) or re.search(MIGRATION_REGEX, str(response.content))
 
             if migration_redirection_url:
-                response = await self._session.request(method="GET", url=migration_redirection_url.group(0), headers=headers)
-                home_page = bs4.BeautifulSoup(response.content, 'lxml')
+                response = session.request(method="GET", url=migration_redirection_url.group(0), headers=headers)
+                home_page = bs4.BeautifulSoup(response.content, 'html5lib')
             migration_form = home_page.select_one("form[name='f']") or home_page.select_one(f"form[action='https://x.com/x/migrate']")
 
             if migration_form:
                 url = migration_form.attrs.get("action", 'https://x.com/x/migrate')
                 method = migration_form.attrs.get("method", "POST")
                 request_payload = {input_field.get("name"): input_field.get("value") for input_field in migration_form.select("input")}
-                response = await self._session.request(method=method, url=url, data=request_payload, headers=headers)
-                home_page = bs4.BeautifulSoup(response.content, 'lxml')
+                response = session.request(method=method, url=url, data=request_payload, headers=headers)
+                home_page = bs4.BeautifulSoup(response.content, 'html5lib')
         except Exception as twitter_home_error:
             raise ValueError(f"Unable to get Twitter Home Page : {str(twitter_home_error)}")
         return home_page
@@ -290,13 +455,24 @@ class Request:
     async def _get_guest_token(self):
         token = None
         this_response = None
-        headers = self._get_request_headers()
+        headers = {
+            'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            'User-Agent': constants.REQUEST_USER_AGENT,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Sec-Ch-Ua-Platform': 'Android',
+            'Sec-Ch-Ua-Mobile': '?1',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'sec-fetch-dest': 'empty',
+            'Referer': 'https://x.com/',
+            'X-Twitter-Auth-Type': 'OAuth2Session',
+            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
+            'Priority':'u=1, i',
+            'X-Twitter-Active-User': 'yes',
+            'X-Twitter-Client-Language': 'ja',
+        }
         try:
-            request_data = self._builder.get_guest_token()
-            request_data["headers"] = headers
-            this_response = await self._session.request(**request_data)
-            this_response = this_response.json()
-            token = this_response.get('guest_token')  # noqa
+            token = requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json()['guest_token']  # noqa
         except:
             pass
 
@@ -305,7 +481,9 @@ class Request:
                 request_data = self._builder.get_guest_token_fallback()
                 request_data["headers"] = headers
                 request_data["headers"] = {"authorization": None, "content-type": None, "x-csrf-token": None}
-                this_response = await self._session.request(**request_data, cookies=None)
+                _sessions = cloudscraper.create_scraper()
+                _sessions.headers = headers
+                this_response = _sessions.request(**request_data, cookies=None)
                 guest_token = re.findall(GUEST_TOKEN_REGEX, this_response.text)
                 if guest_token:
                     token = guest_token[0]
@@ -315,18 +493,6 @@ class Request:
         if not token:
             raise GuestTokenNotFound(response=this_response, message=f"Guest Token couldn't be found")
         return token
-
-    async def verify_cookies(self):
-        data = self._builder.get_self_user()
-        response = await self.__get_response__(**data)
-        user = User(self._client, response)
-
-        if user is None:
-            raise InvalidCredentials(None, None, response)
-
-        self.username = user.username
-        self.set_user(user)
-        return user
 
     async def authenticate_periscope(self):
         request = self._builder.authenticate_periscope()
@@ -380,11 +546,14 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
-    async def login(self, _url, _payload):
+    async def login(self, _url, _payload, att=''):
         request_data = self._builder.build_flow(_url)
         request_data['json'] = _payload
         request_data["headers"] = {"content-type": "application/json", "x-csrf-token": None}
-        response = await self.__get_response__(True, **request_data)
+        if att != '':
+            response = await self.__get_response__(True, **request_data, att=att)
+        else:
+            response = await self.__get_response__(True, **request_data)
         return response
 
     async def get_tweets(self, user_id, replies=False, cursor=None):

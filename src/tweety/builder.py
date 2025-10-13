@@ -8,7 +8,7 @@ from .types import HOME_TIMELINE_TYPE_FOR_YOU
 
 @utils.DictRequestData
 class UrlBuilder:
-    URL_GUEST_TOKEN = "https://api.x.com/1.1/guest/activate.json"
+    URL_GUEST_TOKEN = "https://api.twitter.com/1.1/guest/activate.json"
     URL_HOME_PAGE = "https://x.com/"
     URL_API_INIT = "https://x.com/i/api/1.1/branch/init.json"
     URL_GET_USER_STATE = "https://api.x.com/help-center/forms/api/prod/user_state.json"
@@ -2397,57 +2397,21 @@ class FlowData:
     @staticmethod
     def startFlow(**kwargs):
         return {
-            'input_flow_data': {
-                'flow_context': {
-                    'debug_overrides': {},
-                    'start_location': {
-                        'location': 'splash_screen',
+            "flow_token": None,
+            "input_flow_data": {
+                "country_code": None,
+                "flow_context": {
+                    "referrer_context": {
+                        "referral_details": "utm_source=google-play&utm_medium=organic",
+                        "referrer_url": ""
                     },
+                    "start_location": {
+                        "location": "splash_screen"
+                    }
                 },
-            },
-            'subtask_versions': {
-                'action_list': 2,
-                'alert_dialog': 1,
-                'app_download_cta': 1,
-                'check_logged_in_account': 1,
-                'choice_selection': 3,
-                'contacts_live_sync_permission_prompt': 0,
-                'cta': 7,
-                'email_verification': 2,
-                'end_flow': 1,
-                'enter_date': 1,
-                'enter_email': 2,
-                'enter_password': 5,
-                'enter_phone': 2,
-                'enter_recaptcha': 1,
-                'enter_text': 5,
-                'enter_username': 2,
-                'generic_urt': 3,
-                'in_app_notification': 1,
-                'interest_picker': 3,
-                'js_instrumentation': 1,
-                'menu_dialog': 1,
-                'notifications_permission_prompt': 2,
-                'open_account': 2,
-                'open_home_timeline': 1,
-                'open_link': 1,
-                'phone_verification': 4,
-                'privacy_options': 1,
-                'security_key': 3,
-                'select_avatar': 4,
-                'select_banner': 2,
-                'settings_list': 7,
-                'show_code': 1,
-                'sign_up': 2,
-                'sign_up_review': 4,
-                'tweet_selection_urt': 1,
-                'update_users': 1,
-                'upload_media': 1,
-                'user_recommendations_list': 4,
-                'user_recommendations_urt': 1,
-                'wait_spinner': 3,
-                'web_modal': 1,
-            },
+                "requested_variant": None,
+                "target_user_id": 0
+            }
         }
 
     def LoginJsInstrumentationSubtask(self, **login_data):
@@ -2464,41 +2428,29 @@ class FlowData:
             ]
         }
 
-    def LoginEnterUserIdentifierSSO(self, **login_data):
+    def LoginEnterUserIdentifier(self, **login_data):
         return {
             "flow_token": self.get_flow_token(login_data['json_']),
-            'subtask_inputs': [
-                {
-                    'subtask_id': 'LoginEnterUserIdentifierSSO',
-                    'settings_list': {
-                        'setting_responses': [
-                            {
-                                'key': 'user_identifier',
-                                'response_data': {
-                                    'text_data': {
-                                        'result': login_data['username'],
-                                    },
-                                },
-                            },
-                        ],
-                        'link': 'next_link',
-                    },
+            "subtask_inputs": [{
+                "enter_text": {
+                    "suggestion_id": None,
+                    "text": login_data['username'],
+                    "link": "next_link"
                 },
-            ]
+                "subtask_id": "LoginEnterUserIdentifier"
+            }]
         }
 
     def LoginEnterPassword(self, **login_data):
         return {
             "flow_token": self.get_flow_token(login_data['json_']),
-            "subtask_inputs": [
-                {
-                    "subtask_id": "LoginEnterPassword",
-                    "enter_password": {
-                        "password": login_data['password'],
-                        "link": "next_link"
-                    }
-                }
-            ]
+            "subtask_inputs": [{
+                "enter_password": {
+                    "password": login_data['password'],
+                    "link": "next_link"
+                },
+                "subtask_id": "LoginEnterPassword"
+            }],
         }
 
     def AccountDuplicationCheck(self, **login_data):
