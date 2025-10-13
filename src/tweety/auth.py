@@ -77,11 +77,6 @@ class AuthMethods:
         """
 
         """if self.session.logged_in and self.session.user['username'].lower() == username.lower():"""
-        try:
-            return await self.connect()
-        except InvalidCredentials:
-            self.request.cookies = None
-            pass
 
         self._username = username
         self._password = password
@@ -144,7 +139,6 @@ class AuthMethods:
         return f"{primary_message}. {secondary_message}"
 
     async def _login(self):
-
         while not self.logged_in:
             _login_payload = self._login_flow.get(
                 self._login_flow_state,
@@ -162,42 +156,39 @@ class AuthMethods:
                 response = await self.request.login(self._login_url, _payload=_login_payload, att=self.request.headers.get('att'))
             else:
                 response = await self.request.login(self._login_url, _payload=_login_payload)
-            try:
-                self._last_json = response.json()
-                if response.headers.get('att'):
-                    self.request.headers = {"att": response.headers.get('att')}
-                self.request.headers = {"User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)"}
+            self._last_json = response.json()
+            if response.cookies.get("att") or response.headers.get('att'):
+                self.request.headers = {"att": response.cookies.get("att") or response.headers.get('att')}
+            self.request.headers = {"User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)"}
 
-                if self._last_json.get('status') != "success":
-                    raise DeniedLogin(response=response, message=response.text)
+            if self._last_json.get('status') != "success":
+                raise DeniedLogin(response=response, message=response.text)
 
-                subtask = self._last_json["subtasks"][0].get("subtask_id")
-                self._login_url = self._login_url.split("?")[0]
-                self._login_flow_state = subtask
+            subtask = self._last_json["subtasks"][0].get("subtask_id")
+            self._login_url = self._login_url.split("?")[0]
+            self._login_flow_state = subtask
+            print(subtask)
+            if subtask in constants.AUTH_ACTION_REQUIRED_KEYS and not self._extra:
+                message = self._get_action_text(self._last_json)
+                raise ActionRequired(0, "ActionRequired", response, message)
 
-                if subtask in constants.AUTH_ACTION_REQUIRED_KEYS and not self._extra:
-                    message = self._get_action_text(self._last_json)
-                    raise ActionRequired(0, "ActionRequired", response, message)
+            if subtask == "ArkoseLogin":
+                # if self._captcha_solver is None:
+                raise ArkoseLoginRequired(response=response)
 
-                if subtask == "ArkoseLogin":
-                    # if self._captcha_solver is None:
-                    raise ArkoseLoginRequired(response=response)
+                # token = await self.request.solve_captcha(websiteUrl="https://iframe.arkoselabs.com")
+                # token = self.request.solve_captcha(websiteUrl="https://twitter.com/i/flow/login", blob_data=data[0])
+                # self._captcha_token = token
 
-                    # token = await self.request.solve_captcha(websiteUrl="https://iframe.arkoselabs.com")
-                    # token = self.request.solve_captcha(websiteUrl="https://twitter.com/i/flow/login", blob_data=data[0])
-                    # self._captcha_token = token
+            if subtask == "DenyLoginSubtask":
+                reason = self._get_action_text(self._last_json)
+                raise DeniedLogin(response=response, message=reason)
 
-                if subtask == "DenyLoginSubtask":
-                    reason = self._get_action_text(self._last_json)
-                    raise DeniedLogin(response=response, message=reason)
-
-                if subtask == "LoginSuccessSubtask":
-                    self.request.remove_header("att")
-                    self.cookies = Cookies(dict(response.cookies))
-                    await self.session.save_session(self.cookies, None)
-                    return await self.connect()
-            except:
-                self._last_json = None
+            if subtask == "LoginSuccessSubtask":
+                self.request.remove_header("att")
+                self.cookies = Cookies(dict(response.cookies))
+                await self.session.save_session(self.cookies, None)
+                return await self.connect()
 
 
         raise DeniedLogin(response=response, message="Unknown Error Occurred")

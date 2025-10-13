@@ -192,18 +192,24 @@ class Request:
             await self._init_local_api()
         headers = {
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
+            'Accept': '*/*',
+            'Accept-Language': 'ja;q=0.5',
             "Content-Type": "application/json",
             "User-Agent": constants.REQUEST_USER_AGENT,
+            'sec-ch-ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
+            'sec-ch-ua-platform': "Android",
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-site': 'same-origin',
             "X-Twitter-API-Version": '5',
             "X-Twitter-Client": "TwitterAndroid",
             "X-Twitter-Client-Version": "10.21.0-release.0",
+            "X-Twitter-Client-Language": "ja",
             "OS-Version": "28",
             "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
             "X-Twitter-Active-User": "yes",
             "X-Guest-Token": requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
             "X-Twitter-Client-DeviceID": ""
         }
-
         new_request = request_data
         new_request["headers"] = headers
         new_request["cookies"] = self._cookie
@@ -212,8 +218,8 @@ class Request:
             new_request["method"],
             urlparse(new_request["url"]).path,
         )
-        new_request["headers"]["x-client-transaction-id"] = transaction_id
-
+        # new_request["headers"]["x-client-transaction-id"] = transaction_id
+        print(new_request)
         response = None
         last_error = None
         for retry in range(self._retries):
@@ -228,6 +234,7 @@ class Request:
                 continue
 
         if not response:
+            print(response)
             raise last_error
 
         await self._update_rate_limit(response, inspect.stack()[1][3])
@@ -424,6 +431,7 @@ class Request:
         request_data['json'] = _payload
         request_data["headers"] = {"content-type": "application/json", "x-csrf-token": None}
         if att != '':
+            print(att)
             response = await self.__get_response__(True, **request_data, att=att)
         else:
             response = await self.__get_response__(True, **request_data)
