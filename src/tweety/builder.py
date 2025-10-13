@@ -2464,7 +2464,7 @@ class FlowData:
             ]
         }
 
-    def LoginEnterUserIdentifierSSO(self, **login_data):
+    def LoginEnterUserIdentifier(self, **login_data):
         return {
             "flow_token": self.get_flow_token(login_data['json_']),
             "subtask_inputs": [{

@@ -148,7 +148,6 @@ class AuthMethods:
                 extra=self._extra,
                 captcha_token=self._captcha_token
             )
-
             # Twitter now often asks for multiple verifications
             if self._login_flow_state in constants.AUTH_ACTION_REQUIRED_KEYS:
                 self._extra = None
@@ -167,7 +166,6 @@ class AuthMethods:
             subtask = self._last_json["subtasks"][0].get("subtask_id")
             self._login_url = self._login_url.split("?")[0]
             self._login_flow_state = subtask
-            print(subtask)
             if subtask in constants.AUTH_ACTION_REQUIRED_KEYS and not self._extra:
                 message = self._get_action_text(self._last_json)
                 raise ActionRequired(0, "ActionRequired", response, message)
