@@ -30,7 +30,7 @@ class UploadTypes:
 REQUEST_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 REQUEST_USER_AGENT_CH = '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"'
 REQUEST_PLATFORMS = ['Linux']
-DEFAULT_BEARER_TOKEN = 'Bearer AAAAAAAAAAAAAAAAAAAAAFXzAwAAAAAAMHCxpeSDG1gLNLghVe8d74hl6k4%3DRUMF4xAQLsbeBhTSRrCiQpJtxoGWeyHrDb5te2jpGskWDFW82F'
+DEFAULT_BEARER_TOKEN = 'Bearer AAAAAAAAAAAAAAAAAAAAAFQODgEAAAAAVHTp76lzh3rFzcHbmHVvQxYYpTw%3DckAlMINMjmCwxUcaXbAN4XqJVdgMJaHqNOFgPMK0zN1qLqLQCF'
 AUTH_ACTION_REQUIRED_KEYS = ("LoginTwoFactorAuthChallenge", "LoginAcid", "LoginEnterAlternateIdentifierSubtask")
 LIKES_ARE_PRIVATE_NOW_WARNING = "User Likes are now private , you can only see the Likes of authenticated User"
 
