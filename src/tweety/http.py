@@ -47,7 +47,7 @@ class Request:
         headers = {
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
             "Content-Type": "application/json",
-            "User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)",
+            "User-Agent": constants.REQUEST_USER_AGENT,
             "X-Twitter-API-Version": '5',
             "X-Twitter-Client": "TwitterAndroid",
             "X-Twitter-Client-Version": "10.21.0-release.0",
@@ -193,7 +193,7 @@ class Request:
         headers = {
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
             "Content-Type": "application/json",
-            "User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)",
+            "User-Agent": constants.REQUEST_USER_AGENT,
             "X-Twitter-API-Version": '5',
             "X-Twitter-Client": "TwitterAndroid",
             "X-Twitter-Client-Version": "10.21.0-release.0",
