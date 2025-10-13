@@ -8,3 +8,4 @@ capsolver
 python-magic
 python-magic-bin; os_name == 'nt'
 cloudscraper
+requests
