@@ -151,10 +151,7 @@ class AuthMethods:
             # Twitter now often asks for multiple verifications
             if self._login_flow_state in constants.AUTH_ACTION_REQUIRED_KEYS:
                 self._extra = None
-            if self.request.headers.get('att'):
-                response = await self.request.login(self._login_url, _payload=_login_payload, att=self.request.headers.get('att'))
-            else:
-                response = await self.request.login(self._login_url, _payload=_login_payload)
+            response = await self.request.login(self._login_url, _payload=_login_payload)
             self._last_json = response.json()
             if response.cookies.get("att") or response.headers.get('att'):
                 self.request.headers = {"att": response.cookies.get("att") or response.headers.get('att')}

@@ -51,11 +51,9 @@ class Request:
             "X-Twitter-API-Version": '5',
             "X-Twitter-Client": "TwitterAndroid",
             "X-Twitter-Client-Version": "10.21.0-release.0",
-            "OS-Version": "28",
-            "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
             "X-Twitter-Active-User": "yes",
-            "X-Guest-Token": requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
-            "X-Twitter-Client-DeviceID": ""
+            "X-Twitter-Client-DeviceID": "",
+            "X-Guest-Token": self._get_guest_token()
         }
         _sessions = cloudscraper.create_scraper()
         _sessions.headers = headers
@@ -97,28 +95,21 @@ class Request:
 
         default_headers = {
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
-            'User-Agent': constants.REQUEST_USER_AGENT,
-            'Content-Type': 'application/json',
-            'Sec-Ch-Ua-Platform': 'Android',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-origin',
+            'Accept': '*/*',
+            'Accept-Language': 'en-PK,en;q=0.9',
+            "Content-Type": "application/json",
+            "User-Agent": constants.REQUEST_USER_AGENT,
             'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
-            'Priority': 'u=1, i',
-            'X-Twitter-Active-User': 'yes',
-            'X-Twitter-Client-Language': 'ja',
-            'X-Guest-Token': requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')
+            "X-Csrf-Token": self._get_csrf(),
+            "X-Twitter-Client-Language": "en",
+            "X-Twitter-Active-User": "yes",
         }
 
         session_headers = self._session.headers
         default_headers.update(session_headers)
 
         if self._guest_token or self._cookie:
-            default_headers['sec-fetch-site'] = 'same-origin'
-
-            if self._cookie:
-                default_headers['X-Twitter-Auth-Type'] = 'OAuth2Session'
-
+            # default_headers['sec-fetch-site'] = 'same-origin'
             if self._guest_token and not self._cookie:
                 default_headers['X-Guest-Token'] = self._guest_token
 
@@ -183,11 +174,11 @@ class Request:
             self._transaction = TransactionGenerator(home_page_html)
 
         if not self._guest_token:
-            self._guest_token = await self._get_guest_token()
+            self._guest_token = self._get_guest_token()
 
         self.cookies = cookies
 
-    async def __get_response__(self, return_raw=False, ignore_none_data=False, is_document=False, att='', **request_data):
+    async def __get_response__(self, return_raw=False, ignore_none_data=False, is_document=False, **request_data):
         if not self._transaction or not self._guest_token:
             await self._init_local_api()
         headers = {
@@ -197,10 +188,8 @@ class Request:
             "Content-Type": "application/json",
             "User-Agent": constants.REQUEST_USER_AGENT,
             'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
-            "X-Csrf-Token": self._get_csrf(),
             "X-Twitter-Client-Language": "en",
             "X-Twitter-Active-User": "yes",
-            "X-Guest-Token": requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
         }
         new_request = request_data
         new_request["headers"] = headers
@@ -212,10 +201,13 @@ class Request:
         new_request["headers"]["X-Client-Transaction-Id"] = transaction_id
         response = None
         last_error = None
+        # self._session.headers = headers
+        try:
+            del new_request["X-Guest-Token"]
+        except:
+            pass
         for retry in range(self._retries):
             try:
-                if att != '':
-                    self._session.headers['att'] = att
                 response = self._session.request(**new_request)
                 if response.status_code == 200:
                     break
@@ -224,6 +216,7 @@ class Request:
                 continue
 
         if not response:
+            print(response)
             raise last_error
 
         await self._update_rate_limit(response, inspect.stack()[1][3])
@@ -319,7 +312,7 @@ class Request:
             raise ValueError(f"Unable to get Twitter Home Page : {str(twitter_home_error)}")
         return home_page
 
-    async def _get_guest_token(self):
+    def _get_guest_token(self):
         token = None
         this_response = None
         headers = {
@@ -411,14 +404,11 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
-    async def login(self, _url, _payload, att=''):
+    async def login(self, _url, _payload):
         request_data = self._builder.build_flow(_url)
         request_data['json'] = _payload
         request_data["headers"] = {"content-type": "application/json", "x-csrf-token": None}
-        if att != '':
-            response = await self.__get_response__(True, **request_data, att=att)
-        else:
-            response = await self.__get_response__(True, **request_data)
+        response = await self.__get_response__(True, **request_data)
         return response
 
     async def get_tweets(self, user_id, replies=False, cursor=None):
