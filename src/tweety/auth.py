@@ -158,7 +158,7 @@ class AuthMethods:
             self._last_json = response.json()
             if response.cookies.get("att") or response.headers.get('att'):
                 self.request.headers = {"att": response.cookies.get("att") or response.headers.get('att')}
-            self.request.headers = {"User-Agent": "TwitterAndroid/10.21.0-release.0 (310210000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)"}
+            self.request.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 Edg/94.0.992.38"}
 
             if self._last_json.get('status') != "success":
                 raise DeniedLogin(response=response, message=response.text)
