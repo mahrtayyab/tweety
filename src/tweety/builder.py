@@ -13,7 +13,7 @@ class UrlBuilder:
     URL_API_INIT = "https://x.com/i/api/1.1/branch/init.json"
     URL_GET_USER_STATE = "https://api.x.com/help-center/forms/api/prod/user_state.json"
     URL_SELF_USER = "https://api.x.com/graphql/851wLy502Jw3dVkLYkyC2Q/ViewerUserQuery"
-    URL_USER_BY_SCREEN_NAME = "https://api.x.com/graphql/jUKA--0QkqGIFhmfRZdWrQ/UserByScreenName"
+    URL_USER_BY_SCREEN_NAME = "https://x.com/i/api/graphql/1VOOyvKkiI3FMmkeDNxM9A/UserByScreenName"
     URL_USER_BY_USER_IDS = "https://x.com/i/api/graphql/kCBEQ-OvWNVtotaYmqG0aw/UsersByRestIds"
     URL_USER_TWEETS = "https://x.com/i/api/graphql/2ItQrd86P8C0pDU6td3Z7Q/UserTweets"
     URL_USER_MEDIAS = "https://x.com/i/api/graphql/ZfjwHi7mxOP6-jPcZbqRhw/UserMedia"

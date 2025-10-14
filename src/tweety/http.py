@@ -54,7 +54,7 @@ class Request:
             "OS-Version": "28",
             "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
             "X-Twitter-Active-User": "yes",
-            "X-Guest-Token": requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
+            "X-Guest-Token": requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
             "X-Twitter-Client-DeviceID": ""
         }
         _sessions = cloudscraper.create_scraper()
@@ -107,7 +107,7 @@ class Request:
             'Priority': 'u=1, i',
             'X-Twitter-Active-User': 'yes',
             'X-Twitter-Client-Language': 'ja',
-            'X-Guest-Token': requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')
+            'X-Guest-Token': requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')
         }
 
         session_headers = self._session.headers
@@ -193,30 +193,23 @@ class Request:
         headers = {
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
             'Accept': '*/*',
-            'Accept-Language': 'ja;q=0.5',
+            'Accept-Language': 'en-PK,en;q=0.9',
             "Content-Type": "application/json",
             "User-Agent": constants.REQUEST_USER_AGENT,
-            'sec-ch-ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
-            'sec-ch-ua-platform': "Android",
-            "X-Twitter-API-Version": '5',
-            "X-Twitter-Client": "TwitterAndroid",
-            "X-Twitter-Client-Version": "10.21.0-release.0",
-            "X-Twitter-Client-Language": "ja",
-            "OS-Version": "28",
-            "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
+            'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
+            "X-Csrf-Token": self._get_csrf(),
+            "X-Twitter-Client-Language": "en",
             "X-Twitter-Active-User": "yes",
-            "X-Guest-Token": requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
-            "X-Twitter-Client-DeviceID": ""
+            "X-Guest-Token": requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
         }
         new_request = request_data
         new_request["headers"] = headers
         new_request["cookies"] = self._cookie
-
         transaction_id = self._transaction.generate_transaction_id(
             new_request["method"],
             urlparse(new_request["url"]).path,
         )
-        new_request["headers"]["x-client-transaction-id"] = transaction_id
+        new_request["headers"]["X-Client-Transaction-Id"] = transaction_id
         response = None
         last_error = None
         for retry in range(self._retries):
@@ -288,8 +281,6 @@ class Request:
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
             'User-Agent': constants.REQUEST_USER_AGENT,
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Sec-Ch-Ua-Platform': 'Android',
-            'Sec-Ch-Ua-Mobile': '?1',
             'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Site': 'same-origin',
             'sec-fetch-dest': 'empty',
@@ -298,12 +289,12 @@ class Request:
             'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
             'Priority':'u=1, i',
             'X-Twitter-Active-User': 'yes',
-            'X-Twitter-Client-Language': 'ja',
+            'X-Twitter-Client-Language': 'en',
         }
         session = cloudscraper.create_scraper()
         session.headers = headers
-        if headers.get("authorization"):
-            del headers["authorization"]
+        if headers.get("Authorization"):
+            del headers["Authorization"]
         try:
             response = session.request(method="GET", url="https://x.com/?mx=2")
 
@@ -335,8 +326,6 @@ class Request:
             'Authorization': constants.DEFAULT_BEARER_TOKEN,
             'User-Agent': constants.REQUEST_USER_AGENT,
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Sec-Ch-Ua-Platform': 'Android',
-            'Sec-Ch-Ua-Mobile': '?1',
             'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Site': 'same-origin',
             'sec-fetch-dest': 'empty',
@@ -345,10 +334,10 @@ class Request:
             'Sec-Ch-Ua': constants.REQUEST_USER_AGENT_CH.replace('\\', ''),
             'Priority':'u=1, i',
             'X-Twitter-Active-User': 'yes',
-            'X-Twitter-Client-Language': 'ja',
+            'X-Twitter-Client-Language': 'en',
         }
         try:
-            token = requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')  # noqa
+            token = requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token')  # noqa
         except:
             pass
 
@@ -940,7 +929,7 @@ class Request:
             "OS-Version": "28",
             "System-User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)",
             "X-Twitter-Active-User": "yes",
-            "X-Guest-Token": requests.post('https://api.twitter.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
+            "X-Guest-Token": requests.post('https://api.x.com/1.1/guest/activate.json', headers={'Authorization': constants.DEFAULT_BEARER_TOKEN}).json().get('guest_token'),
             "X-Twitter-Client-DeviceID": ""
         }
         if media_url.startswith("https://ton.twitter.com") or media_url.startswith("https://ton.x.com"):
