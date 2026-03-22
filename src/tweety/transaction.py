@@ -14,10 +14,23 @@ from functools import reduce
 from typing import Union, List
 from .utils import float_to_hex, is_odd, base64_encode
 
-ON_DEMAND_FILE_REGEX = re.compile(
-    r"""['|\"]{1}ondemand\.s['|\"]{1}:\s*['|\"]{1}([\w]*)['|\"]{1}""", flags=(re.VERBOSE | re.MULTILINE))
 INDICES_REGEX = re.compile(
-    r"""(\(\w{1}\[(\d{1,2})\],\s*16\))+""", flags=(re.VERBOSE | re.MULTILINE))
+    r"""(\(\w{1}\[(\d{1,2})\],\s*16\))+""",
+    flags=(re.VERBOSE | re.MULTILINE),
+)
+ON_DEMAND_FILE_POINTER_REGEX = re.compile(
+    r'(\d+)\s*:\s*"ondemand\.s"',
+    flags=(re.VERBOSE | re.MULTILINE),
+)
+
+
+def find_on_demand_file(text: str) -> str | None:
+    pointer_match = ON_DEMAND_FILE_POINTER_REGEX.search(text)
+    if pointer_match is None:
+        return None
+    pointer = pointer_match.group(1)
+    file = re.search(rf'{pointer}\s*:\s*"(\w+)"', text)
+    return None if file is None else file.group(1)
 
 
 def interpolate(from_list: List[Union[float, int]], to_list: List[Union[float, int]], f: Union[float, int]):
@@ -111,9 +124,9 @@ class TransactionGenerator:
     def get_indices(self, home_page_html=None):
         key_byte_indices = []
         response = self.validate_response(home_page_html) or self.home_page_html
-        on_demand_file = ON_DEMAND_FILE_REGEX.search(str(response))
+        on_demand_file = find_on_demand_file(str(response))
         if on_demand_file:
-            on_demand_file_url = f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{on_demand_file.group(1)}a.js"
+            on_demand_file_url = f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{on_demand_file}a.js"
             on_demand_file_response = httpx.get(on_demand_file_url)
             key_byte_indices_match = INDICES_REGEX.finditer(
                 str(on_demand_file_response.text))
