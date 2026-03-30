@@ -417,6 +417,11 @@ class Request:
 
         keyword = quote(keyword, safe='"()%')
         request_data = self._builder.search(keyword, cursor, filter_)
+        # X migrated SearchTimeline from GET to POST (March 2026).
+        # The builder returns the payload in "params"; move it to "json"
+        # so httpx sends it as a JSON request body instead of query params.
+        if request_data.get("method") == "POST" and "params" in request_data:
+            request_data["json"] = request_data.pop("params")
         response = await self.__get_response__(**request_data)
         return response
 

@@ -21,7 +21,7 @@ class UrlBuilder:
     URL_USER_LIKES = "https://x.com/i/api/graphql/32OdaXdMRRC5hslSEJYFdQ/Likes"
     URL_USER_TWEETS_WITH_REPLIES = "https://x.com/i/api/graphql/Z9gIrY5Gq-2K7HXhIimlyQ/UserTweetsAndReplies"
     URL_TRENDS = "https://x.com/i/api/2/guide.json"
-    URL_SEARCH = "https://x.com/i/api/graphql/nKAncKPF1fV1xltvF3UUlw/SearchTimeline"
+    URL_SEARCH = "https://x.com/i/api/graphql/GcXk9vN_d1jUfHNqLacXQA/SearchTimeline"
     URL_SEARCH_TYPEHEAD = "https://x.com/i/api/1.1/search/typeahead.json"
     URL_GIF_SEARCH = "https://x.com/i/api/1.1/foundmedia/search.json"
     URL_PLACE_SEARCH = "https://x.com/i/api/1.1/geo/places.json"
@@ -452,8 +452,12 @@ class UrlBuilder:
         if filter_:
             variables['product'] = filter_
 
-        params = {'variables': utils.json_stringify(variables), 'features': utils.json_stringify(features)}
-        return "GET", self.URL_SEARCH, urlencode(params, safe='"()%', quote_via=urllib.parse.quote_plus)
+        body = {
+            'variables': utils.json_stringify(variables),
+            'features': utils.json_stringify(features),
+            'fieldToggles': utils.json_stringify(fieldToggles),
+        }
+        return "POST", self.URL_SEARCH, body
 
     def search_place(self, lat=None, long=None, search_term=None):
         params = {
