@@ -495,7 +495,17 @@ class Tweet(_TwType):
         return self._tweet.get('rest_id')
 
     def _get_community(self):
-        return Community(self._client, self._tweet.get("author_community_relationship") or self._tweet.get('community_results'))
+        data = self._tweet.get("author_community_relationship") or self._tweet.get('community_results')
+
+        if not data:
+            return None
+
+        community = Community(self._client, data)
+
+        if community is None or not community.available:
+            return None
+        
+        return community
 
     def _get_author(self):
         if self._tweet.get("core"):
@@ -1597,17 +1607,24 @@ class Community(_TwType):
     def __init__(self, client, data, *args, **kwargs):
         self._raw = data
         self._client = client
-        self._community = find_objects(self._raw, "__typename", "Community", recursive=False)
-        self.id = self._get_id()
-        self.date = self.created_at = self._get_date()
-        self.description = self._get_description()
-        self.name = self._get_name()
-        self.role = self._get_role()
-        self.member_count = self._get_member_count()
-        self.moderator_count = self._get_moderator_count()
-        self.admin = self._get_admin()
-        self.creator = self._get_creator()
-        self.rules = self._get_rules()
+        self._community = (
+            find_objects(self._raw, "__typename", "Community", recursive=False) or
+            find_objects(self._raw, "__typename", "CommunityUnavailable", recursive=False)
+        )
+
+        unavailable = (self._community.get('__typename') == 'CommunityUnavailable') if self._community else True
+        self.available = not unavailable
+        if self.available:
+            self.id = self._get_id()
+            self.date = self.created_at = self._get_date()
+            self.description = self._get_description()
+            self.name = self._get_name()
+            self.role = self._get_role()
+            self.member_count = self._get_member_count()
+            self.moderator_count = self._get_moderator_count()
+            self.admin = self._get_admin()
+            self.creator = self._get_creator()
+            self.rules = self._get_rules()
 
     def __repr__(self):
         return "Community(id={}, name={}, role={}, admin={})".format(
