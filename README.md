@@ -1,12 +1,27 @@
 # tweety
 Reverse Engineered Twitter Frontend API. (Still Maintained)
 
-> **Important Maintenance & Temporary Service Notice**
-> 
-> Due to work commitments, updates to **tweety** are currently too slow. 
-> 
-> **Want to speed up the open-source maintenance process?**  
-> Consider supporting the project on ☕ **[Buy Me a Coffee](https://buymeacoffee.com/mahrtayyab)** to help prioritize updates!
+### 💖 Recommended Proxy Provider
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://proxy-seller.com/?utm_source=github&utm_medium=referral&utm_campaign=partner_promo&utm_term=github&partner=4YW20Q5AXMV3EV" target="_blank">
+        <img src="https://mahrtayyab.github.io/proxy_seller.png" alt="CoreClaw" width="100%" />
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h3><a href="https://proxy-seller.com/?utm_source=github&utm_medium=referral&utm_campaign=partner_promo&utm_term=github&partner=4YW20Q5AXMV3EV">ProxySeller</a> — Buy Private Socks5, HTTPs & Residential Proxies (Use code TWEETY for 15% off)</h3>
+      <p>
+        <a href="https://proxy-seller.com/?utm_source=github&utm_medium=referral&utm_campaign=partner_promo&utm_term=github&partner=4YW20Q5AXMV3EV">
+          👉 <b>Get 15% OFF</b>
+        </a>
+      </p>
+    </td>
+  </tr>
+</table>
 
 [![Downloads](https://static.pepy.tech/personalized-badge/tweety-ns?period=total&units=international_system&left_color=orange&right_color=blue&left_text=Downloads)](https://pepy.tech/project/tweety-ns) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mahrtayyab/tweety)
 
