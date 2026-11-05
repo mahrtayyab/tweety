@@ -285,7 +285,7 @@ class Request:
                 home_page = bs4.BeautifulSoup(response.content, 'lxml')
 
             if not find_on_demand_file(str(home_page)):
-                response = await self._session.request(method="GET", url="https://x.com/home", headers=headers)
+                response = await self._session.request(method="GET", url="https://x.com/i/jf/", headers=headers)
                 home_page = bs4.BeautifulSoup(response.content, 'lxml')
         except Exception as twitter_home_error:
             raise ValueError(f"Unable to get Twitter Home Page : {str(twitter_home_error)}")
