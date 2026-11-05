@@ -1,4 +1,5 @@
 import getpass
+import time
 from http.cookiejar import MozillaCookieJar
 from typing import Union
 from .exceptions import InvalidCredentials, DeniedLogin, ActionRequired, ArkoseLoginRequired
@@ -118,11 +119,13 @@ class AuthMethods:
         URL = "https://business.x.com/en"
         temp_cookie = {"auth_token": auth_token}
         temp_headers = {'authorization': constants.DEFAULT_BEARER_TOKEN}
-        res = await self.request.session.get(URL, cookies=temp_cookie)
+        params = {'_': int(time.time() * 1000)}
+        res = await self.request.session.get(URL, params=params, cookies=temp_cookie)
         ct0 = res.cookies.get('ct0')
 
         if not ct0:
-            res = await self.request.session.get(URL, cookies=temp_cookie, headers=temp_headers)
+            params = {'_': int(time.time() * 1000)}
+            res = await self.request.session.get(URL, params=params, cookies=temp_cookie, headers=temp_headers)
             ct0 = res.cookies.get('ct0')
 
         if not ct0:
